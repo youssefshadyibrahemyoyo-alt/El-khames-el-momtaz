@@ -3,6 +3,22 @@ import { ArrowLeftRight, CalendarDays, CheckCircle2, ChevronRight, CircleUserRou
 import { isSupabaseConfigured, Profile, supabase } from './supabase';
 
 type Screen = 'overview' | 'squad' | 'players' | 'leaderboard' | 'admin';
+type LeaderboardPlayer = {
+  player_id: string;
+  display_name: string;
+  photo_url: string | null;
+  total_goals?: number;
+  total_assists?: number;
+  total_contributions?: number;
+  average_rating?: number | null;
+  matches_rated?: number;
+};
+
+type LeaderboardTab =
+  | 'goals'
+  | 'assists'
+  | 'contributions'
+  | 'ratings';
 const demoPlayers = [
   { name: 'Karim', price: 7, points: 18 }, { name: 'Omar', price: 6.5, points: 15 }, { name: 'Youssef', price: 6, points: 12 }, { name: 'Ziad', price: 5.5, points: 10 }, { name: 'Adam', price: 5.5, points: 9 }, { name: 'Mazen', price: 4.5, points: 8 }, { name: 'Nour', price: 4.5, points: 7 }, { name: 'Fares', price: 4.5, points: 6 },
 ];
@@ -28,6 +44,17 @@ export default function App() {
   const [matchInProgress, setMatchInProgress] = useState(false);
   const [didNotPlay, setDidNotPlay] = useState<string[]>([]);
   const [sessionMessage, setSessionMessage] = useState('');
+  const [leaderboardTab, setLeaderboardTab] =
+  useState<LeaderboardTab>('goals');
+
+const [leaderboardPlayers, setLeaderboardPlayers] =
+  useState<LeaderboardPlayer[]>([]);
+
+const [leaderboardLoading, setLeaderboardLoading] =
+  useState(false);
+
+const [leaderboardError, setLeaderboardError] =
+  useState('');
 
   useEffect(() => {
     if (!supabase) return;
