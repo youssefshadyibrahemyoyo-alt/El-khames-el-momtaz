@@ -540,11 +540,11 @@ export default function App() {
                   <h3>My fantasy squad</h3>
                   <p>5 starters + 2 bench players. Changes lock during a match.</p>
                 </div>
-                <span className="budget">£{selectedCost.toFixed(1)}m / £40.0m</span>
+                <span className="budget">£{selectedCost.toFixed(1)}m / £50.0m</span>
               </div>
 
               <div className="budget-track">
-                <span style={{ width: `${Math.min(selectedCost / 40 * 100, 100)}%` }} />
+                <span style={{ width: `${Math.min(selectedCost / 50 * 100, 100)}%` }} />
               </div>
 
               <div className="lineup-heading">
@@ -790,7 +790,7 @@ export default function App() {
                     className={selected.includes(p.name) ? 'secondary compact-btn' : 'primary compact-btn'}
                     disabled={
                       !selected.includes(p.name) &&
-                      (selected.length >= 7 || selectedCost + p.price > 40 || matchInProgress)
+                      (selected.length >= 7 || selectedCost + p.price > 50 || matchInProgress)
                     }
                     onClick={() => setSelected(old => {
                       if (old.includes(p.name)) {
