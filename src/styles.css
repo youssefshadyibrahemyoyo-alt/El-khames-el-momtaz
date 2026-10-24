@@ -4,3 +4,269 @@
 /* Chips, seven-player squads, and per-match lineup controls */
 .lineup-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:12px 0;color:#f7f5ff}.lineup-heading strong{font-family:'Space Grotesk';font-size:13px}.lineup-heading span{font-size:10px;color:var(--muted)}.bench-heading{margin-top:24px}.bench-grid{display:grid;gap:8px}.bench-card{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--line);border-radius:9px;background:#201d31}.bench-number{display:grid;place-items:center;width:24px;height:24px;border-radius:6px;background:#353049;color:var(--lime);font-weight:700;font-size:11px}.bench-copy{display:grid;gap:4px;flex:1}.bench-copy strong{font-size:12px}.bench-copy span{font-size:10px;color:var(--muted)}.match-lock-panel{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:20px;padding:15px;border:1px solid #4b4265;background:#25213a;border-radius:10px}.match-lock-panel strong{font-size:12px}.match-lock-panel p{font-size:10px;color:var(--muted);margin:5px 0 0;line-height:1.5}.did-not-play{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px;padding:12px;border:1px solid var(--line);border-radius:8px}.did-not-play label{font-size:11px;color:var(--muted)}.did-not-play select{background:#151223;color:white;border:1px solid #51496c;padding:8px;border-radius:6px}.chip-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.chip-card{display:flex;flex-direction:column;align-items:flex-start;gap:10px;padding:16px;border:1px solid var(--line);border-radius:11px;background:#201d31}.chip-card.chip-active{border-color:var(--lime);box-shadow:0 0 0 1px #c4ff6122}.chip-icon{font-size:25px}.chip-card>strong{font-size:13px}.chip-card p{font-size:11px;color:var(--muted);line-height:1.6;min-height:52px;margin:0}.chip-card button{width:100%;margin-top:auto}.chip-status{font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase}.chip-status.available{color:#a6a1bb}.chip-status.active{color:var(--lime)}.chip-status.used{color:#e4a94b}.transfer-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.transfer-summary>div{display:grid;gap:8px;background:#201d31;border:1px solid var(--line);border-radius:9px;padding:14px}.transfer-summary span{font-size:10px;color:var(--muted)}.transfer-summary strong{font-size:23px;color:var(--lime)}.transfer-controls{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}
 @media(max-width:850px){.chip-grid{grid-template-columns:1fr}.chip-card p{min-height:0}.squad-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.match-lock-panel,.did-not-play{align-items:stretch;flex-direction:column}.transfer-summary{grid-template-columns:1fr 1fr}.lineup-heading{align-items:flex-start;flex-direction:column}}
+
+/* El Khames El Momtaz — Egyptian green & gold */
+:root {
+  --bg: #071b14;
+  --panel: #0d281e;
+  --panel2: #15382a;
+  --line: #28513d;
+  --muted: #b2c5b7;
+  --lime: #dfbd62;
+  --purple: #b8d7a7;
+}
+
+body {
+  background:
+    radial-gradient(ellipse at 75% 0%, #1c4933 0%, transparent 48%),
+    #071b14;
+}
+
+.brand-mark {
+  background: #dfbd62;
+  color: #092117;
+}
+
+.nav-item.active {
+  background: #1b4430;
+  color: #f0cf79;
+  border: 1px solid #806a35;
+}
+
+.primary {
+  background: #dfbd62;
+  color: #10251a;
+}
+
+.secondary {
+  background: #173b2a;
+  border-color: #426c4f;
+  color: #f6edcf;
+}
+
+.player-photo {
+  background: linear-gradient(135deg, #376e4a, #112b20);
+  border-color: #dfbd62;
+  color: #f4d783;
+}
+
+/* New squad layout */
+.egypt-squad {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(230px, 0.8fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.egypt-pitch {
+  position: relative;
+  overflow: hidden;
+  padding: 22px 14px;
+  border: 1px solid #b99a4e;
+  border-radius: 16px;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      rgba(255,255,255,.025) 0 52px,
+      rgba(0,0,0,.055) 52px 104px
+    ),
+    linear-gradient(145deg, #155337, #0b3825 70%, #10462d);
+}
+
+.egypt-pitch::before {
+  content: "";
+  position: absolute;
+  inset: 10px;
+  border: 1px solid rgba(235, 210, 132, .48);
+  border-radius: 9px;
+  pointer-events: none;
+}
+
+.egypt-pitch-title {
+  position: relative;
+  margin: 0 0 18px;
+  color: #f0d17b;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.egypt-formation {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px 6px;
+  padding: 12px 2px;
+}
+
+.egypt-player {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 2px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: rgba(3, 23, 15, .26);
+  color: #fff7dc;
+  cursor: pointer;
+}
+
+.egypt-player:hover,
+.egypt-player.selected {
+  border-color: #f0d17b;
+  background: rgba(223, 189, 98, .15);
+}
+
+.egypt-player .player-photo,
+.egypt-player img {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.egypt-player strong {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  font-size: 11px;
+  text-align: center;
+}
+
+.egypt-player small {
+  color: #f0d17b;
+  font-size: 10px;
+}
+
+.egypt-captain {
+  color: #f5d875;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.egypt-bench {
+  border: 1px solid #806a35;
+  border-radius: 14px;
+  background: linear-gradient(150deg, #153b2a, #0b2118);
+  padding: 16px;
+}
+
+.egypt-bench h3 {
+  margin: 0 0 4px;
+  color: #f0d17b;
+}
+
+.egypt-bench > p {
+  margin: 0 0 14px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.egypt-bench-player {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 12px 0;
+  border-bottom: 1px solid #28513d;
+}
+
+.egypt-bench-player:last-child {
+  border-bottom: 0;
+}
+
+.egypt-bench-player .player-photo,
+.egypt-bench-player img {
+  width: 39px;
+  height: 39px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.egypt-bench-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.egypt-bench-info strong,
+.egypt-bench-info span {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.egypt-bench-info strong {
+  font-size: 12px;
+}
+
+.egypt-bench-info span {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.egypt-chip-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 9px;
+  margin-bottom: 16px;
+}
+
+.egypt-chip {
+  padding: 12px 8px;
+  border: 1px solid #806a35;
+  border-radius: 10px;
+  background: #102c20;
+  color: #f8edcf;
+  text-align: left;
+}
+
+.egypt-chip strong,
+.egypt-chip span {
+  display: block;
+}
+
+.egypt-chip strong {
+  font-size: 11px;
+}
+
+.egypt-chip span {
+  margin-top: 5px;
+  color: #dfbd62;
+  font-size: 10px;
+}
+
+.egypt-chip.active {
+  background: #dfbd62;
+  color: #10251a;
+}
+
+.egypt-chip.active span {
+  color: #10251a;
+}
+
+.egypt-squad-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 14px 0;
+}
+
+@media (max-width: 760px) {
+  .egypt-squad {
+    grid-template-columns: 1fr;
+  }
+
+  .egypt-bench {
+    order: 2;
+  }
+
+  .egypt-formation {
+    gap: 12px 4px;
+  }
+
+  .egypt-chip-row {
+    grid-template-columns: 1fr;
+  }
+}
