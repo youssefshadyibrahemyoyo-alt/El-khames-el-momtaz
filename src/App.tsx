@@ -17,18 +17,43 @@ import {
 } from 'lucide-react';
 import { isSupabaseConfigured, Profile, supabase } from './supabase';
 
-type Screen =
-  | 'overview'
-  | 'squad'
-  | 'players'
-  | 'leaderboard'
-  | 'admin';
+type Screen = 'overview' | 'squad' | 'players' | 'leaderboard' | 'admin';
+type LeaderboardTab = 'goals' | 'assists' | 'contributions' | 'ratings';
 
-type LeaderboardTab =
-  | 'goals'
-  | 'assists'
-  | 'contributions'
-  | 'ratings';
+type FootballPlayer = {
+  id: string;
+  display_name: string;
+  price: number;
+  is_active: boolean;
+  photo_url: string | null;
+};
+
+type Gameweek = {
+  id: number;
+  number: number;
+  status: string;
+  transfer_deadline: string | null;
+  started_at: string | null;
+  ended_at: string | null;
+};
+
+type SquadRecord = {
+  id: string;
+  manager_id: string;
+  gameweek_id: number;
+  captain_player_id: string | null;
+  chip: string | null;
+  transfers_used: number;
+  points_hit: number;
+};
+
+type LeaguePlayer = {
+  id: string;
+  name: string;
+  price: number;
+  points: number;
+  photo_url: string | null;
+};
 
 type LeaderboardPlayer = {
   player_id: string;
@@ -41,15 +66,15 @@ type LeaderboardPlayer = {
   matches_rated?: number;
 };
 
-const demoPlayers = [
-  { name: 'Karim', price: 7, points: 18 },
-  { name: 'Omar', price: 6.5, points: 15 },
-  { name: 'Youssef', price: 6, points: 12 },
-  { name: 'Ziad', price: 5.5, points: 10 },
-  { name: 'Adam', price: 5.5, points: 9 },
-  { name: 'Mazen', price: 4.5, points: 8 },
-  { name: 'Nour', price: 4.5, points: 7 },
-  { name: 'Fares', price: 4.5, points: 6 },
+const demoPlayers: LeaguePlayer[] = [
+  { id: 'Karim', name: 'Karim', price: 7, points: 18, photo_url: null },
+  { id: 'Omar', name: 'Omar', price: 6.5, points: 15, photo_url: null },
+  { id: 'Youssef', name: 'Youssef', price: 6, points: 12, photo_url: null },
+  { id: 'Ziad', name: 'Ziad', price: 5.5, points: 10, photo_url: null },
+  { id: 'Adam', name: 'Adam', price: 5.5, points: 9, photo_url: null },
+  { id: 'Mazen', name: 'Mazen', price: 4.5, points: 8, photo_url: null },
+  { id: 'Nour', name: 'Nour', price: 4.5, points: 7, photo_url: null },
+  { id: 'Fares', name: 'Fares', price: 4.5, points: 6, photo_url: null },
 ];
 
 const leaderboardTabs: { id: LeaderboardTab; label: string }[] = [
@@ -58,6 +83,8 @@ const leaderboardTabs: { id: LeaderboardTab; label: string }[] = [
   { id: 'contributions', label: 'Goal contributions' },
   { id: 'ratings', label: 'Ratings' },
 ];
+
+const activeStatuses = ['active', 'started', 'in_progress', 'open'];
 
 export default function App() {
   const [session, setSession] = useState<any>(null);
@@ -71,7 +98,13 @@ export default function App() {
   const [demoRole, setDemoRole] = useState<'admin_player' | 'player'>('admin_player');
   const [demoMode] = useState(!isSupabaseConfigured);
 
-  const [selected, setSelected] = useState([
+  const [realPlayers, setRealPlayers] = useState<FootballPlayer[]>([]);
+  const [playersLoading, setPlayersLoading] = useState(false);
+  const [playersError, setPlayersError] = useState('');
+
+  const [gameweek, setGameweek] = useState<Gameweek | null>(null);
+  const [squadRecord, setSquadRecord] = useState<SquadRecord | null>(null);
+  const [selected, setSelected] = useState<string[]>([
     'Karim', 'Omar', 'Youssef', 'Ziad', 'Adam', 'Mazen', 'Nour',
   ]);
   const [captain, setCaptain] = useState('Karim');
@@ -83,6 +116,9 @@ export default function App() {
   const [matchInProgress, setMatchInProgress] = useState(false);
   const [didNotPlay, setDidNotPlay] = useState<string[]>([]);
   const [sessionMessage, setSessionMessage] = useState('');
+  const [squadLoading, setSquadLoading] = useState(false);
+  const [squadSaving, setSquadSaving] = useState(false);
+  const [squadError, setSquadError] = useState('');
 
   const [leaderboardTab, setLeaderboardTab] =
     useState<LeaderboardTab>('goals');
@@ -112,9 +148,7 @@ export default function App() {
 
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
-      if (data.session) {
-        void loadProfile(data.session.user.id);
-      }
+      if (data.session) void loadProfile(data.session.user.id);
     });
 
     const { data: listener } = supabase.auth.onAuthStateChange(
@@ -147,19 +181,14 @@ export default function App() {
         options: { data: { display_name: displayName } },
       });
 
-      if (error) {
-        setNotice(error.message);
-      } else {
-        setNotice(
-          'Registration submitted. Check your email if confirmation is enabled. An admin must approve your player profile.'
-        );
-      }
+      setNotice(error
+        ? error.message
+        : 'Registration submitted. Check your email if confirmation is enabled. An admin must approve your player profile.');
     } else {
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
-
       if (error) setNotice(error.message);
     }
   }
@@ -172,32 +201,40 @@ export default function App() {
 
   const role = demoMode ? demoRole : profile?.role;
   const isAdmin = role === 'admin_player';
-  const approved =
-    demoMode || profile?.player_approval_status === 'approved';
+  const approved = demoMode || profile?.player_approval_status === 'approved';
 
-  const selectedCost = demoPlayers
-    .filter(p => selected.includes(p.name))
-    .reduce((sum, p) => sum + p.price, 0);
+  const players: LeaguePlayer[] = demoMode
+    ? demoPlayers
+    : realPlayers.map(p => ({
+        id: p.id,
+        name: p.display_name,
+        price: Number(p.price),
+        points: 0,
+        photo_url: p.photo_url,
+      }));
 
+  const playerById = new Map(players.map(p => [p.id, p]));
+  const selectedPlayers = selected
+    .map(id => playerById.get(id))
+    .filter((p): p is LeaguePlayer => Boolean(p));
+
+  const selectedCost = selectedPlayers.reduce((sum, p) => sum + p.price, 0);
   const starters = selected.slice(0, 5);
   const bench = selected.slice(5, 7);
   const freeTransfers = gameweekNumber >= 2 ? 1 : 0;
 
   const effectiveDemoPoints =
-    starters.reduce((sum, name) => {
-      const points = demoPlayers.find(p => p.name === name)?.points ?? 0;
-      return sum + points * (
-        name === captain
+    starters.reduce((sum, id) => {
+      const p = playerById.get(id);
+      if (!p) return sum;
+      return sum + p.points * (
+        id === captain
           ? activeChip === 'Triple Captain' ? 3 : 2
           : 1
       );
     }, 0) +
     (activeChip === 'Bench Boost'
-      ? bench.reduce(
-          (sum, name) =>
-            sum + (demoPlayers.find(p => p.name === name)?.points ?? 0),
-          0
-        )
+      ? bench.reduce((sum, id) => sum + (playerById.get(id)?.points ?? 0), 0)
       : 0) -
     pointsHits;
 
@@ -214,16 +251,132 @@ export default function App() {
     { id: 'admin', label: 'Admin panel', icon: ShieldCheck, admin: true },
   ];
 
-  // Load the selected real leaderboard when its screen or tab changes.
+  // Load the real player pool from Supabase.
   useEffect(() => {
-    if (
-      screen !== 'leaderboard' ||
-      !supabase ||
-      !session ||
-      !approved
-    ) {
-      return;
+    if (demoMode || !supabase || !session || !approved) return;
+
+    let cancelled = false;
+
+    async function loadPlayers() {
+      setPlayersLoading(true);
+      setPlayersError('');
+
+      const { data, error } = await supabase!
+        .from('football_players')
+        .select('id,display_name,price,is_active,photo_url')
+        .eq('is_active', true)
+        .order('display_name', { ascending: true });
+
+      if (cancelled) return;
+
+      if (error) {
+        setPlayersError(error.message);
+        setRealPlayers([]);
+      } else {
+        setRealPlayers((data ?? []) as FootballPlayer[]);
+      }
+
+      setPlayersLoading(false);
     }
+
+    void loadPlayers();
+    return () => { cancelled = true; };
+  }, [demoMode, session, approved]);
+
+  // Load the current active gameweek, then this manager's saved squad.
+  useEffect(() => {
+    if (demoMode || !supabase || !session || !approved) return;
+
+    let cancelled = false;
+
+    async function loadSquad() {
+      setSquadLoading(true);
+      setSquadError('');
+
+      const { data: weeks, error: weekError } = await supabase!
+        .from('gameweeks')
+        .select('id,number,status,transfer_deadline,started_at,ended_at')
+        .order('number', { ascending: false });
+
+      if (cancelled) return;
+
+      if (weekError) {
+        setSquadError(`Could not load gameweeks: ${weekError.message}`);
+        setSquadLoading(false);
+        return;
+      }
+
+      const weekRows = (weeks ?? []) as Gameweek[];
+      const current = weekRows.find(w =>
+        activeStatuses.includes(String(w.status).toLowerCase())
+      );
+
+      setGameweek(current ?? null);
+
+      if (current) {
+        setGameweekNumber(current.number);
+
+        const { data: record, error: recordError } = await supabase!
+          .from('fantasy_squads')
+          .select('id,manager_id,gameweek_id,captain_player_id,chip,transfers_used,points_hit')
+          .eq('manager_id', session.user.id)
+          .eq('gameweek_id', current.id)
+          .maybeSingle();
+
+        if (cancelled) return;
+
+        if (recordError) {
+          setSquadError(`Could not load your squad: ${recordError.message}`);
+        } else if (record) {
+          const saved = record as SquadRecord;
+          setSquadRecord(saved);
+          setTransfersUsed(saved.transfers_used ?? 0);
+          setPointsHits(saved.points_hit ?? 0);
+          setActiveChip(saved.chip ?? null);
+
+          const { data: rows, error: playersError } = await supabase!
+            .from('squad_players')
+            .select('player_id,slot')
+            .eq('squad_id', saved.id)
+            .order('slot', { ascending: true });
+
+          if (cancelled) return;
+
+          if (playersError) {
+            setSquadError(`Could not load saved players: ${playersError.message}`);
+          } else {
+            const ordered = (rows ?? [])
+              .sort((a, b) => Number(a.slot) - Number(b.slot))
+              .map(row => String(row.player_id));
+
+            setSelected(ordered);
+            setCaptain(saved.captain_player_id ?? ordered[0] ?? '');
+          }
+        } else {
+          setSquadRecord(null);
+          setSelected([]);
+          setCaptain('');
+          setTransfersUsed(0);
+          setPointsHits(0);
+          setActiveChip(null);
+        }
+      } else {
+        setSquadRecord(null);
+        setSelected([]);
+        setCaptain('');
+        setSquadError('No active gameweek. An admin must start a gameweek before a squad can be saved.');
+      }
+
+      setSquadLoading(false);
+    }
+
+    void loadSquad();
+    return () => { cancelled = true; };
+  }, [demoMode, session, approved]);
+
+  // Load the selected real leaderboard.
+  useEffect(() => {
+    if (screen !== 'leaderboard' || !supabase || !session || !approved) return;
 
     let cancelled = false;
 
@@ -238,37 +391,131 @@ export default function App() {
         ratings: 'player_ratings',
       } as const;
 
-      try {
-        const { data, error } = await supabase!
-          .from(viewByTab[leaderboardTab])
-          .select('*');
+      const { data, error } = await supabase!
+        .from(viewByTab[leaderboardTab])
+        .select('*');
 
-        if (cancelled) return;
+      if (cancelled) return;
 
-        if (error) {
-          setLeaderboardError(error.message);
-          setLeaderboardPlayers([]);
-        } else {
-          setLeaderboardPlayers(
-            (data ?? []) as LeaderboardPlayer[]
-          );
-        }
-      } catch {
-        if (!cancelled) {
-          setLeaderboardError('Could not load the leaderboard.');
-          setLeaderboardPlayers([]);
-        }
+      if (error) {
+        setLeaderboardError(error.message);
+        setLeaderboardPlayers([]);
+      } else {
+        setLeaderboardPlayers((data ?? []) as LeaderboardPlayer[]);
       }
 
-      if (!cancelled) setLeaderboardLoading(false);
+      setLeaderboardLoading(false);
     }
 
     void loadLeaderboard();
-
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [screen, leaderboardTab, session, approved]);
+
+  async function saveSquad() {
+    setSquadError('');
+    setSessionMessage('');
+
+    if (demoMode || !supabase || !session) {
+      setSessionMessage('Demo mode: this squad is not saved to the database.');
+      return;
+    }
+
+    if (!approved) {
+      setSquadError('Your player account must be approved before saving a squad.');
+      return;
+    }
+
+    if (!gameweek) {
+      setSquadError('There is no active gameweek. Ask an admin to start one first.');
+      return;
+    }
+
+    if (selected.length !== 7 || new Set(selected).size !== 7) {
+      setSquadError('Select exactly seven different players before saving.');
+      return;
+    }
+
+    if (selectedCost > 50) {
+      setSquadError('Your squad exceeds the £50m budget.');
+      return;
+    }
+
+    if (!captain || !starters.includes(captain)) {
+      setSquadError('Choose a captain from your starting five.');
+      return;
+    }
+
+    setSquadSaving(true);
+
+    try {
+      let squadId = squadRecord?.id;
+
+      const squadValues = {
+        manager_id: session.user.id,
+        gameweek_id: gameweek.id,
+        captain_player_id: captain,
+        chip: activeChip,
+        transfers_used: transfersUsed,
+        points_hit: pointsHits,
+      };
+
+      if (squadId) {
+        const { error } = await supabase
+          .from('fantasy_squads')
+          .update(squadValues)
+          .eq('id', squadId)
+          .eq('manager_id', session.user.id);
+
+        if (error) throw error;
+      } else {
+        const { data, error } = await supabase
+          .from('fantasy_squads')
+          .insert(squadValues)
+          .select('id,manager_id,gameweek_id,captain_player_id,chip,transfers_used,points_hit')
+          .single();
+
+        if (error) throw error;
+        squadId = data.id;
+        setSquadRecord(data as SquadRecord);
+      }
+
+      const { error: deleteError } = await supabase
+        .from('squad_players')
+        .delete()
+        .eq('squad_id', squadId);
+
+      if (deleteError) throw deleteError;
+
+      const playerRows = selected.map((playerId, index) => ({
+        squad_id: squadId,
+        player_id: playerId,
+        slot: index + 1,
+      }));
+
+      const { error: insertError } = await supabase
+        .from('squad_players')
+        .insert(playerRows);
+
+      if (insertError) throw insertError;
+
+      setSessionMessage('Your seven-player squad has been saved.');
+      setSquadRecord({
+        id: squadId!,
+        manager_id: session.user.id,
+        gameweek_id: gameweek.id,
+        captain_player_id: captain,
+        chip: activeChip,
+        transfers_used: transfersUsed,
+        points_hit: pointsHits,
+      });
+    } catch (error: any) {
+      setSquadError(
+        `Save failed: ${error?.message ?? 'Unknown database error'}. Check the Supabase permissions for fantasy_squads and squad_players.`
+      );
+    } finally {
+      setSquadSaving(false);
+    }
+  }
 
   if (!demoMode && !session) {
     return (
@@ -353,9 +600,7 @@ export default function App() {
   const leaderboardValue = (player: LeaderboardPlayer) => {
     if (leaderboardTab === 'goals') return player.total_goals ?? 0;
     if (leaderboardTab === 'assists') return player.total_assists ?? 0;
-    if (leaderboardTab === 'contributions') {
-      return player.total_contributions ?? 0;
-    }
+    if (leaderboardTab === 'contributions') return player.total_contributions ?? 0;
     return player.average_rating == null
       ? '—'
       : Number(player.average_rating).toFixed(2);
@@ -379,9 +624,7 @@ export default function App() {
           </div>
         </div>
 
-        <div className="league-pill">
-          <span className="pulse" /> PRIVATE LEAGUE
-        </div>
+        <div className="league-pill"><span className="pulse" /> PRIVATE LEAGUE</div>
 
         <nav>
           {nav.filter(n => !n.admin || isAdmin).map(n => (
@@ -411,18 +654,14 @@ export default function App() {
             <button
               className="icon-btn"
               title="Sign out"
-              onClick={() =>
-                demoMode
-                  ? setDemoRole(demoRole === 'admin_player' ? 'player' : 'admin_player')
-                  : void signOut()
-              }
+              onClick={() => demoMode
+                ? setDemoRole(demoRole === 'admin_player' ? 'player' : 'admin_player')
+                : void signOut()}
             >
               {demoMode ? <ArrowLeftRight size={16} /> : <LogOut size={16} />}
             </button>
           </div>
-          <div className="tiny">
-            {demoMode ? 'Demo mode · sample data' : 'Secure account'}
-          </div>
+          <div className="tiny">{demoMode ? 'Demo mode · sample data' : 'Secure account'}</div>
         </div>
       </aside>
 
@@ -505,21 +744,18 @@ export default function App() {
               <div className="stat-card">
                 <span>SESSION POINTS</span>
                 <strong>{effectiveDemoPoints} <small>pts</small></strong>
-                <small className="positive"><Trophy size={13} /> Preview points</small>
+                <small className="positive"><Trophy size={13} /> {demoMode ? 'Preview points' : 'Points integration pending'}</small>
               </div>
               <div className="stat-card">
                 <span>GAMEWEEK STATUS</span>
-                <strong className="status-text">Not started</strong>
+                <strong className="status-text">{gameweek?.status ?? 'Not started'}</strong>
                 <small><span className="status-dot" /> Admin starts manually</small>
               </div>
             </section>
 
             <section className="panel">
               <div className="panel-heading">
-                <div>
-                  <h3>How this league works</h3>
-                  <p>Made for your rotating 15-minute matches</p>
-                </div>
+                <div><h3>How this league works</h3><p>Made for your rotating 15-minute matches</p></div>
                 <span className="tag">LEAGUE RULES</span>
               </div>
               <div className="rule-grid">
@@ -547,32 +783,48 @@ export default function App() {
                 <span style={{ width: `${Math.min(selectedCost / 50 * 100, 100)}%` }} />
               </div>
 
+              {!demoMode && (
+                <p className="muted tiny">
+                  {squadLoading
+                    ? 'Loading your saved squad…'
+                    : gameweek
+                      ? `Gameweek ${gameweek.number} · ${gameweek.status}`
+                      : 'No active gameweek is available for saving.'}
+                </p>
+              )}
+
+              {playersError && <div className="notice">Could not load players: {playersError}</div>}
+              {squadError && <div className="notice">{squadError}</div>}
+
               <div className="lineup-heading">
                 <strong>Starting five</strong>
                 <span>{matchInProgress ? 'Lineup locked' : 'Changes allowed before kickoff'}</span>
               </div>
 
               <div className="squad-grid">
-                {starters.map(name => {
-                  const p = demoPlayers.find(x => x.name === name)!;
+                {starters.map(id => {
+                  const p = playerById.get(id);
+                  if (!p) return null;
                   return (
-                    <div className="player-card" key={name}>
-                      <div className="player-photo">{name.slice(0, 1)}</div>
-                      <strong>{name}</strong>
-                      <span>£{p.price.toFixed(1)}m · {p.points} pts</span>
+                    <div className="player-card" key={id}>
+                      {p.photo_url
+                        ? <img className="leaderboard-photo" src={p.photo_url} alt={p.name} />
+                        : <div className="player-photo">{p.name.slice(0, 1)}</div>}
+                      <strong>{p.name}</strong>
+                      <span>£{p.price.toFixed(1)}m{demoMode ? ` · ${p.points} pts` : ''}</span>
                       <button
-                        className={`captain-button ${captain === name ? 'chosen' : ''}`}
+                        className={`captain-button ${captain === id ? 'chosen' : ''}`}
                         disabled={matchInProgress}
-                        onClick={() => setCaptain(name)}
+                        onClick={() => setCaptain(id)}
                       >
-                        {captain === name ? '★ Captain' : 'Make captain'}
+                        {captain === id ? '★ Captain' : 'Make captain'}
                       </button>
                       <button
                         className="text-button"
                         disabled={matchInProgress || bench.length === 0}
                         onClick={() => {
                           const next = [...selected];
-                          const i = next.indexOf(name);
+                          const i = next.indexOf(id);
                           const bi = next.indexOf(bench[0]);
                           [next[i], next[bi]] = [next[bi], next[i]];
                           setSelected(next);
@@ -591,15 +843,18 @@ export default function App() {
               </div>
 
               <div className="bench-grid">
-                {bench.map((name, i) => {
-                  const p = demoPlayers.find(x => x.name === name)!;
+                {bench.map((id, i) => {
+                  const p = playerById.get(id);
+                  if (!p) return null;
                   return (
-                    <div className="bench-card" key={name}>
+                    <div className="bench-card" key={id}>
                       <span className="bench-number">{i + 1}</span>
-                      <div className="player-photo small-photo">{name.slice(0, 1)}</div>
+                      {p.photo_url
+                        ? <img className="leaderboard-photo" src={p.photo_url} alt={p.name} />
+                        : <div className="player-photo small-photo">{p.name.slice(0, 1)}</div>}
                       <div className="bench-copy">
-                        <strong>{name}</strong>
-                        <span>£{p.price.toFixed(1)}m · {p.points} pts</span>
+                        <strong>{p.name}</strong>
+                        <span>£{p.price.toFixed(1)}m</span>
                       </div>
                       {i === 1 && (
                         <button
@@ -634,7 +889,7 @@ export default function App() {
                     onClick={() => {
                       setMatchInProgress(true);
                       setDidNotPlay([]);
-                      setSessionMessage('Match started. Lineup is locked.');
+                      setSessionMessage('Preview match started. Lineup is locked locally.');
                     }}
                   >
                     Start 15-minute match
@@ -644,15 +899,21 @@ export default function App() {
                     className="primary"
                     onClick={() => {
                       const next = [...selected];
-                      const missing = didNotPlay.find(n => next.slice(0, 5).includes(n));
-                      let message = 'Match finished.';
-                      if (missing && next.length > 5) {
-                        const b = next[5];
-                        const si = next.indexOf(missing);
-                        const bi = next.indexOf(b);
-                        [next[si], next[bi]] = [next[bi], next[si]];
-                        message += ` Auto-sub: ${b} replaces ${missing}.`;
+                      let message = 'Preview match finished.';
+                      const missing = didNotPlay.filter(id => next.slice(0, 5).includes(id));
+
+                      for (const absent of missing) {
+                        const starterIndex = next.slice(0, 5).indexOf(absent);
+                        const benchIndex = next.slice(5).findIndex(id => !didNotPlay.includes(id));
+                        if (starterIndex >= 0 && benchIndex >= 0) {
+                          const actualBenchIndex = 5 + benchIndex;
+                          const replacement = next[actualBenchIndex];
+                          [next[starterIndex], next[actualBenchIndex]] =
+                            [next[actualBenchIndex], next[starterIndex]];
+                          message += ` Auto-sub: ${playerById.get(replacement)?.name ?? 'Bench player'} replaces ${playerById.get(absent)?.name ?? 'starter'}.`;
+                        }
                       }
+
                       setSelected(next);
                       setMatchInProgress(false);
                       setDidNotPlay([]);
@@ -669,12 +930,17 @@ export default function App() {
                   <label htmlFor="did-not-play">Starter who did not play</label>
                   <select
                     id="did-not-play"
-                    value={didNotPlay[0] ?? ''}
-                    onChange={e => setDidNotPlay(e.target.value ? [e.target.value] : [])}
+                    multiple
+                    value={didNotPlay}
+                    onChange={e => setDidNotPlay(
+                      Array.from(e.target.selectedOptions, option => option.value)
+                    )}
                   >
-                    <option value="">No absent starter</option>
-                    {starters.map(n => <option key={n} value={n}>{n}</option>)}
+                    {starters.map(id => (
+                      <option key={id} value={id}>{playerById.get(id)?.name ?? id}</option>
+                    ))}
                   </select>
+                  <p className="tiny muted">This match control is a local preview, not a recorded real match.</p>
                 </div>
               )}
 
@@ -685,8 +951,20 @@ export default function App() {
                 </div>
               )}
 
+              <div className="transfer-controls">
+                <button
+                  className="primary"
+                  disabled={squadSaving || squadLoading || matchInProgress || selected.length !== 7}
+                  onClick={() => void saveSquad()}
+                >
+                  {squadSaving ? 'Saving squad…' : 'Save my squad'}
+                </button>
+              </div>
+
               <p className="muted tiny">
-                Squad and match controls are currently a local preview and are not saved to Supabase.
+                {demoMode
+                  ? 'Demo squad changes are not saved.'
+                  : 'Saving requires an active gameweek and the correct Supabase row permissions.'}
               </p>
             </section>
 
@@ -715,10 +993,9 @@ export default function App() {
                         className={active ? 'secondary' : 'primary'}
                         disabled={used || (activeChip !== null && !active)}
                         onClick={() => {
-                          if (used) return;
                           setActiveChip(chip.name);
                           setUsedChips(old => [...old, chip.name]);
-                          setSessionMessage(`${chip.name} activated.`);
+                          setSessionMessage(`${chip.name} selected. Season chip tracking is not yet stored in the database.`);
                         }}
                       >
                         {used ? 'Already used' : active ? 'Activated' : 'Activate chip'}
@@ -733,7 +1010,7 @@ export default function App() {
               <div className="panel-heading">
                 <div>
                   <h3>Transfer allowance</h3>
-                  <p>Unlimited initial setup, then one free transfer each gameweek.</p>
+                  <p>Initial setup, then one free transfer per gameweek from Gameweek 2.</p>
                 </div>
                 <ArrowLeftRight color="#C4FF61" />
               </div>
@@ -752,19 +1029,7 @@ export default function App() {
                     }
                   }}
                 >
-                  Record transfer
-                </button>
-                <button
-                  className="secondary"
-                  onClick={() => {
-                    setGameweekNumber(v => v + 1);
-                    setTransfersUsed(0);
-                    setPointsHits(0);
-                    setActiveChip(null);
-                    setSessionMessage(`Advanced to Gameweek ${gameweekNumber + 1}.`);
-                  }}
-                >
-                  Demo: next gameweek
+                  Record transfer (preview)
                 </button>
               </div>
             </section>
@@ -774,35 +1039,48 @@ export default function App() {
         {screen === 'players' && (
           <section className="panel">
             <div className="panel-heading">
-              <div><h3>Player pool</h3><p>Build a seven-player squad within £40m.</p></div>
-              <span className="tag">{demoPlayers.length} AVAILABLE</span>
+              <div><h3>Player pool</h3><p>Build a seven-player squad within £50m.</p></div>
+              <span className="tag">{players.length} AVAILABLE</span>
             </div>
+
+            {playersLoading && <p className="muted">Loading players…</p>}
+            {playersError && <div className="notice">{playersError}</div>}
+
             <div className="player-list">
-              {demoPlayers.map(p => (
-                <div className="player-row" key={p.name}>
-                  <div className="player-photo small-photo">{p.name.slice(0, 1)}</div>
+              {players.map(p => (
+                <div className="player-row" key={p.id}>
+                  {p.photo_url
+                    ? <img className="leaderboard-photo" src={p.photo_url} alt={p.name} />
+                    : <div className="player-photo small-photo">{p.name.slice(0, 1)}</div>}
                   <div className="player-info">
                     <strong>{p.name}</strong>
-                    <span>{p.points} preview points</span>
+                    <span>{demoMode ? `${p.points} preview points` : 'Real player · points pending'}</span>
                   </div>
                   <strong className="price">£{p.price.toFixed(1)}m</strong>
                   <button
-                    className={selected.includes(p.name) ? 'secondary compact-btn' : 'primary compact-btn'}
+                    className={selected.includes(p.id) ? 'secondary compact-btn' : 'primary compact-btn'}
                     disabled={
-                      !selected.includes(p.name) &&
+                      !selected.includes(p.id) &&
                       (selected.length >= 7 || selectedCost + p.price > 50 || matchInProgress)
                     }
-                    onClick={() => setSelected(old => {
-                      if (old.includes(p.name)) {
-                        const next = old.filter(n => n !== p.name);
-                        if (captain === p.name) setCaptain(next[0] ?? '');
+                    onClick={() => {
+                      if (matchInProgress) return;
+
+                      setSelected(old => {
+                        if (old.includes(p.id)) {
+                          const next = old.filter(id => id !== p.id);
+                          if (captain === p.id) setCaptain(next.slice(0, 5)[0] ?? '');
+                          return next;
+                        }
+
+                        if (old.length >= 7 || selectedCost + p.price > 50) return old;
+                        const next = [...old, p.id];
+                        if (!captain) setCaptain(next[0]);
                         return next;
-                      }
-                      if (old.length >= 7 || selectedCost + p.price > 50 || matchInProgress) return old;
-                      return [...old, p.name];
-                    })}
+                      });
+                    }}
                   >
-                    {selected.includes(p.name) ? 'Remove' : 'Add player'}
+                    {selected.includes(p.id) ? 'Remove' : 'Add player'}
                   </button>
                 </div>
               ))}
@@ -813,10 +1091,7 @@ export default function App() {
         {screen === 'leaderboard' && (
           <section className="panel">
             <div className="panel-heading">
-              <div>
-                <h3>Player leaderboard</h3>
-                <p>{leaderboardDescription[leaderboardTab]}</p>
-              </div>
+              <div><h3>Player leaderboard</h3><p>{leaderboardDescription[leaderboardTab]}</p></div>
               <Trophy color="#C4FF61" />
             </div>
 
@@ -832,81 +1107,45 @@ export default function App() {
               ))}
             </div>
 
-            {demoMode && (
-              <div className="notice">
-                Demo mode is using sample data. Sign in to view database statistics.
-              </div>
-            )}
-
+            {demoMode && <div className="notice">Demo mode is using sample data.</div>}
             {leaderboardLoading && <p className="muted">Loading leaderboard…</p>}
+            {leaderboardError && <div className="notice">Could not load leaderboard: {leaderboardError}</div>}
 
-            {leaderboardError && (
-              <div className="notice">
-                Could not load leaderboard: {leaderboardError}
-              </div>
-            )}
-
-            {!leaderboardLoading && !leaderboardError && !demoMode && (
+            {!demoMode && !leaderboardLoading && !leaderboardError && (
               <div className="leaderboard-list">
-                {leaderboardPlayers.length === 0 ? (
-                  <p className="muted">
-                    No statistics available yet. Results appear after match statistics are recorded.
-                  </p>
-                ) : (
-                  [...leaderboardPlayers]
-                    .sort((a, b) => {
-                      const av = Number(leaderboardValue(a)) || 0;
-                      const bv = Number(leaderboardValue(b)) || 0;
-                      return bv - av;
-                    })
-                    .map((player, index) => (
-                      <div className="leaderboard-player" key={player.player_id}>
-                        <span className={`rank ${index === 0 ? 'first' : ''}`}>
-                          {String(index + 1).padStart(2, '0')}
-                        </span>
-
-                        {player.photo_url ? (
-                          <img
-                            className="leaderboard-photo"
-                            src={player.photo_url}
-                            alt={player.display_name}
-                          />
-                        ) : (
-                          <div className="player-photo small-photo">
-                            {(player.display_name || '?').slice(0, 1).toUpperCase()}
+                {leaderboardPlayers.length === 0
+                  ? <p className="muted">No statistics available yet. Results appear after match statistics are recorded.</p>
+                  : [...leaderboardPlayers]
+                      .sort((a, b) => (Number(leaderboardValue(b)) || 0) - (Number(leaderboardValue(a)) || 0))
+                      .map((player, index) => (
+                        <div className="leaderboard-player" key={player.player_id}>
+                          <span className={`rank ${index === 0 ? 'first' : ''}`}>
+                            {String(index + 1).padStart(2, '0')}
+                          </span>
+                          {player.photo_url
+                            ? <img className="leaderboard-photo" src={player.photo_url} alt={player.display_name} />
+                            : <div className="player-photo small-photo">{(player.display_name || '?').slice(0, 1)}</div>}
+                          <div className="leaderboard-player-info">
+                            <strong>{player.display_name}</strong>
+                            {leaderboardTab === 'ratings' && <span>{player.matches_rated ?? 0} ratings recorded</span>}
                           </div>
-                        )}
-
-                        <div className="leaderboard-player-info">
-                          <strong>{player.display_name}</strong>
-                          {leaderboardTab === 'ratings' && (
-                            <span>{player.matches_rated ?? 0} ratings recorded</span>
-                          )}
+                          <strong className="leaderboard-stat">
+                            {leaderboardValue(player)}
+                            {leaderboardTab === 'ratings' ? '' : ` ${leaderboardTab === 'contributions' ? 'G+A' : leaderboardTab === 'goals' ? 'G' : 'A'}`}
+                          </strong>
                         </div>
-
-                        <strong className="leaderboard-stat">
-                          {leaderboardValue(player)}
-                          {leaderboardTab === 'ratings' ? '' : ` ${leaderboardTab === 'contributions' ? 'G+A' : leaderboardTab === 'goals' ? 'G' : 'A'}`}
-                        </strong>
-                      </div>
-                    ))
-                )}
+                      ))}
               </div>
             )}
 
             {demoMode && (
               <div className="leaderboard-list">
                 {demoPlayers.slice(0, 5).map((player, index) => (
-                  <div className="leaderboard-player" key={player.name}>
-                    <span className={`rank ${index === 0 ? 'first' : ''}`}>
-                      {String(index + 1).padStart(2, '0')}
-                    </span>
-                    <div className="player-photo small-photo">
-                      {player.name.slice(0, 1)}
-                    </div>
+                  <div className="leaderboard-player" key={player.id}>
+                    <span className={`rank ${index === 0 ? 'first' : ''}`}>{String(index + 1).padStart(2, '0')}</span>
+                    <div className="player-photo small-photo">{player.name.slice(0, 1)}</div>
                     <div className="leaderboard-player-info">
-                      <strong>{player.name}</strong>
-                      <span>Sample data only</span>
+                      <strong>{player.name}</strong><span>Sample data only</span>
                     </div>
                     <strong className="leaderboard-stat">
                       {leaderboardTab === 'ratings' ? '—' : player.points}
@@ -921,17 +1160,14 @@ export default function App() {
         {screen === 'admin' && isAdmin && (
           <section className="panel">
             <div className="panel-heading">
-              <div>
-                <h3>Admin control room</h3>
-                <p>Admin actions need database integration before production use.</p>
-              </div>
+              <div><h3>Admin control room</h3><p>Gameweek and match administration still need database integration.</p></div>
               <ShieldCheck color="#C4FF61" />
             </div>
             <div className="admin-grid">
-              <button className="admin-action" onClick={() => setNotice('Gameweek control is still a preview.')}>
+              <button className="admin-action" onClick={() => setNotice('Gameweek start controls are not connected yet.')}>
                 <CalendarDays /><strong>Start gameweek</strong><span>Open a new session</span>
               </button>
-              <button className="admin-action" onClick={() => setNotice('Gameweek control is still a preview.')}>
+              <button className="admin-action" onClick={() => setNotice('Gameweek end controls are not connected yet.')}>
                 <CheckCircle2 /><strong>End gameweek</strong><span>Finalize the session</span>
               </button>
               <button className="admin-action" onClick={() => setNotice('Player approval controls need database integration.')}>
@@ -941,12 +1177,7 @@ export default function App() {
                 <Trophy /><strong>Enter / correct stats</strong><span>Record match statistics</span>
               </button>
             </div>
-            {notice && (
-              <div className="notice inline-notice">
-                {notice}
-                <button className="text-button" onClick={() => setNotice('')}>Dismiss</button>
-              </div>
-            )}
+            {notice && <div className="notice inline-notice">{notice}</div>}
             <div className="security-note">
               <LockKeyhole />
               <div>
