@@ -523,7 +523,7 @@ export default function App() {
                 <span className="tag">LEAGUE RULES</span>
               </div>
               <div className="rule-grid">
-                <div><Users /><strong>5 starters + 2 bench</strong><span>No positions, £40m budget</span></div>
+                <div><Users /><strong>5 starters + 2 bench</strong><span>No positions, £50m budget</span></div>
                 <div><Crown /><strong>Captain x2</strong><span>Double eligible points</span></div>
                 <div><ArrowLeftRight /><strong>Flexible transfers</strong><span>One free from Gameweek 2</span></div>
                 <div><Trophy /><strong>One session score</strong><span>No appearance points</span></div>
