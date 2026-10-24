@@ -798,7 +798,7 @@ export default function App() {
                         if (captain === p.name) setCaptain(next[0] ?? '');
                         return next;
                       }
-                      if (old.length >= 7 || selectedCost + p.price > 40 || matchInProgress) return old;
+                      if (old.length >= 7 || selectedCost + p.price > 50 || matchInProgress) return old;
                       return [...old, p.name];
                     })}
                   >
