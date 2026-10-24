@@ -1,4 +1,51 @@
 import { FormEvent, useEffect, useState } from 'react';
+useEffect(() => {
+  if (
+    screen !== 'leaderboard' ||
+    !supabase ||
+    !session ||
+    !approved
+  ) {
+    return;
+  }
+
+  let cancelled = false;
+
+  async function loadLeaderboard() {
+    setLeaderboardLoading(true);
+    setLeaderboardError('');
+
+    const viewByTab = {
+      goals: 'top_scorers',
+      assists: 'top_assists',
+      contributions: 'goal_contributions',
+      ratings: 'player_ratings',
+    } as const;
+
+    const { data, error } = await supabase!
+      .from(viewByTab[leaderboardTab])
+      .select('*');
+
+    if (cancelled) return;
+
+    if (error) {
+      setLeaderboardError(error.message);
+      setLeaderboardPlayers([]);
+    } else {
+      setLeaderboardPlayers(
+        (data ?? []) as LeaderboardPlayer[]
+      );
+    }
+
+    setLeaderboardLoading(false);
+  }
+
+  void loadLeaderboard();
+
+  return () => {
+    cancelled = true;
+  };
+}, [screen, leaderboardTab, session, approved]);
 import { ArrowLeftRight, CalendarDays, CheckCircle2, ChevronRight, CircleUserRound, Crown, LockKeyhole, LogOut, ShieldCheck, Trophy, UserPlus, Users, Wallet } from 'lucide-react';
 import { isSupabaseConfigured, Profile, supabase } from './supabase';
 
