@@ -500,7 +500,7 @@ export default function App() {
               <div className="stat-card">
                 <span>MY TEAM VALUE</span>
                 <strong>£{selectedCost.toFixed(1)}m</strong>
-                <small><Wallet size={13} /> £{(40 - selectedCost).toFixed(1)}m remaining</small>
+                <small><Wallet size={13} /> £{(50 - selectedCost).toFixed(1)}m remaining</small>
               </div>
               <div className="stat-card">
                 <span>SESSION POINTS</span>
