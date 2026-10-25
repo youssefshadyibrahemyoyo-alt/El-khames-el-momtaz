@@ -1294,6 +1294,7 @@ setSquadRecord({
 
                 setSelected(old => {
                   if (old.includes(p.id)) {
+                    recordTransfer();
                     const next = old.filter(id => id !== p.id);
 
                     if (captain === p.id) {
@@ -1306,7 +1307,7 @@ setSquadRecord({
                   if (old.length >= 7 || selectedCost + p.price > 50) {
                     return old;
                   }
-
+recordTransfer();
                   const next = [...old, p.id];
 
                   if (!captain) setCaptain(next[0]);
