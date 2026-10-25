@@ -347,6 +347,19 @@ const startingFreeTransfers = previousSquad
     )
   : 1;
         
+        const { data: pendingRecord, error: pendingError } = await supabase!
+          .from('pending_squads')
+          .select('id, captain_player_id, vice_captain_player_id')
+          .eq('manager_id', session.user.id)
+          .eq('gameweek_id', current.id)
+          .maybeSingle();
+
+        if (pendingError) {
+          setSquadError(`Could not load pending transfers: ${pendingError.message}`);
+          setSquadLoading(false);
+          return;
+        }
+
 const { data: record, error: recordError } = await supabase!
   .from('fantasy_squads')
   .select('id,manager_id,gameweek_id,captain_player_id,vice_captain_player_id,chip,transfers_used,points_hit,free_transfers')
