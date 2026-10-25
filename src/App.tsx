@@ -1540,9 +1540,16 @@ points_hit: updatedPointsHits,
               <ShieldCheck color="#C4FF61" />
             </div>
             <div className="admin-grid">
-              <button className="admin-action" onClick={() => setNotice('Gameweek start controls are not connected yet.')}>
-                <CalendarDays /><strong>Start gameweek</strong><span>Open a new session</span>
-              </button>
+              
+<button
+  className="admin-action"
+  onClick={startGameweek}
+>
+  <CalendarDays />
+  <strong>Start gameweek</strong>
+  <span>Open a new session</span>
+</button>
+
               <button className="admin-action" onClick={() => setNotice('Gameweek end controls are not connected yet.')}>
                 <CheckCircle2 /><strong>End gameweek</strong><span>Finalize the session</span>
               </button>
