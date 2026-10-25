@@ -768,13 +768,14 @@ export default function App() {
           </>
         )}
 
+        
         {screen === 'squad' && (
           <>
-            <section className="panel">
+            <section className="panel egypt-squad-panel">
               <div className="panel-heading">
                 <div>
                   <h3>My fantasy squad</h3>
-                  <p>5 starters + 2 bench players. Changes lock during a match.</p>
+                  <p>Choose your captain, activate a chip, and arrange your seven players.</p>
                 </div>
                 <span className="budget">£{selectedCost.toFixed(1)}m / £50.0m</span>
               </div>
@@ -793,109 +794,222 @@ export default function App() {
                 </p>
               )}
 
-              {playersError && <div className="notice">Could not load players: {playersError}</div>}
+              {playersError && <div className="notice">{playersError}</div>}
               {squadError && <div className="notice">{squadError}</div>}
 
               <div className="lineup-heading">
-                <strong>Starting five</strong>
-                <span>{matchInProgress ? 'Lineup locked' : 'Changes allowed before kickoff'}</span>
+                <strong>Gameweek chips</strong>
+                <span>One chip per gameweek</span>
               </div>
 
-              <div className="squad-grid">
-                {starters.map(id => {
-                  const p = playerById.get(id);
-                  if (!p) return null;
+              <div className="egypt-chip-row">
+                {[
+                  { name: 'Triple Captain', icon: '👑', desc: 'Captain scores triple' },
+                  { name: 'Wildcard', icon: '🃏', desc: 'Unlimited transfers' },
+                  { name: 'Bench Boost', icon: '🪑', desc: 'Bench points count' },
+                ].map(chip => {
+                  const active = activeChip === chip.name;
+                  const used = usedChips.includes(chip.name) && !active;
+
                   return (
-                    <div className="player-card" key={id}>
-                      {p.photo_url
-                        ? <img className="leaderboard-photo" src={p.photo_url} alt={p.name} />
-                        : <div className="player-photo">{p.name.slice(0, 1)}</div>}
-                      <strong>{p.name}</strong>
-                      <span>£{p.price.toFixed(1)}m{demoMode ? ` · ${p.points} pts` : ''}</span>
-                      <button
-                        className={`captain-button ${captain === id ? 'chosen' : ''}`}
-                        disabled={matchInProgress}
-                        onClick={() => setCaptain(id)}
-                      >
-                        {captain === id ? '★ Captain' : 'Make captain'}
-                      </button>
-                      <button
-                        className="text-button"
-                        disabled={matchInProgress || bench.length === 0}
-                        onClick={() => {
-                          const next = [...selected];
-                          const i = next.indexOf(id);
-                          const bi = next.indexOf(bench[0]);
-                          [next[i], next[bi]] = [next[bi], next[i]];
-                          setSelected(next);
-                        }}
-                      >
-                        Swap with bench 1
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      key={chip.name}
+                      className={`egypt-chip ${active ? 'active' : ''}`}
+                      disabled={used || (activeChip !== null && !active) || matchInProgress}
+                      onClick={() => {
+                        setActiveChip(chip.name);
+                        setUsedChips(old =>
+                          old.includes(chip.name) ? old : [...old, chip.name]
+                        );
+                        setSessionMessage(
+                          `${chip.name} selected. Chip usage is not yet permanently tracked in the database.`
+                        );
+                      }}
+                    >
+                      <strong>{chip.icon} {chip.name}</strong>
+                      <span>{active ? 'ACTIVE' : used ? 'USED' : chip.desc}</span>
+                    </button>
                   );
                 })}
               </div>
 
-              <div className="lineup-heading bench-heading">
-                <strong>Bench (2)</strong>
-                <span>Slot 1 is first to substitute</span>
-              </div>
+              <div className="egypt-lineup-layout">
+                <div className="egypt-pitch">
+                  <div className="egypt-pitch-title">Starting XI · Five players</div>
+                  <div className="egypt-pitch-markings">
+                    <div className="egypt-halfway" />
+                    <div className="egypt-centre-circle" />
+                    <div className="egypt-goal-box egypt-goal-top" />
+                    <div className="egypt-goal-box egypt-goal-bottom" />
+                  </div>
 
-              <div className="bench-grid">
-                {bench.map((id, i) => {
-                  const p = playerById.get(id);
-                  if (!p) return null;
-                  return (
-                    <div className="bench-card" key={id}>
-                      <span className="bench-number">{i + 1}</span>
-                      {p.photo_url
-                        ? <img className="leaderboard-photo" src={p.photo_url} alt={p.name} />
-                        : <div className="player-photo small-photo">{p.name.slice(0, 1)}</div>}
-                      <div className="bench-copy">
-                        <strong>{p.name}</strong>
-                        <span>£{p.price.toFixed(1)}m</span>
-                      </div>
-                      {i === 1 && (
-                        <button
-                          className="text-button"
-                          disabled={matchInProgress}
-                          onClick={() => setSelected(old => {
-                            const next = [...old];
-                            [next[5], next[6]] = [next[6], next[5]];
-                            return next;
-                          })}
+                  <div className="egypt-formation">
+                    {starters.map((id, index) => {
+                      const p = playerById.get(id);
+                      if (!p) return null;
+
+                      return (
+                        <div
+                          key={id}
+                          className={`egypt-player ${swapStarter === id ? 'selected' : ''}`}
                         >
-                          Move up
+                          <button
+                            type="button"
+                            className="egypt-player-main"
+                            disabled={matchInProgress}
+                            onClick={() => setSwapStarter(id)}
+                            title="Select this starter to swap"
+                          >
+                            <span className="egypt-shirt">
+                              {p.photo_url
+                                ? <img src={p.photo_url} alt="" />
+                                : <span>{p.name.slice(0, 1).toUpperCase()}</span>}
+                            </span>
+                            {captain === id && <span className="egypt-captain-badge">C</span>}
+                            <strong>{p.name}</strong>
+                            <small>£{p.price.toFixed(1)}m</small>
+                            {demoMode && <small>{p.points} pts</small>}
+                          </button>
+
+                          <button
+                            type="button"
+                            className={`egypt-captain-action ${captain === id ? 'chosen' : ''}`}
+                            disabled={matchInProgress}
+                            onClick={() => setCaptain(id)}
+                          >
+                            {captain === id ? '★ Captain' : 'Make captain'}
+                          </button>
+
+                          <div className="egypt-swap-buttons">
+                            {bench.map((benchId, benchIndex) => (
+                              <button
+                                type="button"
+                                key={benchId}
+                                disabled={matchInProgress}
+                                onClick={() => {
+                                  setSelected(old => {
+                                    const next = [...old];
+                                    const starterIndex = next.indexOf(id);
+                                    const subIndex = next.indexOf(benchId);
+                                    if (starterIndex < 0 || subIndex < 0) return old;
+                                    [next[starterIndex], next[subIndex]] =
+                                      [next[subIndex], next[starterIndex]];
+                                    return next;
+                                  });
+                                  setSwapStarter(null);
+                                }}
+                              >
+                                ↔ Sub {benchIndex + 1}
+                              </button>
+                            ))}
+                          </div>
+                          <span className="egypt-player-number">{index + 1}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <p className="egypt-pitch-hint">
+                    Select a starter, then use the substitute buttons to swap players.
+                  </p>
+                </div>
+
+                <aside className="egypt-bench">
+                  <h3>Substitutes</h3>
+                  <p>Sub 1 is first to come on.</p>
+
+                  {bench.map((id, index) => {
+                    const p = playerById.get(id);
+                    if (!p) return null;
+
+                    return (
+                      <div className="egypt-bench-player" key={id}>
+                        <span className="egypt-sub-number">{index + 1}</span>
+                        {p.photo_url
+                          ? <img src={p.photo_url} alt={p.name} />
+                          : <div className="player-photo">{p.name.slice(0, 1)}</div>}
+                        <div className="egypt-bench-info">
+                          <strong>{p.name}</strong>
+                          <span>£{p.price.toFixed(1)}m</span>
+                          {demoMode && <span>{p.points} preview pts</span>}
+                        </div>
+                        <button
+                          type="button"
+                          className="egypt-bench-swap"
+                          disabled={matchInProgress || !swapStarter}
+                          title={swapStarter ? `Swap with ${playerById.get(swapStarter)?.name}` : 'Select a starter first'}
+                          onClick={() => {
+                            if (!swapStarter) return;
+                            setSelected(old => {
+                              const next = [...old];
+                              const starterIndex = next.indexOf(swapStarter);
+                              const subIndex = next.indexOf(id);
+                              if (starterIndex < 0 || subIndex < 0) return old;
+                              [next[starterIndex], next[subIndex]] =
+                                [next[subIndex], next[starterIndex]];
+                              return next;
+                            });
+                            setSwapStarter(null);
+                          }}
+                        >
+                          Swap
                         </button>
-                      )}
-                    </div>
-                  );
-                })}
+                        {index === 1 && (
+                          <button
+                            type="button"
+                            className="egypt-bench-swap"
+                            disabled={matchInProgress}
+                            onClick={() => {
+                              setSelected(old => {
+                                if (old.length < 7) return old;
+                                const next = [...old];
+                                [next[5], next[6]] = [next[6], next[5]];
+                                return next;
+                              });
+                              setSwapStarter(null);
+                            }}
+                            title="Move this substitute into the first bench position"
+                          >
+                            ↑
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+
+                  <div className="egypt-bench-note">
+                    {swapStarter
+                      ? `Selected: ${playerById.get(swapStarter)?.name ?? ''}. Choose Swap beside a substitute.`
+                      : 'Select a starter on the pitch to enable the Swap buttons.'}
+                  </div>
+                </aside>
               </div>
 
               <div className="match-lock-panel">
                 <div>
-                  <strong>{matchInProgress ? '15-minute match in progress' : 'Before the next match'}</strong>
+                  <strong>{matchInProgress ? '15-minute match in progress' : 'Ready for kickoff?'}</strong>
                   <p>
                     {matchInProgress
-                      ? 'Lineup changes are locked until this match finishes.'
-                      : 'You can adjust your lineup before kickoff.'}
+                      ? 'Lineup changes are locked until this preview match finishes.'
+                      : 'Make your lineup changes and save before kickoff.'}
                   </p>
                 </div>
                 {!matchInProgress ? (
                   <button
+                    type="button"
                     className="primary"
                     onClick={() => {
                       setMatchInProgress(true);
                       setDidNotPlay([]);
-                      setSessionMessage('Preview match started. Lineup is locked locally.');
+                      setSwapStarter(null);
+                      setSessionMessage('Preview match started. Lineup changes are locked locally.');
                     }}
                   >
                     Start 15-minute match
                   </button>
                 ) : (
                   <button
+                    type="button"
                     className="primary"
                     onClick={() => {
                       const next = [...selected];
@@ -905,6 +1019,7 @@ export default function App() {
                       for (const absent of missing) {
                         const starterIndex = next.slice(0, 5).indexOf(absent);
                         const benchIndex = next.slice(5).findIndex(id => !didNotPlay.includes(id));
+
                         if (starterIndex >= 0 && benchIndex >= 0) {
                           const actualBenchIndex = 5 + benchIndex;
                           const replacement = next[actualBenchIndex];
@@ -937,22 +1052,29 @@ export default function App() {
                     )}
                   >
                     {starters.map(id => (
-                      <option key={id} value={id}>{playerById.get(id)?.name ?? id}</option>
+                      <option key={id} value={id}>
+                        {playerById.get(id)?.name ?? id}
+                      </option>
                     ))}
                   </select>
-                  <p className="tiny muted">This match control is a local preview, not a recorded real match.</p>
+                  <p className="tiny muted">
+                    Preview control only. It does not record a real match.
+                  </p>
                 </div>
               )}
 
               {sessionMessage && (
                 <div className="notice inline-notice">
                   {sessionMessage}
-                  <button className="text-button" onClick={() => setSessionMessage('')}>Dismiss</button>
+                  <button type="button" className="text-button" onClick={() => setSessionMessage('')}>
+                    Dismiss
+                  </button>
                 </div>
               )}
 
               <div className="transfer-controls">
                 <button
+                  type="button"
                   className="primary"
                   disabled={squadSaving || squadLoading || matchInProgress || selected.length !== 7}
                   onClick={() => void saveSquad()}
@@ -963,56 +1085,18 @@ export default function App() {
 
               <p className="muted tiny">
                 {demoMode
-                  ? 'Demo squad changes are not saved.'
-                  : 'Saving requires an active gameweek and the correct Supabase row permissions.'}
+                  ? 'Demo changes are not saved to Supabase.'
+                  : 'Saving requires an active gameweek and the correct Supabase permissions.'}
               </p>
-            </section>
-
-            <section className="panel">
-              <div className="panel-heading">
-                <div><h3>Chips</h3><p>Each chip is available once per season.</p></div>
-                <span className="tag">GAMEWEEK {gameweekNumber}</span>
-              </div>
-              <div className="chip-grid">
-                {[
-                  { name: 'Triple Captain', desc: 'Your captain scores triple.', icon: '👑' },
-                  { name: 'Wildcard', desc: 'Unlimited transfers this gameweek.', icon: '🃏' },
-                  { name: 'Bench Boost', desc: 'Both bench players count.', icon: '🪑' },
-                ].map(chip => {
-                  const used = usedChips.includes(chip.name);
-                  const active = activeChip === chip.name;
-                  return (
-                    <div className={`chip-card ${active ? 'chip-active' : ''}`} key={chip.name}>
-                      <span className="chip-icon">{chip.icon}</span>
-                      <strong>{chip.name}</strong>
-                      <p>{chip.desc}</p>
-                      <span className={`chip-status ${used ? 'used' : active ? 'active' : 'available'}`}>
-                        {used ? 'Used this season' : active ? 'Active' : 'Available'}
-                      </span>
-                      <button
-                        className={active ? 'secondary' : 'primary'}
-                        disabled={used || (activeChip !== null && !active)}
-                        onClick={() => {
-                          setActiveChip(chip.name);
-                          setUsedChips(old => [...old, chip.name]);
-                          setSessionMessage(`${chip.name} selected. Season chip tracking is not yet stored in the database.`);
-                        }}
-                      >
-                        {used ? 'Already used' : active ? 'Activated' : 'Activate chip'}
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
             </section>
 
             <section className="panel">
               <div className="panel-heading">
                 <div>
                   <h3>Transfer allowance</h3>
-                  <p>Initial setup, then one free transfer per gameweek from Gameweek 2.</p>
+                  <p>One free transfer per gameweek from Gameweek 2. Extra transfers cost 4 points.</p>
                 </div>
-                <ArrowLeftRight color="#C4FF61" />
+                <ArrowLeftRight color="#dfbd62" />
               </div>
               <div className="transfer-summary">
                 <div><span>Free transfers</span><strong>{gameweekNumber === 1 ? '∞' : freeTransfers}</strong></div>
@@ -1021,6 +1105,7 @@ export default function App() {
               </div>
               <div className="transfer-controls">
                 <button
+                  type="button"
                   className="secondary"
                   onClick={() => {
                     setTransfersUsed(v => v + 1);
