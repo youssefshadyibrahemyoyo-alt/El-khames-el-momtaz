@@ -565,7 +565,9 @@ const squadValues = {
         .insert(playerRows);
 
       if (insertError) throw insertError;
-
+setSavedPlayerIds(selected);
+setTransfersUsed(updatedTransfersUsed);
+setPointsHits(updatedPointsHits);
       setSessionMessage('Your seven-player squad has been saved.');
      
 setSquadRecord({
