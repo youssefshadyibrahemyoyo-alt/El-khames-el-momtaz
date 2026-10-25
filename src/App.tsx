@@ -1159,7 +1159,7 @@ setSquadRecord({
               <div className="panel-heading">
                 <div>
                   <h3>Transfer allowance</h3>
-                  <p>One new free transfer each gameweek. Unused transfers carry over, up to a maximum of 2. Extra transfers cost 4 points each. Extra transfers cost 4 points.</p>
+                  <p>One new free transfer each gameweek. Unused transfers carry over, up to a maximum of 2. Extra transfers cost 4 points each.</p>
                 </div>
                 <ArrowLeftRight color="#dfbd62" />
               </div>
