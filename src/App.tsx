@@ -358,12 +358,11 @@ const { data: record, error: recordError } = await supabase!
         
 if (cancelled) return;
 
+
 if (recordError) {
   setSquadError(`Could not load your squad: ${recordError.message}`);
 } else if (record) {
 
-          setSquadError(`Could not load your squad: ${recordError.message}`);
-        } else if (record) {
           const saved = record as SquadRecord;
           setSquadRecord(saved);
           setTransfersUsed(saved.transfers_used ?? 0);
