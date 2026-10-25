@@ -447,6 +447,59 @@ const startingFreeTransfers = previousSquad
     return () => { cancelled = true; };
   }, [screen, leaderboardTab, session, approved]);
 
+  async function startGameweek() {
+    if (!supabase || !session || !isAdmin) {
+      setNotice('Admin access is required.');
+      return;
+    }
+
+    setNotice('Starting gameweek...');
+
+    const { data: weeks, error: weeksError } = await supabase
+      .from('gameweeks')
+      .select('id, number, status')
+      .order('number', { ascending: true });
+
+    if (weeksError) {
+      setNotice(`Could not load gameweeks: ${weeksError.message}`);
+      return;
+    }
+
+    const activeWeek = (weeks ?? []).find(
+      week => String(week.status).toLowerCase() === 'active'
+    );
+
+    if (activeWeek) {
+      setNotice(`Gameweek ${activeWeek.number} is already active. End it first.`);
+      return;
+    }
+
+    const nextWeek = (weeks ?? []).find(
+      week => ['draft', 'open'].includes(String(week.status).toLowerCase())
+    );
+
+    if (!nextWeek) {
+      setNotice('No draft gameweek found. Create the next gameweek in Supabase first.');
+      return;
+    }
+
+    const { error: updateError } = await supabase
+      .from('gameweeks')
+      .update({
+        status: 'active',
+        started_at: new Date().toISOString(),
+      })
+      .eq('id', nextWeek.id);
+
+    if (updateError) {
+      setNotice(`Could not start gameweek: ${updateError.message}`);
+      return;
+    }
+
+    setNotice(`Gameweek ${nextWeek.number} started successfully. Reload the page to refresh.`);
+  }
+
+
   async function saveSquad() {
     setSquadError('');
     setSessionMessage('');
