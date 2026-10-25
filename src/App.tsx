@@ -528,6 +528,9 @@ setSquadRecord({
   chip: activeChip,
   transfers_used: transfersUsed,
   points_hit: pointsHits,
+    transfers_used: transfersUsed,
+  points_hit: pointsHits,
+  free_transfers: freeTransfers,
 });
 
     } catch (error: any) {
