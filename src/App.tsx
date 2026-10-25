@@ -112,7 +112,6 @@ const [captain, setCaptain] = useState('');
   const [usedChips, setUsedChips] = useState<string[]>([]);
   const [activeChip, setActiveChip] = useState<string | null>(null);
   const [matchInProgress, setMatchInProgress] = useState(false);
-  const [matchInProgress, setMatchInProgress] = useState(false);
 const [swapStarter, setSwapStarter] = useState<string | null>(null);
 const [didNotPlay, setDidNotPlay] = useState<string[]>([]);
   const [didNotPlay, setDidNotPlay] = useState<string[]>([]);
