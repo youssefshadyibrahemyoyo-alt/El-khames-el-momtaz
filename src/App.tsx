@@ -355,9 +355,13 @@ const { data: record, error: recordError } = await supabase!
   .maybeSingle();
 
 
-        if (cancelled) return;
+        
+if (cancelled) return;
 
-        if (recordError) {
+if (recordError) {
+  setSquadError(`Could not load your squad: ${recordError.message}`);
+} else if (record) {
+
           setSquadError(`Could not load your squad: ${recordError.message}`);
         } else if (record) {
           const saved = record as SquadRecord;
