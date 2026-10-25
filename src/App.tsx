@@ -472,6 +472,8 @@ const squadValues = {
   chip: activeChip,
   transfers_used: transfersUsed,
   points_hit: pointsHits,
+  free_transfers: freeTransfers,
+};
 };
 
 
