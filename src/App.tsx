@@ -515,7 +515,6 @@ if (deadlinePassed) {
 
   pendingGameweekId = nextWeek.id;
 }
-    try {
       let squadId = squadRecord?.id;
 const hasExistingSavedSquad = savedPlayerIds.length === 7;
 
