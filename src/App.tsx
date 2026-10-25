@@ -462,14 +462,17 @@ if (
     try {
       let squadId = squadRecord?.id;
 
-      const squadValues = {
-        manager_id: session.user.id,
-        gameweek_id: gameweek.id,
-        captain_player_id: captain,
-        chip: activeChip,
-        transfers_used: transfersUsed,
-        points_hit: pointsHits,
-      };
+     
+const squadValues = {
+  manager_id: session.user.id,
+  gameweek_id: gameweek.id,
+  captain_player_id: captain,
+  vice_captain_player_id: viceCaptain,
+  chip: activeChip,
+  transfers_used: transfersUsed,
+  points_hit: pointsHits,
+};
+
 
       if (squadId) {
         const { error } = await supabase
