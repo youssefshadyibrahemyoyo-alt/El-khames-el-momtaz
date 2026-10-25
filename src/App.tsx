@@ -113,6 +113,7 @@ const [viceCaptain, setViceCaptain] = useState('');
   const [transfersUsed, setTransfersUsed] = useState(0);
   const [pointsHits, setPointsHits] = useState(0);
   const [freeTransfers, setFreeTransfers] = useState(1);
+  const [savedPlayerIds, setSavedPlayerIds] = useState<string[]>([]);
   const [usedChips, setUsedChips] = useState<string[]>([]);
   const [activeChip, setActiveChip] = useState<string | null>(null);
   const [matchInProgress, setMatchInProgress] = useState(false);
