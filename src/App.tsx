@@ -485,7 +485,7 @@ if (
   return;
 }
     setSquadSaving(true);
-
+setSessionMessage('Saving your squad to the database...');
     try {
       let squadId = squadRecord?.id;
 const hasExistingSavedSquad = savedPlayerIds.length === 7;
