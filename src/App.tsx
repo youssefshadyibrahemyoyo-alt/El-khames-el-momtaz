@@ -511,7 +511,6 @@ const squadValues = {
   points_hit: pointsHits,
   free_transfers: freeTransfers,
 };
-};
 
 
       if (squadId) {
@@ -563,8 +562,6 @@ setSquadRecord({
   vice_captain_player_id: viceCaptain,
   chip: activeChip,
   transfers_used: transfersUsed,
-  points_hit: pointsHits,
-    transfers_used: transfersUsed,
   points_hit: pointsHits,
   free_transfers: freeTransfers,
 });
