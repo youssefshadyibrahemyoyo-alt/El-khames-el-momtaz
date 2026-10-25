@@ -42,6 +42,7 @@ type SquadRecord = {
   manager_id: string;
   gameweek_id: number;
   captain_player_id: string | null;
+  vice_captain_player_id: string | null;
   chip: string | null;
   transfers_used: number;
   points_hit: number;
