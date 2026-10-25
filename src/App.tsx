@@ -104,8 +104,9 @@ export default function App() {
 
   const [gameweek, setGameweek] = useState<Gameweek | null>(null);
   const [squadRecord, setSquadRecord] = useState<SquadRecord | null>(null);
-  const [selected, setSelected] = useState<string[]>([]);
+ const [selected, setSelected] = useState<string[]>([]);
 const [captain, setCaptain] = useState('');
+const [viceCaptain, setViceCaptain] = useState('');
   const [gameweekNumber, setGameweekNumber] = useState(1);
   const [transfersUsed, setTransfersUsed] = useState(0);
   const [pointsHits, setPointsHits] = useState(0);
