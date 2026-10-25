@@ -491,6 +491,28 @@ if (
     setSquadSaving(true);
 setSessionMessage('Saving your squad to the database...');
     const deadlinePassed = isTransferDeadlinePassed();
+    let pendingGameweekId: number | null = null;
+
+if (deadlinePassed) {
+  const { data: nextWeek, error: nextWeekError } = await supabase
+    .from('gameweeks')
+    .select('id, number, status')
+    .gt('number', gameweek.number)
+    .in('status', ['draft', 'open'])
+    .order('number', { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (nextWeekError) throw nextWeekError;
+
+  if (!nextWeek) {
+    throw new Error(
+      'Transfers are past the deadline. An admin must create the next gameweek first.'
+    );
+  }
+
+  pendingGameweekId = nextWeek.id;
+}
     try {
       let squadId = squadRecord?.id;
 const hasExistingSavedSquad = savedPlayerIds.length === 7;
