@@ -104,10 +104,8 @@ export default function App() {
 
   const [gameweek, setGameweek] = useState<Gameweek | null>(null);
   const [squadRecord, setSquadRecord] = useState<SquadRecord | null>(null);
-  const [selected, setSelected] = useState<string[]>([
-    'Karim', 'Omar', 'Youssef', 'Ziad', 'Adam', 'Mazen', 'Nour',
-  ]);
-  const [captain, setCaptain] = useState('Karim');
+  const [selected, setSelected] = useState<string[]>([]);
+const [captain, setCaptain] = useState('');
   const [gameweekNumber, setGameweekNumber] = useState(1);
   const [transfersUsed, setTransfersUsed] = useState(0);
   const [pointsHits, setPointsHits] = useState(0);
@@ -215,20 +213,7 @@ export default function App() {
 
   const playerById = new Map(players.map(p => [p.id, p]));
   
-useEffect(() => {
-  if (demoMode || players.length < 7) return;
 
-  const hasValidSquad =
-    selected.length === 7 &&
-    selected.every(id => playerById.has(id));
-
-  if (hasValidSquad) return;
-
-  const initialSquad = players.slice(0, 7).map(p => p.id);
-
-  setSelected(initialSquad);
-  setCaptain(initialSquad[0]);
-}, [demoMode, players, selected, playerById]);
 
   const selectedPlayers = selected
     .map(id => playerById.get(id))
