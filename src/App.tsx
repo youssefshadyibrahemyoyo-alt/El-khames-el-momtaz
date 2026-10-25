@@ -514,15 +514,18 @@ const squadValues = {
       if (insertError) throw insertError;
 
       setSessionMessage('Your seven-player squad has been saved.');
-      setSquadRecord({
-        id: squadId!,
-        manager_id: session.user.id,
-        gameweek_id: gameweek.id,
-        captain_player_id: captain,
-        chip: activeChip,
-        transfers_used: transfersUsed,
-        points_hit: pointsHits,
-      });
+     
+setSquadRecord({
+  id: squadId!,
+  manager_id: session.user.id,
+  gameweek_id: gameweek.id,
+  captain_player_id: captain,
+  vice_captain_player_id: viceCaptain,
+  chip: activeChip,
+  transfers_used: transfersUsed,
+  points_hit: pointsHits,
+});
+
     } catch (error: any) {
       setSquadError(
         `Save failed: ${error?.message ?? 'Unknown database error'}. Check the Supabase permissions for fantasy_squads and squad_players.`
