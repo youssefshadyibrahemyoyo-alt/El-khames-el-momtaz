@@ -1168,20 +1168,7 @@ setSquadRecord({
                 <div><span>Used</span><strong>{transfersUsed}</strong></div>
                 <div><span>Transfer hits</span><strong>−{pointsHits} pts</strong></div>
               </div>
-              <div className="transfer-controls">
-                <button
-                  type="button"
-                  className="secondary"
-                  onClick={() => {
-                    setTransfersUsed(v => v + 1);
-                    if (gameweekNumber > 1 && transfersUsed >= freeTransfers && activeChip !== 'Wildcard') {
-                      setPointsHits(v => v + 4);
-                    }
-                  }}
-                >
-                  
-                </button>
-              </div>
+              
             </section>
           </>
         )}
