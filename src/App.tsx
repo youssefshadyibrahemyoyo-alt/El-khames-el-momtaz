@@ -488,13 +488,15 @@ if (
 
     try {
       let squadId = squadRecord?.id;
-const outgoingPlayers = savedPlayerIds.filter(
-  id => !selected.includes(id)
-);
+const hasExistingSavedSquad = savedPlayerIds.length === 7;
 
-const incomingPlayers = selected.filter(
-  id => !savedPlayerIds.includes(id)
-);
+const outgoingPlayers = hasExistingSavedSquad
+  ? savedPlayerIds.filter(id => !selected.includes(id))
+  : [];
+
+const incomingPlayers = hasExistingSavedSquad
+  ? selected.filter(id => !savedPlayerIds.includes(id))
+  : [];
 
 const newTransfers = Math.max(
   outgoingPlayers.length,
