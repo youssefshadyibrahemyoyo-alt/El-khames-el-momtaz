@@ -226,7 +226,7 @@ const [didNotPlay, setDidNotPlay] = useState<string[]>([]);
   const selectedCost = selectedPlayers.reduce((sum, p) => sum + p.price, 0);
   const starters = selected.slice(0, 5);
   const bench = selected.slice(5, 7);
-  const freeTransfers = gameweekNumber >= 2 ? 1 : 0;
+  const [freeTransfers, setFreeTransfers] = useState(1);
 
   const effectiveDemoPoints =
     starters.reduce((sum, id) => {
