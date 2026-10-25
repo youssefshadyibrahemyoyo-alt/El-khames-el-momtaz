@@ -224,6 +224,22 @@ const [didNotPlay, setDidNotPlay] = useState<string[]>([]);
     .filter((p): p is LeaguePlayer => Boolean(p));
 
   const selectedCost = selectedPlayers.reduce((sum, p) => sum + p.price, 0);
+  const recordTransfer = () => {
+  if (matchInProgress) return;
+
+  setTransfersUsed(previous => {
+    const next = previous + 1;
+
+    if (
+      next > freeTransfers &&
+      activeChip !== 'Wildcard'
+    ) {
+      setPointsHits(hits => hits + 4);
+    }
+
+    return next;
+  });
+};
   const starters = selected.slice(0, 5);
   const bench = selected.slice(5, 7);
   const [freeTransfers, setFreeTransfers] = useState(1);
