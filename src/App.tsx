@@ -488,7 +488,30 @@ if (
 
     try {
       let squadId = squadRecord?.id;
+const outgoingPlayers = savedPlayerIds.filter(
+  id => !selected.includes(id)
+);
 
+const incomingPlayers = selected.filter(
+  id => !savedPlayerIds.includes(id)
+);
+
+const newTransfers = Math.max(
+  outgoingPlayers.length,
+  incomingPlayers.length
+);
+
+const updatedTransfersUsed = transfersUsed + newTransfers;
+
+const extraTransfers = Math.max(
+  0,
+  updatedTransfersUsed - freeTransfers
+);
+
+const updatedPointsHits =
+  activeChip === 'Wildcard'
+    ? 0
+    : extraTransfers * 4;
      
 const squadValues = {
   manager_id: session.user.id,
