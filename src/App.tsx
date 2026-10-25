@@ -541,7 +541,47 @@ const updatedPointsHits =
   activeChip === 'Wildcard'
     ? 0
     : extraTransfers * 4;
-     
+     if (deadlinePassed && pendingGameweekId !== null) {
+  const { data: pendingRecord, error: pendingError } = await supabase
+    .from('pending_squads')
+    .upsert(
+      {
+        manager_id: session.user.id,
+        gameweek_id: pendingGameweekId,
+        captain_player_id: captain,
+        vice_captain_player_id: viceCaptain,
+      },
+      { onConflict: 'manager_id,gameweek_id' }
+    )
+    .select('id')
+    .single();
+
+  if (pendingError) throw pendingError;
+
+  const { error: deletePendingError } = await supabase
+    .from('pending_squad_players')
+    .delete()
+    .eq('pending_squad_id', pendingRecord.id);
+
+  if (deletePendingError) throw deletePendingError;
+
+  const pendingPlayerRows = selected.map((playerId, index) => ({
+    pending_squad_id: pendingRecord.id,
+    player_id: playerId,
+    slot: index + 1,
+  }));
+
+  const { error: insertPendingError } = await supabase
+    .from('pending_squad_players')
+    .insert(pendingPlayerRows);
+
+  if (insertPendingError) throw insertPendingError;
+
+  setSessionMessage(
+    'Your transfers are saved for the next gameweek. Your current gameweek squad is unchanged.'
+  );
+  return;
+}
 const squadValues = {
   manager_id: session.user.id,
   gameweek_id: gameweek.id,
