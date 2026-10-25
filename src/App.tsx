@@ -114,7 +114,6 @@ const [captain, setCaptain] = useState('');
   const [matchInProgress, setMatchInProgress] = useState(false);
 const [swapStarter, setSwapStarter] = useState<string | null>(null);
 const [didNotPlay, setDidNotPlay] = useState<string[]>([]);
-  const [didNotPlay, setDidNotPlay] = useState<string[]>([]);
   const [sessionMessage, setSessionMessage] = useState('');
   const [squadLoading, setSquadLoading] = useState(false);
   const [squadSaving, setSquadSaving] = useState(false);
