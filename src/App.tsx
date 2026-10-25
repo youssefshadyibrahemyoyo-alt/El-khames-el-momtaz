@@ -884,14 +884,28 @@ const [didNotPlay, setDidNotPlay] = useState<string[]>([]);
                             {demoMode && <small>{p.points} pts</small>}
                           </button>
 
-                          <button
-                            type="button"
-                            className={`egypt-captain-action ${captain === id ? 'chosen' : ''}`}
-                            disabled={matchInProgress}
-                            onClick={() => setCaptain(id)}
-                          >
-                            {captain === id ? '★ Captain' : 'Make captain'}
-                          </button>
+                         
+<button
+  type="button"
+  className={`egypt-captain-action ${captain === id ? 'chosen' : ''}`}
+  disabled={matchInProgress}
+  onClick={() => {
+    setCaptain(id);
+    if (viceCaptain === id) setViceCaptain('');
+  }}
+>
+  {captain === id ? '★ Captain (C)' : 'Make captain'}
+</button>
+
+<button
+  type="button"
+  className={`egypt-captain-action ${viceCaptain === id ? 'chosen' : ''}`}
+  disabled={matchInProgress || captain === id}
+  onClick={() => setViceCaptain(id)}
+>
+  {viceCaptain === id ? 'Vice-Captain (VC)' : 'Make vice-captain'}
+</button>
+
 
                           <div className="egypt-swap-buttons">
                             {bench.map((benchId, benchIndex) => (
