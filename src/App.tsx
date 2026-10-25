@@ -355,6 +355,7 @@ const [didNotPlay, setDidNotPlay] = useState<string[]>([]);
 
             setSelected(ordered);
             setCaptain(saved.captain_player_id ?? ordered[0] ?? '');
+            setViceCaptain(saved.vice_captain_player_id ?? '');
           }
         } else {
           setSquadRecord(null);
