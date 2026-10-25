@@ -356,7 +356,7 @@ const startingFreeTransfers = previousSquad
           setTransfersUsed(saved.transfers_used ?? 0);
           setPointsHits(saved.points_hit ?? 0);
           setFreeTransfers(1);
-          setFreeTransfers(saved.free_transfers ?? 1);
+          setFreeTransfers(saved.free_transfers ?? startingFreeTransfers);
           setActiveChip(saved.chip ?? null);
 
           const { data: rows, error: playersError } = await supabase!
@@ -384,6 +384,7 @@ const startingFreeTransfers = previousSquad
           setCaptain('');
           setTransfersUsed(0);
           setPointsHits(0);
+          setFreeTransfers(startingFreeTransfers);
           setActiveChip(null);
         }
       } else {
