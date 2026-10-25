@@ -218,7 +218,19 @@ const [didNotPlay, setDidNotPlay] = useState<string[]>([]);
       }));
 
   const playerById = new Map(players.map(p => [p.id, p]));
-  
+  const isTransferDeadlinePassed = () => {
+  const cairoTime = new Date().toLocaleString('en-US', {
+    timeZone: 'Africa/Cairo',
+  });
+
+  const now = new Date(cairoTime);
+  const day = now.getDay();
+  const hour = now.getHours();
+
+  // Transfers reopen Thursday before 12:00 PM Cairo time.
+  // They lock at noon and remain locked until the next deadline.
+  return day !== 4 || hour >= 12;
+};
 
 
   const selectedPlayers = selected
