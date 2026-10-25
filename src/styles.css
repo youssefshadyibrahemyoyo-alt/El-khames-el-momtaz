@@ -270,3 +270,454 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+/* Fantasy lineup: green-and-gold theme */
+.egypt-squad-panel {
+  overflow: hidden;
+}
+
+.egypt-lineup-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.65fr) minmax(235px, .85fr);
+  gap: 16px;
+  align-items: stretch;
+}
+
+.egypt-pitch {
+  position: relative;
+  isolation: isolate;
+  min-width: 0;
+  min-height: 440px;
+  padding: 20px 12px 14px;
+  overflow: hidden;
+  border: 1px solid #806a35;
+  border-radius: 14px;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent 0 48px,
+      rgba(255,255,255,.035) 48px 96px
+    ),
+    linear-gradient(145deg, #174b32, #103c29 55%, #16482f);
+}
+
+.egypt-pitch-markings {
+  position: absolute;
+  inset: 12px;
+  z-index: -1;
+  overflow: hidden;
+  border: 1px solid rgba(240,209,123,.48);
+  border-radius: 8px;
+  pointer-events: none;
+}
+
+.egypt-halfway {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: rgba(240,209,123,.38);
+}
+
+.egypt-centre-circle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100px;
+  height: 100px;
+  border: 1px solid rgba(240,209,123,.38);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.egypt-goal-box {
+  position: absolute;
+  left: 50%;
+  width: 42%;
+  height: 42px;
+  border: 1px solid rgba(240,209,123,.35);
+  transform: translateX(-50%);
+}
+
+.egypt-goal-top {
+  top: 0;
+  border-top: 0;
+}
+
+.egypt-goal-bottom {
+  bottom: 0;
+  border-bottom: 0;
+}
+
+.egypt-pitch-title {
+  position: relative;
+  margin: 0 0 18px;
+  color: #f0d17b;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.6px;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.egypt-formation {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-rows: auto auto;
+  align-items: start;
+  gap: 18px 3px;
+  padding: 8px 0;
+}
+
+.egypt-player {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 2px 8px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: rgba(4, 28, 18, .28);
+  color: #fff7dc;
+}
+
+.egypt-player:nth-child(1) {
+  grid-column: 2 / span 2;
+  grid-row: 1;
+}
+
+.egypt-player:nth-child(2) {
+  grid-column: 4 / span 2;
+  grid-row: 1;
+}
+
+.egypt-player:nth-child(3) {
+  grid-column: 1 / span 2;
+  grid-row: 2;
+}
+
+.egypt-player:nth-child(4) {
+  grid-column: 3 / span 2;
+  grid-row: 2;
+}
+
+.egypt-player:nth-child(5) {
+  grid-column: 5 / span 2;
+  grid-row: 2;
+}
+
+.egypt-player.selected {
+  border-color: #f0d17b;
+  background: rgba(223,189,98,.17);
+  box-shadow: 0 0 0 1px rgba(223,189,98,.15);
+}
+
+.egypt-player-main {
+  position: relative;
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 2px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+}
+
+.egypt-shirt {
+  display: grid;
+  place-items: center;
+  width: 49px;
+  height: 49px;
+  overflow: hidden;
+  border: 2px solid #dfbd62;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #38764d, #102d20);
+  color: #f4d783;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.egypt-shirt img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.egypt-player-main strong {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  font-size: 10px;
+  text-align: center;
+}
+
+.egypt-player-main small {
+  color: #f0d17b;
+  font-size: 9px;
+}
+
+.egypt-captain-badge {
+  position: absolute;
+  top: -4px;
+  right: calc(50% - 29px);
+  display: grid;
+  place-items: center;
+  width: 19px;
+  height: 19px;
+  border: 1px solid #fff0b0;
+  border-radius: 50%;
+  background: #dfbd62;
+  color: #10251a;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.egypt-captain-action {
+  max-width: 100%;
+  padding: 5px 6px;
+  border: 1px solid #806a35;
+  border-radius: 6px;
+  background: #173b2a;
+  color: #f6edcf;
+  font-size: 9px;
+}
+
+.egypt-captain-action.chosen {
+  background: #dfbd62;
+  color: #10251a;
+}
+
+.egypt-swap-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 3px;
+}
+
+.egypt-swap-buttons button,
+.egypt-bench-swap {
+  padding: 5px 6px;
+  border: 1px solid #426c4f;
+  border-radius: 5px;
+  background: #173b2a;
+  color: #f6edcf;
+  font-size: 9px;
+}
+
+.egypt-player-number {
+  position: absolute;
+  top: -7px;
+  left: -4px;
+  display: grid;
+  place-items: center;
+  width: 19px;
+  height: 19px;
+  border-radius: 6px;
+  background: #dfbd62;
+  color: #10251a;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.egypt-pitch-hint {
+  position: relative;
+  margin: 12px 0 0;
+  color: #d4e1d5;
+  font-size: 10px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.egypt-bench {
+  min-width: 0;
+  padding: 15px;
+  border: 1px solid #806a35;
+  border-radius: 14px;
+  background: linear-gradient(150deg, #153b2a, #0b2118);
+}
+
+.egypt-bench h3 {
+  margin: 0 0 5px;
+  color: #f0d17b;
+  font-size: 16px;
+}
+
+.egypt-bench > p {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.egypt-bench-player {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 0;
+  border-bottom: 1px solid #28513d;
+}
+
+.egypt-bench-player:last-of-type {
+  border-bottom: 0;
+}
+
+.egypt-sub-number {
+  display: grid;
+  flex: 0 0 22px;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: #dfbd62;
+  color: #10251a;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.egypt-bench-player > img,
+.egypt-bench-player > .player-photo {
+  width: 37px;
+  height: 37px;
+  flex: 0 0 37px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.egypt-bench-info {
+  flex: 1 1 75px;
+  min-width: 0;
+}
+
+.egypt-bench-info strong,
+.egypt-bench-info span {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.egypt-bench-info strong {
+  font-size: 11px;
+}
+
+.egypt-bench-info span {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.egypt-bench-note {
+  margin-top: 13px;
+  padding: 10px;
+  border-radius: 8px;
+  background: rgba(223,189,98,.09);
+  color: #e4d7ad;
+  font-size: 10px;
+  line-height: 1.6;
+}
+
+.egypt-chip-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 9px;
+  margin-bottom: 18px;
+}
+
+.egypt-chip {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #806a35;
+  border-radius: 10px;
+  background: #102c20;
+  color: #f8edcf;
+  text-align: left;
+  transition: background .15s ease, border-color .15s ease;
+}
+
+.egypt-chip strong,
+.egypt-chip span {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.egypt-chip strong {
+  font-size: 11px;
+}
+
+.egypt-chip span {
+  margin-top: 5px;
+  color: #dfbd62;
+  font-size: 10px;
+}
+
+.egypt-chip.active {
+  background: #dfbd62;
+  color: #10251a;
+}
+
+.egypt-chip.active span {
+  color: #10251a;
+}
+
+.egypt-chip:disabled {
+  opacity: .5;
+}
+
+@media (max-width: 900px) {
+  .egypt-lineup-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .egypt-bench {
+    order: 2;
+  }
+
+  .egypt-pitch {
+    min-height: 400px;
+  }
+}
+
+@media (max-width: 600px) {
+  .egypt-chip-row {
+    grid-template-columns: 1fr;
+  }
+
+  .egypt-chip {
+    padding: 10px 12px;
+  }
+
+  .egypt-formation {
+    gap: 13px 2px;
+  }
+
+  .egypt-shirt {
+    width: 42px;
+    height: 42px;
+  }
+
+  .egypt-player-main strong {
+    font-size: 9px;
+  }
+
+  .egypt-captain-action {
+    font-size: 8px;
+    padding: 5px 3px;
+  }
+
+  .egypt-swap-buttons button {
+    padding: 5px 4px;
+    font-size: 8px;
+  }
+
+  .egypt-pitch {
+    padding: 16px 7px 12px;
+  }
+
+  .egypt-bench-player {
+    flex-wrap: nowrap;
+  }
+}
