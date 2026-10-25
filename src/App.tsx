@@ -378,6 +378,7 @@ const startingFreeTransfers = previousSquad
               .map(row => String(row.player_id));
 
             setSelected(ordered);
+            setSavedPlayerIds(ordered);
             setCaptain(saved.captain_player_id ?? ordered[0] ?? '');
             setViceCaptain(saved.vice_captain_player_id ?? '');
           }
