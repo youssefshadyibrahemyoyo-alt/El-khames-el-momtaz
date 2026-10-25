@@ -490,7 +490,9 @@ if (
 }
     setSquadSaving(true);
 setSessionMessage('Saving your squad to the database...');
-    const deadlinePassed = isTransferDeadlinePassed();
+
+try {
+  const deadlinePassed = isTransferDeadlinePassed();
     let pendingGameweekId: number | null = null;
 
 if (deadlinePassed) {
