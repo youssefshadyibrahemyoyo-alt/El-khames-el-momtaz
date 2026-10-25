@@ -449,7 +449,14 @@ const [didNotPlay, setDidNotPlay] = useState<string[]>([]);
       setSquadError('Choose a captain from your starting five.');
       return;
     }
-
+if (
+  !viceCaptain ||
+  !starters.includes(viceCaptain) ||
+  viceCaptain === captain
+) {
+  setSquadError('Choose a different vice-captain from your starting five.');
+  return;
+}
     setSquadSaving(true);
 
     try {
