@@ -490,6 +490,7 @@ if (
 }
     setSquadSaving(true);
 setSessionMessage('Saving your squad to the database...');
+    const deadlinePassed = isTransferDeadlinePassed();
     try {
       let squadId = squadRecord?.id;
 const hasExistingSavedSquad = savedPlayerIds.length === 7;
