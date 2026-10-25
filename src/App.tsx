@@ -346,12 +346,14 @@ const startingFreeTransfers = previousSquad
       ) + 1
     )
   : 1;
-        const { data: record, error: recordError } = await supabase!
-          .from('fantasy_squads')
-          .select('id,manager_id,gameweek_id,captain_player_id,vice_captain_player_id,chip,transfers_used,points_hit,free_transfers')
-          .eq('manager_id', session.user.id)
-          .eq('gameweek_id', current.id)
-          .maybeSingle();
+        
+const { data: record, error: recordError } = await supabase!
+  .from('fantasy_squads')
+  .select('id,manager_id,gameweek_id,captain_player_id,vice_captain_player_id,chip,transfers_used,points_hit,free_transfers')
+  .eq('manager_id', session.user.id)
+  .eq('gameweek_id', current.id)
+  .maybeSingle();
+
 
         if (cancelled) return;
 
