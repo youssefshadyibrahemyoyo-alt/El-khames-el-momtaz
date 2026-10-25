@@ -1180,7 +1180,7 @@ setSquadRecord({
                     }
                   }}
                 >
-                  Record transfer (preview)
+                  
                 </button>
               </div>
             </section>
