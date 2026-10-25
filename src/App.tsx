@@ -385,6 +385,7 @@ const startingFreeTransfers = previousSquad
         } else {
           setSquadRecord(null);
           setSelected([]);
+          setSavedPlayerIds([]);
           setCaptain('');
           setTransfersUsed(0);
           setPointsHits(0);
