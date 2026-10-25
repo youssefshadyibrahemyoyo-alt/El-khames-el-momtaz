@@ -727,9 +727,16 @@ const [captain, setCaptain] = useState('');
                       <ShieldCheck size={17} /> Open admin panel
                     </button>
                   )}
-                  <button className="secondary" onClick={() => setScreen('squad')}>
-                    View my squad <ChevronRight size={16} />
-                  </button>
+                  
+<div className="hero-actions">
+  <button className="secondary" onClick={() => setScreen('squad')}>
+    View my squad <ChevronRight size={16} />
+  </button>
+  <button className="primary" onClick={() => setScreen('players')}>
+    Player Market <ArrowLeftRight size={16} />
+  </button>
+</div>
+
                 </div>
               </div>
               <div className="hero-ball">⚽</div>
