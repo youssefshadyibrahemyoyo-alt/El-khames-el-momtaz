@@ -521,8 +521,8 @@ const squadValues = {
   captain_player_id: captain,
   vice_captain_player_id: viceCaptain,
   chip: activeChip,
-  transfers_used: transfersUsed,
-  points_hit: pointsHits,
+  transfers_used: updatedTransfersUsed,
+  points_hit: updatedPointsHits,
   free_transfers: freeTransfers,
 };
 
