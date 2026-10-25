@@ -337,7 +337,8 @@ const [didNotPlay, setDidNotPlay] = useState<string[]>([]);
           setSquadRecord(saved);
           setTransfersUsed(saved.transfers_used ?? 0);
           setPointsHits(saved.points_hit ?? 0);
-          setFreeTransfers(data.free_transfers ?? 1);
+          setFreeTransfers(1);
+          setFreeTransfers(saved.free_transfers ?? 1);
           setActiveChip(saved.chip ?? null);
 
           const { data: rows, error: playersError } = await supabase!
