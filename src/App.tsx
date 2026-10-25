@@ -1137,57 +1137,144 @@ useEffect(() => {
           </>
         )}
 
-        {screen === 'players' && (
-          <section className="panel">
-            <div className="panel-heading">
-              <div><h3>Player pool</h3><p>Build a seven-player squad within £50m.</p></div>
-              <span className="tag">{players.length} AVAILABLE</span>
+       
+{screen === 'players' && (
+  <section className="panel">
+    <div className="panel-heading">
+      <div>
+        <h3>Player Market</h3>
+        <p>Choose 7 players for your fantasy team.</p>
+      </div>
+      <span className="tag">{players.length} AVAILABLE</span>
+    </div>
+
+    <div className="transfer-summary">
+      <div>
+        <span>Squad selected</span>
+        <strong>{selected.length} / 7</strong>
+      </div>
+      <div>
+        <span>Budget used</span>
+        <strong>£{selectedCost.toFixed(1)}m</strong>
+      </div>
+      <div>
+        <span>Budget remaining</span>
+        <strong>£{Math.max(0, 50 - selectedCost).toFixed(1)}m</strong>
+      </div>
+    </div>
+
+    <div className="budget-track">
+      <span
+        style={{
+          width: `${Math.min(selectedCost / 50 * 100, 100)}%`,
+        }}
+      />
+    </div>
+
+    {playersLoading && (
+      <p className="muted">Loading available players…</p>
+    )}
+
+    {playersError && (
+      <div className="notice">{playersError}</div>
+    )}
+
+    {!playersLoading && !playersError && players.length === 0 && (
+      <div className="notice">
+        No players are available yet. Check that players have been added
+        to the football_players table and marked as active in Supabase.
+      </div>
+    )}
+
+    <div className="player-list">
+      {players.map(p => {
+        const isSelected = selected.includes(p.id);
+
+        return (
+          <div className="player-row" key={p.id}>
+            {p.photo_url ? (
+              <img
+                className="leaderboard-photo"
+                src={p.photo_url}
+                alt={p.name}
+              />
+            ) : (
+              <div className="player-photo small-photo">
+                {p.name.slice(0, 1)}
+              </div>
+            )}
+
+            <div className="player-info">
+              <strong>{p.name}</strong>
+              <span>
+                {isSelected ? 'In your squad' : 'Available to select'}
+              </span>
             </div>
 
-            {playersLoading && <p className="muted">Loading players…</p>}
-            {playersError && <div className="notice">{playersError}</div>}
+            <strong className="price">
+              £{p.price.toFixed(1)}m
+            </strong>
 
-            <div className="player-list">
-              {players.map(p => (
-                <div className="player-row" key={p.id}>
-                  {p.photo_url
-                    ? <img className="leaderboard-photo" src={p.photo_url} alt={p.name} />
-                    : <div className="player-photo small-photo">{p.name.slice(0, 1)}</div>}
-                  <div className="player-info">
-                    <strong>{p.name}</strong>
-                    <span>{demoMode ? `${p.points} preview points` : 'Real player · points pending'}</span>
-                  </div>
-                  <strong className="price">£{p.price.toFixed(1)}m</strong>
-                  <button
-                    className={selected.includes(p.id) ? 'secondary compact-btn' : 'primary compact-btn'}
-                    disabled={
-                      !selected.includes(p.id) &&
-                      (selected.length >= 7 || selectedCost + p.price > 50 || matchInProgress)
+            <button
+              type="button"
+              className={isSelected ? 'secondary compact-btn' : 'primary compact-btn'}
+              disabled={
+                matchInProgress ||
+                (!isSelected &&
+                  (selected.length >= 7 || selectedCost + p.price > 50))
+              }
+              onClick={() => {
+                if (matchInProgress) return;
+
+                setSelected(old => {
+                  if (old.includes(p.id)) {
+                    const next = old.filter(id => id !== p.id);
+
+                    if (captain === p.id) {
+                      setCaptain(next.slice(0, 5)[0] ?? '');
                     }
-                    onClick={() => {
-                      if (matchInProgress) return;
 
-                      setSelected(old => {
-                        if (old.includes(p.id)) {
-                          const next = old.filter(id => id !== p.id);
-                          if (captain === p.id) setCaptain(next.slice(0, 5)[0] ?? '');
-                          return next;
-                        }
+                    return next;
+                  }
 
-                        if (old.length >= 7 || selectedCost + p.price > 50) return old;
-                        const next = [...old, p.id];
-                        if (!captain) setCaptain(next[0]);
-                        return next;
-                      });
-                    }}
-                  >
-                    {selected.includes(p.id) ? 'Remove' : 'Add player'}
-                  </button>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
+                  if (old.length >= 7 || selectedCost + p.price > 50) {
+                    return old;
+                  }
+
+                  const next = [...old, p.id];
+
+                  if (!captain) setCaptain(next[0]);
+
+                  return next;
+                });
+              }}
+            >
+              {isSelected ? 'Remove' : 'Add player'}
+            </button>
+          </div>
+        );
+      })}
+    </div>
+
+    <div className="transfer-controls">
+      <button
+        type="button"
+        className="primary"
+        disabled={selected.length !== 7 || selectedCost > 50}
+        onClick={() => setScreen('squad')}
+      >
+        {selected.length === 7
+          ? 'Pick My Team →'
+          : `Select ${7 - selected.length} more player${7 - selected.length === 1 ? '' : 's'}`}
+      </button>
+    </div>
+
+    <p className="muted tiny">
+      Select seven different players within the £50m budget, then arrange
+      your five starters and two substitutes on My Squad.
+    </p>
+  </section>
+)}
 
         {screen === 'leaderboard' && (
           <section className="panel">
