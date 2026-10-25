@@ -214,6 +214,22 @@ export default function App() {
       }));
 
   const playerById = new Map(players.map(p => [p.id, p]));
+  
+useEffect(() => {
+  if (demoMode || players.length < 7) return;
+
+  const hasValidSquad =
+    selected.length === 7 &&
+    selected.every(id => playerById.has(id));
+
+  if (hasValidSquad) return;
+
+  const initialSquad = players.slice(0, 7).map(p => p.id);
+
+  setSelected(initialSquad);
+  setCaptain(initialSquad[0]);
+}, [demoMode, players, selected, playerById]);
+
   const selectedPlayers = selected
     .map(id => playerById.get(id))
     .filter((p): p is LeaguePlayer => Boolean(p));
