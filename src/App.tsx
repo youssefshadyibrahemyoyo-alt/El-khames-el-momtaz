@@ -487,7 +487,7 @@ const squadValues = {
         const { data, error } = await supabase
           .from('fantasy_squads')
           .insert(squadValues)
-          .select('id,manager_id,gameweek_id,captain_player_id,vice_captain_player_id,chip,transfers_used,points_hit')
+          .select('id,manager_id,gameweek_id,captain_player_id,vice_captain_player_id,chip,transfers_used,points_hit,free_transfers')
           .single();
 
         if (error) throw error;
