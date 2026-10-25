@@ -46,6 +46,7 @@ type SquadRecord = {
   chip: string | null;
   transfers_used: number;
   points_hit: number;
+  free_transfers: number;
 };
 
 type LeaguePlayer = {
