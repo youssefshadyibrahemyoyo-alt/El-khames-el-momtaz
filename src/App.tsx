@@ -320,7 +320,25 @@ const [didNotPlay, setDidNotPlay] = useState<string[]>([]);
 
       if (current) {
         setGameweekNumber(current.number);
+const { data: previousSquad } = await supabase!
+  .from('fantasy_squads')
+  .select('free_transfers,transfers_used')
+  .eq('manager_id', session.user.id)
+  .lt('gameweek_id', current.id)
+  .order('gameweek_id', { ascending: false })
+  .limit(1)
+  .maybeSingle();
 
+const startingFreeTransfers = previousSquad
+  ? Math.min(
+      2,
+      Math.max(
+        0,
+        (previousSquad.free_transfers ?? 1) -
+          (previousSquad.transfers_used ?? 0)
+      ) + 1
+    )
+  : 1;
         const { data: record, error: recordError } = await supabase!
           .from('fantasy_squads')
           .select('id,manager_id,gameweek_id,captain_player_id,vice_captain_player_id,chip,transfers_used,points_hit,free_transfers')
