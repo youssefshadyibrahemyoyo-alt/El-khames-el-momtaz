@@ -112,6 +112,7 @@ const [viceCaptain, setViceCaptain] = useState('');
   const [gameweekNumber, setGameweekNumber] = useState(1);
   const [transfersUsed, setTransfersUsed] = useState(0);
   const [pointsHits, setPointsHits] = useState(0);
+  const [freeTransfers, setFreeTransfers] = useState(1);
   const [usedChips, setUsedChips] = useState<string[]>([]);
   const [activeChip, setActiveChip] = useState<string | null>(null);
   const [matchInProgress, setMatchInProgress] = useState(false);
@@ -242,7 +243,7 @@ const [didNotPlay, setDidNotPlay] = useState<string[]>([]);
 };
   const starters = selected.slice(0, 5);
   const bench = selected.slice(5, 7);
-  const [freeTransfers, setFreeTransfers] = useState(1);
+  
 
   const effectiveDemoPoints =
     starters.reduce((sum, id) => {
