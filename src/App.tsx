@@ -346,7 +346,7 @@ const startingFreeTransfers = previousSquad
       ) + 1
     )
   : 1;
-        
+        let pendingPlayers: Array<{ player_id: string; slot: number }> = [];
         const { data: pendingRecord, error: pendingError } = await supabase!
           .from('pending_squads')
           .select('id, captain_player_id, vice_captain_player_id')
@@ -361,7 +361,7 @@ const startingFreeTransfers = previousSquad
         }
 
         if (pendingRecord) {
-          const { data: pendingPlayers, error: pendingPlayersError } = await supabase!
+         const { data: loadedPendingPlayers, error: pendingPlayersError } = await supabase!
             .from('pending_squad_players')
             .select('player_id, slot')
             .eq('pending_squad_id', pendingRecord.id)
@@ -373,11 +373,12 @@ const startingFreeTransfers = previousSquad
             return;
           }
 
-          if (!pendingPlayers || pendingPlayers.length !== 7) {
+          if (!loadedPendingPlayers || loadedPendingPlayers.length !== 7) {
             setSquadError('Your pending squad must contain exactly seven players.');
             setSquadLoading(false);
             return;
           }
+          pendingPlayers = loadedPendingPlayers;
         }
 
 const { data: record, error: recordError } = await supabase!
@@ -424,15 +425,88 @@ if (recordError) {
             setCaptain(saved.captain_player_id ?? ordered[0] ?? '');
             setViceCaptain(saved.vice_captain_player_id ?? '');
           }
+        
         } else {
-          setSquadRecord(null);
-          setSelected([]);
-          setSavedPlayerIds([]);
-          setCaptain('');
-          setTransfersUsed(0);
-          setPointsHits(0);
-          setFreeTransfers(startingFreeTransfers);
-          setActiveChip(null);
+          if (pendingRecord && pendingPlayers.length === 7) {
+            const { data: newSquad, error: createError } = await supabase!
+              .from('fantasy_squads')
+              .insert({
+                manager_id: session.user.id,
+                gameweek_id: current.id,
+                captain_player_id: pendingRecord.captain_player_id,
+                vice_captain_player_id: pendingRecord.vice_captain_player_id,
+                chip: null,
+                transfers_used: 0,
+                points_hit: 0,
+                free_transfers: startingFreeTransfers,
+              })
+              .select('id,manager_id,gameweek_id,captain_player_id,vice_captain_player_id,chip,transfers_used,points_hit,free_transfers')
+              .single();
+
+            if (createError || !newSquad) {
+              setSquadError(
+                `Could not apply pending squad: ${createError?.message ?? 'No squad returned.'}`
+              );
+            } else {
+              const { error: playersInsertError } = await supabase!
+                .from('squad_players')
+                .insert(
+                  pendingPlayers.map(player => ({
+                    squad_id: newSquad.id,
+                    player_id: player.player_id,
+                    slot: player.slot,
+                  }))
+                );
+
+              if (playersInsertError) {
+                await supabase!
+                  .from('fantasy_squads')
+                  .delete()
+                  .eq('id', newSquad.id);
+
+                setSquadError(
+                  `Could not apply pending players: ${playersInsertError.message}`
+                );
+              } else {
+                const { error: deletePendingError } = await supabase!
+                  .from('pending_squads')
+                  .delete()
+                  .eq('id', pendingRecord.id);
+
+                if (deletePendingError) {
+                  setSquadError(
+                    `Squad applied, but pending cleanup failed: ${deletePendingError.message}`
+                  );
+                }
+
+                const saved = newSquad as SquadRecord;
+                const ordered = [...pendingPlayers]
+                  .sort((a, b) => Number(a.slot) - Number(b.slot))
+                  .map(player => String(player.player_id));
+
+                setSquadRecord(saved);
+                setSelected(ordered);
+                setSavedPlayerIds(ordered);
+                setCaptain(saved.captain_player_id ?? ordered[0] ?? '');
+                setViceCaptain(saved.vice_captain_player_id ?? '');
+                setTransfersUsed(0);
+                setPointsHits(0);
+                setFreeTransfers(saved.free_transfers ?? startingFreeTransfers);
+                setActiveChip(null);
+              }
+            }
+          } else {
+            setSquadRecord(null);
+            setSelected([]);
+            setSavedPlayerIds([]);
+            setCaptain('');
+            setTransfersUsed(0);
+            setPointsHits(0);
+            setFreeTransfers(startingFreeTransfers);
+            setActiveChip(null);
+          }
+        }
+
         }
       } else {
         setSquadRecord(null);
