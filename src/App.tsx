@@ -505,9 +505,7 @@ if (recordError) {
             setFreeTransfers(startingFreeTransfers);
             setActiveChip(null);
           }
-        }
-
-        }
+        } 
       } else {
         setSquadRecord(null);
         setSelected([]);
