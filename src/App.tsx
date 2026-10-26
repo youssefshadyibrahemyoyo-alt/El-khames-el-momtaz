@@ -485,6 +485,50 @@ if (recordError) {
     return () => { cancelled = true; };
   }, [screen, leaderboardTab, session, approved]);
 
+async function endGameweek() {
+  if (!supabase || !session || !isAdmin) {
+    setNotice('Admin access is required.');
+    return;
+  }
+
+  setNotice('Ending gameweek...');
+
+  const { data: weeks, error: weeksError } = await supabase
+    .from('gameweeks')
+    .select('id, number, status')
+    .eq('status', 'active')
+    .limit(1);
+
+  if (weeksError) {
+    setNotice(`Could not load active gameweek: ${weeksError.message}`);
+    return;
+  }
+
+  const activeWeek = weeks?.[0];
+
+  if (!activeWeek) {
+    setNotice('There is no active gameweek to end.');
+    return;
+  }
+
+  const { error: updateError } = await supabase
+    .from('gameweeks')
+    .update({
+      status: 'finished',
+      ended_at: new Date().toISOString(),
+    })
+    .eq('id', activeWeek.id);
+
+  if (updateError) {
+    setNotice(`Could not end gameweek: ${updateError.message}`);
+    return;
+  }
+
+  setNotice(
+    `Gameweek ${activeWeek.number} ended successfully. You can now start the next gameweek.`
+  );
+}
+
   async function startGameweek() {
     if (!supabase || !session || !isAdmin) {
       setNotice('Admin access is required.');
