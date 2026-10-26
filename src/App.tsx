@@ -1632,7 +1632,7 @@ points_hit: updatedPointsHits,
   <span>Open a new session</span>
 </button>
 
-              <button className="admin-action" onClick={() => setNotice('Gameweek end controls are not connected yet.')}>
+              <button className="admin-action" onClick={endGameweek}>
                 <CheckCircle2 /><strong>End gameweek</strong><span>Finalize the session</span>
               </button>
               <button className="admin-action" onClick={() => setNotice('Player approval controls need database integration.')}>
