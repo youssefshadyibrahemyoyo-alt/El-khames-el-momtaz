@@ -86,7 +86,9 @@ const leaderboardTabs: { id: LeaderboardTab; label: string }[] = [
   { id: 'ratings', label: 'Ratings' },
 ];
 
-const activeStatuses = ['active', 'started', 'in_progress', 'open'];
+
+const activeStatuses = ['active'];
+
 
 export default function App() {
   const [session, setSession] = useState<any>(null);
