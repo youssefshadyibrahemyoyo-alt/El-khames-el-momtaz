@@ -751,47 +751,29 @@ const updatedPointsHits =
   activeChip === 'Wildcard'
     ? 0
     : extraTransfers * 4;
-     if (deadlinePassed && pendingGameweekId !== null) {
-  const { data: pendingRecord, error: pendingError } = await supabase
-    .from('pending_squads')
-    .upsert(
-      {
-        manager_id: session.user.id,
-        gameweek_id: pendingGameweekId,
-        captain_player_id: captain,
-        vice_captain_player_id: viceCaptain,
-      },
-      { onConflict: 'manager_id,gameweek_id' }
-    )
-    .select('id')
-    .single();
+    
+if (deadlinePassed && pendingGameweekId !== null) {
+  const { error: pendingError } = await supabase.rpc(
+    'save_pending_squad',
+    {
+      p_gameweek_id: pendingGameweekId,
+      p_captain_player_id: captain,
+      p_vice_captain_player_id: viceCaptain,
+      p_player_ids: selected,
+    }
+  );
 
-  if (pendingError) throw pendingError;
-
-  const { error: deletePendingError } = await supabase
-    .from('pending_squad_players')
-    .delete()
-    .eq('pending_squad_id', pendingRecord.id);
-
-  if (deletePendingError) throw deletePendingError;
-
-  const pendingPlayerRows = selected.map((playerId, index) => ({
-    pending_squad_id: pendingRecord.id,
-    player_id: playerId,
-    slot: index + 1,
-  }));
-
-  const { error: insertPendingError } = await supabase
-    .from('pending_squad_players')
-    .insert(pendingPlayerRows);
-
-  if (insertPendingError) throw insertPendingError;
+  if (pendingError) {
+    throw pendingError;
+  }
 
   setSessionMessage(
     'Your transfers are saved for the next gameweek. Your current gameweek squad is unchanged.'
   );
+
   return;
 }
+
 const squadValues = {
   manager_id: session.user.id,
   gameweek_id: gameweek.id,
