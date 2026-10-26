@@ -360,6 +360,26 @@ const startingFreeTransfers = previousSquad
           return;
         }
 
+        if (pendingRecord) {
+          const { data: pendingPlayers, error: pendingPlayersError } = await supabase!
+            .from('pending_squad_players')
+            .select('player_id, slot')
+            .eq('pending_squad_id', pendingRecord.id)
+            .order('slot', { ascending: true });
+
+          if (pendingPlayersError) {
+            setSquadError(`Could not load pending players: ${pendingPlayersError.message}`);
+            setSquadLoading(false);
+            return;
+          }
+
+          if (!pendingPlayers || pendingPlayers.length !== 7) {
+            setSquadError('Your pending squad must contain exactly seven players.');
+            setSquadLoading(false);
+            return;
+          }
+        }
+
 const { data: record, error: recordError } = await supabase!
   .from('fantasy_squads')
   .select('id,manager_id,gameweek_id,captain_player_id,vice_captain_player_id,chip,transfers_used,points_hit,free_transfers')
