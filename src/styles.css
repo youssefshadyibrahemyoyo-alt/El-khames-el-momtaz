@@ -721,3 +721,130 @@ body {
     flex-wrap: nowrap;
   }
 }
+
+/* Hagz Fantasy — focused responsive polish */
+button,
+a,
+input,
+select {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button {
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease,
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--lime);
+  outline-offset: 3px;
+}
+
+.primary:hover:not(:disabled) {
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+}
+
+.secondary:hover:not(:disabled),
+.nav-item:hover:not(.active) {
+  border-color: var(--line);
+  background: var(--panel2);
+}
+
+.egypt-player:hover,
+.egypt-chip:hover:not(:disabled) {
+  border-color: var(--lime);
+}
+
+.egypt-player.selected {
+  box-shadow: 0 0 0 2px rgba(223, 189, 98, 0.2);
+}
+
+.player-card,
+.bench-card,
+.egypt-bench-player,
+.egypt-chip,
+.stat-card,
+.panel {
+  min-width: 0;
+}
+
+.egypt-lineup-layout {
+  align-items: start;
+}
+
+.egypt-pitch {
+  min-width: 0;
+}
+
+.egypt-bench {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 600px) {
+  .egypt-pitch {
+    min-height: 370px;
+  }
+
+  .egypt-formation {
+    gap: 12px 2px;
+  }
+
+  .egypt-shirt {
+    width: 40px;
+    height: 40px;
+  }
+
+  .egypt-chip-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .egypt-chip {
+    padding: 10px 7px;
+  }
+
+  .egypt-chip strong {
+    font-size: 10px;
+  }
+
+  .egypt-chip span {
+    font-size: 9px;
+    line-height: 1.4;
+  }
+
+  .egypt-squad-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .egypt-squad-actions button {
+    width: 100%;
+    min-height: 42px;
+  }
+
+  .transfer-controls button {
+    min-height: 40px;
+  }
+
+  .panel-heading {
+    align-items: flex-start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
