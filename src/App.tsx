@@ -1054,10 +1054,32 @@ points_hit: updatedPointsHits,
                   score. Rotate teams, record stats, climb the table.
                 </p>
                 <div className="hero-actions">
-                  {isAdmin && (
-                    <button className="primary" onClick={() => setScreen('admin')}>
-                      <ShieldCheck size={17} /> Open admin panel
-                    </button>
+  {isAdmin && (
+    <button
+      className="primary"
+      onClick={() => setScreen('admin')}
+    >
+      <ShieldCheck size={17} />
+      Open admin panel
+    </button>
+  )}
+
+  <button
+    className="secondary"
+    onClick={() => setScreen('squad')}
+  >
+    View my squad
+    <ChevronRight size={16} />
+  </button>
+
+  <button
+    className="primary"
+    onClick={() => setScreen('players')}
+  >
+    Player Market
+    <ArrowLeftRight size={16} />
+  </button>
+</div>
                   )}
                   
 <div className="hero-actions">
