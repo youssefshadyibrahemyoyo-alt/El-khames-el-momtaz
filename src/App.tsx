@@ -1053,7 +1053,8 @@ points_hit: updatedPointsHits,
                   Every 15-minute match counts toward one combined session
                   score. Rotate teams, record stats, climb the table.
                 </p>
-                <div className="hero-actions">
+                
+<div className="hero-actions">
   {isAdmin && (
     <button
       className="primary"
@@ -1080,16 +1081,7 @@ points_hit: updatedPointsHits,
     <ArrowLeftRight size={16} />
   </button>
 </div>
-                  )}
-                  
-<div className="hero-actions">
-  <button className="secondary" onClick={() => setScreen('squad')}>
-    View my squad <ChevronRight size={16} />
-  </button>
-  <button className="primary" onClick={() => setScreen('players')}>
-    Player Market <ArrowLeftRight size={16} />
-  </button>
-</div>
+
 
                 </div>
               </div>
