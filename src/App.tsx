@@ -1083,8 +1083,7 @@ points_hit: updatedPointsHits,
 </div>
 
 
-                </div>
-              </div>
+                              </div>
               <div className="hero-ball">⚽</div>
               <div className="hero-lines" />
             </section>
