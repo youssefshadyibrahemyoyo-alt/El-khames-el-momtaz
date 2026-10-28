@@ -105,7 +105,8 @@ export default function App() {
   const [realPlayers, setRealPlayers] = useState<FootballPlayer[]>([]);
   const [playersLoading, setPlayersLoading] = useState(false);
   const [playersError, setPlayersError] = useState('');
-
+const [playerSearch, setPlayerSearch] = useState('');
+const [priceFilter, setPriceFilter] = useState('all');
   const [gameweek, setGameweek] = useState<Gameweek | null>(null);
   const [squadRecord, setSquadRecord] = useState<SquadRecord | null>(null);
  const [selected, setSelected] = useState<string[]>([]);
