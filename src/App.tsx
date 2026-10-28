@@ -1699,19 +1699,47 @@ points_hit: updatedPointsHits,
             )}
 
             {demoMode && (
-              <div className="leaderboard-list">
-                {demoPlayers.slice(0, 5).map((player, index) => (
-                  <div className="leaderboard-player" key={player.id}>
-                    <span className={`rank ${index === 0 ? 'first' : ''}`}>{String(index + 1).padStart(2, '0')}</span>
-                    <div className="player-photo small-photo">{player.name.slice(0, 1)}</div>
-                    <div className="leaderboard-player-info">
-                      <strong>{player.name}</strong><span>Sample data only</span>
-                    </div>
-                    <strong className="leaderboard-stat">
-                      {leaderboardTab === 'ratings' ? '—' : player.points}
-                    </strong>
-                  </div>
-                ))}
+             
+{demoMode && (
+  <div className="leaderboard-list">
+    <div className="leaderboard-table-heading">
+      <span>RANK</span>
+      <span>PLAYER</span>
+      <span>PERFORMANCE</span>
+    </div>
+
+    {demoPlayers
+      .slice(0, 5)
+      .map((player, index) => (
+        <div
+          className={`leaderboard-player leaderboard-row-${index + 1}`}
+          key={player.id}
+        >
+          <span className={`rank ${index < 3 ? `podium podium-${index + 1}` : ''}`}>
+            {index === 0 ? '🏆' : String(index + 1).padStart(2, '0')}
+          </span>
+
+          <div className="player-photo small-photo">
+            {player.name.slice(0, 1)}
+          </div>
+
+          <div className="leaderboard-player-info">
+            <strong>{player.name}</strong>
+            <span>{index === 0 ? 'League leader' : 'Fantasy manager'}</span>
+          </div>
+
+          <strong className="leaderboard-stat">
+            {leaderboardTab === 'ratings'
+              ? '—'
+              : leaderboardTab === 'contributions'
+                ? `${player.points} G+A`
+                : `${player.points} ${leaderboardTab === 'goals' ? 'G' : 'A'}`}
+          </strong>
+        </div>
+      ))}
+  </div>
+)}
+
               </div>
             )}
           </section>
