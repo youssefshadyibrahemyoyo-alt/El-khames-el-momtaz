@@ -246,7 +246,34 @@ const [didNotPlay, setDidNotPlay] = useState<string[]>([]);
   const selectedPlayers = selected
     .map(id => playerById.get(id))
     .filter((p): p is LeaguePlayer => Boolean(p));
+useEffect(() => {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    return;
+  }
 
+  const elements = document.querySelectorAll(
+    '.hero, .stats-grid, .panel, .stat-card, .rule-grid > div'
+  );
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    },
+    { threshold: 0.08 }
+  );
+
+  elements.forEach((element) => {
+    element.classList.add('js-scroll-reveal');
+    observer.observe(element);
+  });
+
+  return () => observer.disconnect();
+}, []);
   const selectedCost = selectedPlayers.reduce((sum, p) => sum + p.price, 0);
 
   const starters = selected.slice(0, 5);
