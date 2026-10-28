@@ -172,9 +172,7 @@ const [didNotPlay, setDidNotPlay] = useState<string[]>([]);
 
   async function submitAuth(e: FormEvent) {
     e.preventDefault();
-    setNotice(error
-  ? error.message
-  : 'Account created! Check your email if confirmation is required, then log in.');
+    setNotice('Account created! Check your email if confirmation is required, then log in.');
 
     if (!supabase) {
       setNotice('Connect Supabase to enable real accounts.');
