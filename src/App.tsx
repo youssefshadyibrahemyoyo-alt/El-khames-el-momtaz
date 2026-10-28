@@ -172,7 +172,9 @@ const [didNotPlay, setDidNotPlay] = useState<string[]>([]);
 
   async function submitAuth(e: FormEvent) {
     e.preventDefault();
-    setNotice('');
+    setNotice(error
+  ? error.message
+  : 'Account created! Check your email if confirmation is required, then log in.');
 
     if (!supabase) {
       setNotice('Connect Supabase to enable real accounts.');
@@ -206,7 +208,7 @@ const [didNotPlay, setDidNotPlay] = useState<string[]>([]);
 
   const role = demoMode ? demoRole : profile?.role;
   const isAdmin = role === 'admin_player';
-  const approved = demoMode || profile?.player_approval_status === 'approved';
+  const approved = demoMode || Boolean(session && profile);
 
   const players: LeaguePlayer[] = demoMode
     ? demoPlayers
