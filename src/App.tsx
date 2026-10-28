@@ -1537,9 +1537,28 @@ points_hit: updatedPointsHits,
         to the football_players table and marked as active in Supabase.
       </div>
     )}
+<div className="player-market-filters">
+  <input
+    type="search"
+    className="player-search"
+    placeholder="Search players..."
+    value={playerSearch}
+    onChange={e => setPlayerSearch(e.target.value)}
+  />
 
+  <select
+    className="player-price-filter"
+    value={priceFilter}
+    onChange={e => setPriceFilter(e.target.value)}
+  >
+    <option value="all">All prices</option>
+    <option value="under5">Under £5m</option>
+    <option value="5to7">£5m – £7m</option>
+    <option value="over7">Over £7m</option>
+  </select>
+</div>
     <div className="player-list">
-      {players.map(p => {
+      {filteredPlayers.map(p => {
         const isSelected = selected.includes(p.id);
 
         return (
