@@ -1965,3 +1965,42 @@ button:active {
     scroll-behavior: auto !important;
   }
 }
+
+/* Player Market search and filters */
+.player-market-filters {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 180px;
+  gap: 12px;
+  margin: 22px 0 18px;
+}
+
+.player-search,
+.player-price-filter {
+  width: 100%;
+  min-width: 0;
+  min-height: 46px;
+  padding: 0 14px;
+  border: 1px solid #dce6dc;
+  border-radius: 12px;
+  background: #fff;
+  color: #203b2d;
+  font: inherit;
+  outline: none;
+  transition: border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.player-search:focus,
+.player-price-filter:focus {
+  border-color: #24834b;
+  box-shadow: 0 0 0 3px rgba(36, 131, 75, 0.12);
+}
+
+.player-search::placeholder {
+  color: #89968c;
+}
+
+@media (max-width: 600px) {
+  .player-market-filters {
+    grid-template-columns: 1fr;
+  }
+}
