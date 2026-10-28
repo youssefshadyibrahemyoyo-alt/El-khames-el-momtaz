@@ -1700,8 +1700,7 @@ points_hit: updatedPointsHits,
 
             {demoMode && (
              
-{demoMode && (
-  <div className="leaderboard-list">
+
     <div className="leaderboard-table-heading">
       <span>RANK</span>
       <span>PLAYER</span>
