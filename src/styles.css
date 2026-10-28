@@ -448,3 +448,97 @@ button:active:not(:disabled),
     transition: none;
   }
 }
+
+/* HAGZ FANTASY — balanced page spacing */
+
+.main {
+  padding-top: 40px;
+  padding-bottom: 56px;
+}
+
+.topbar {
+  margin-bottom: 32px;
+}
+
+.hero {
+  min-height: 380px;
+  padding: clamp(32px, 4vw, 56px);
+}
+
+.stats-grid {
+  gap: 18px;
+  margin: 26px 0;
+}
+
+.stat-card {
+  padding: 26px;
+}
+
+.panel {
+  margin-top: 26px;
+  padding: clamp(24px, 2.8vw, 34px);
+}
+
+.panel-heading {
+  margin-bottom: 26px;
+  padding-bottom: 20px;
+}
+
+.rule-grid {
+  gap: 14px;
+}
+
+.rule-grid > div {
+  padding: 19px;
+  gap: 10px;
+}
+
+.squad-grid {
+  gap: 14px;
+}
+
+.leaderboard-list {
+  gap: 11px;
+}
+
+@media (max-width: 760px) {
+  .main {
+    padding: 24px 16px 40px;
+  }
+
+  .topbar {
+    margin-bottom: 24px;
+  }
+
+  .hero {
+    min-height: 340px;
+    padding: 28px 22px;
+  }
+
+  .stats-grid {
+    gap: 10px;
+    margin: 20px 0;
+  }
+
+  .stat-card {
+    padding: 18px 14px;
+  }
+
+  .panel {
+    margin-top: 20px;
+    padding: 22px 17px;
+  }
+
+  .panel-heading {
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+  }
+
+  .rule-grid {
+    gap: 10px;
+  }
+
+  .rule-grid > div {
+    padding: 14px;
+  }
+}
