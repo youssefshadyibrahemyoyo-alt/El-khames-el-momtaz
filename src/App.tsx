@@ -1,4 +1,3 @@
-
 import { FormEvent, useEffect, useState } from 'react';
 import {
   ArrowLeftRight,
@@ -1699,8 +1698,7 @@ points_hit: updatedPointsHits,
             )}
 
             {demoMode && (
-             
-
+              <div className="leaderboard-list">
     <div className="leaderboard-table-heading">
       <span>RANK</span>
       <span>PLAYER</span>
@@ -1738,9 +1736,6 @@ points_hit: updatedPointsHits,
       ))}
   </div>
 )}
-
-              </div>
-            )}
           </section>
         )}
 
