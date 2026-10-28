@@ -221,6 +221,19 @@ const [didNotPlay, setDidNotPlay] = useState<string[]>([]);
       }));
 
   const playerById = new Map(players.map(p => [p.id, p]));
+  const filteredPlayers = players.filter(p => {
+  const matchesSearch = p.name
+    .toLowerCase()
+    .includes(playerSearch.toLowerCase());
+
+  const matchesPrice =
+    priceFilter === 'all' ||
+    (priceFilter === 'under5' && p.price < 5) ||
+    (priceFilter === '5to7' && p.price >= 5 && p.price <= 7) ||
+    (priceFilter === 'over7' && p.price > 7);
+
+  return matchesSearch && matchesPrice;
+});
  const isTransferDeadlinePassed = () => {
   if (!gameweek?.transfer_deadline) return false;
 
