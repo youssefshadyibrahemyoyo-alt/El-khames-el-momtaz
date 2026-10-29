@@ -1,14 +1,12 @@
-
-
 {
-  "name": "Hagz Fantasy",
-  "short_name": "Hagz",
-  "description": "Your fantasy football experience",
+  "name": "El Khames El Momtaz",
+  "short_name": "El Khames",
+  "description": "Thursday football fantasy league",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#123d2a",
-  "theme_color": "#123d2a",
+  "background_color": "#193f2c",
+  "theme_color": "#193f2c",
   "icons": [
     {
       "src": "/hagz-icon-192.png",
