@@ -768,7 +768,17 @@ const [didNotPlay, setDidNotPlay] = useState<string[]>([]);
                   })}`
                 : 'No transfer deadline set'}
             </span>
-            <div className="avatar">{isAdmin ? 'A' : 'P'}</div>
+                   <div className="avatar">{isAdmin ? 'A' : 'P'}</div>
+            <button
+              type="button"
+              className="icon-btn"
+              title={demoMode ? 'Switch preview role' : 'Sign out'}
+              onClick={() => demoMode
+                ? setDemoRole(demoRole === 'admin_player' ? 'player' : 'admin_player')
+                : void signOut()}
+            >
+              {demoMode ? <ArrowLeftRight size={18} /> : <LogOut size={18} />}
+            </button>
           </div>
         </header>
 
