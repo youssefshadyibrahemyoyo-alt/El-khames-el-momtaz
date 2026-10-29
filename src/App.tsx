@@ -145,42 +145,42 @@ const [didNotPlay, setDidNotPlay] = useState<string[]>([]);
   const [leaderboardLoading, setLeaderboardLoading] = useState(false);
   const [leaderboardError, setLeaderboardError] = useState('');
 
-  async function loadProfile(id: string) {
-    if (!supabase) return;
-
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('id,display_name,role,player_approval_status')
-      .eq('id', id)
-      .single();
-
-    if (error) {
-      setNotice('Your account profile could not be loaded. Check your database setup.');
-    } else {
-      setProfile(data as Profile);
-    }
-  }
+   const [profileLoading, setProfileLoading] = useState(Boolean(supabase));
 
   useEffect(() => {
     if (!supabase) return;
+    let active = true;
 
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      if (data.session) void loadProfile(data.session.user.id);
+    async function fetchProfile(id: string) {
+      setProfileLoading(true);
+      const { data, error } = await supabase!
+        .from('profiles')
+        .select('id,display_name,role,player_approval_status')
+        .eq('id', id)
+        .single();
+      if (!active) return;
+      if (error) {
+        setNotice('Your account profile could not be loaded. Check your database setup.');
+      } else {
+        setProfile(data as Profile);
+      }
+      setProfileLoading(false);
+    }
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, next) => {
+      setSession(next);
+      if (next) {
+        void fetchProfile(next.user.id);
+      } else {
+        setProfile(null);
+        setProfileLoading(false);
+      }
     });
 
-    const { data: listener } = supabase.auth.onAuthStateChange(
-      (_event, next) => {
-        setSession(next);
-        if (next) {
-          setTimeout(() => void loadProfile(next.user.id), 0);
-        } else {
-          setProfile(null);
-        }
-      }
-    );
-
-    return () => listener.subscription.unsubscribe();
+    return () => {
+      active = false;
+      listener.subscription.unsubscribe();
+    };
   }, []);
 
   async function submitAuth(e: FormEvent) {
