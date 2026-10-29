@@ -4,12 +4,14 @@ import type {
   GameweekHighlights,
   H2HOverview,
   LeagueMonth,
+  LeagueNewsFeed,
   LeaguePlayer,
   ManagerTrophyMap,
   MonthlyStanding,
   PlayerProfileDetail,
   PublicMatch,
   ScoringRule,
+  SeasonRecords,
   Standing,
   SquadInspection,
 } from '../types/league';
@@ -398,19 +400,23 @@ export function buildDemoPlayerProfile(player: LeaguePlayer): PlayerProfileDetai
 }
 
 export function buildDemoInspection(managerName: string): SquadInspection {
-  const sample = DEMO_PLAYERS.slice(0, 7);
+  const isPrimary = managerName === 'Yako' || managerName === 'Admin' || managerName === 'Player';
+  const sample =
+    !isPrimary && DEMO_PLAYERS.length >= 8
+      ? [DEMO_PLAYERS[1], DEMO_PLAYERS[2], DEMO_PLAYERS[0], DEMO_PLAYERS[3], DEMO_PLAYERS[7], DEMO_PLAYERS[5], DEMO_PLAYERS[6]]
+      : DEMO_PLAYERS.slice(0, 7);
   return {
     has_squad: true,
     is_rolled_over: managerName === 'Benas',
-    chip: managerName === 'Yako' ? 'Triple Captain' : null,
+    chip: isPrimary ? 'Triple Captain' : null,
     transfers_used: 1,
     points_hit: 0,
-    total_points: managerName === 'Yako' ? 42 : 35,
+    total_points: isPrimary ? 42 : 35,
     players: sample.map((p, idx) => {
       const isStarter = idx < 5;
       const isCap = idx === 0;
       const isVice = idx === 1;
-      const mult = isCap ? (managerName === 'Yako' ? 3 : 2) : 1;
+      const mult = isCap ? (isPrimary ? 3 : 2) : 1;
       const raw = Math.max(2, Math.round(p.points / 3));
       return {
         slot: idx + 1,
@@ -536,5 +542,101 @@ export const DEMO_MONTHLY_STANDINGS: MonthlyStanding[] = DEMO_STANDINGS.map(s =>
   points: s.total_points,
   gameweeks_played: s.gameweeks_played,
 }));
+
+export const DEMO_NEWS_FEED: LeagueNewsFeed = {
+  bulletins: [
+    {
+      id: 1,
+      category: 'announcement',
+      title: 'Thursday Pitch #2 Confirmed — 9:00 PM Cairo Kickoff!',
+      body: 'Bring white and black shirts. Remember to lock your Starting V, bench order, and Captain before the transfer deadline.',
+      is_pinned: true,
+      author_name: 'Yako',
+      created_at: new Date().toISOString(),
+    },
+    {
+      id: 2,
+      category: 'transfer',
+      title: 'New 4th Chip Unlocked: Free Hit ⚡',
+      body: 'Missing half your squad one Thursday? Activate Free Hit for unlimited transfers for a single Gameweek — your previous squad returns automatically next week.',
+      is_pinned: false,
+      author_name: 'League Admin',
+      created_at: new Date(Date.now() - 3600 * 1000 * 5).toISOString(),
+    },
+  ],
+  auto_wire: [
+    {
+      key: 'gw-open',
+      kind: 'matchday',
+      headline: 'Gameweek #2 Transfers Open',
+      detail: 'Lock in your 5 starters, bench order, and Captain before Thursday night.',
+      ts: new Date().toISOString(),
+    },
+    {
+      key: 'price-karim',
+      kind: 'transfer',
+      headline: 'Karim rises to £8.5m',
+      detail: 'Market value shifted by +£0.2m after the latest Thursday round.',
+      ts: new Date().toISOString(),
+    },
+    {
+      key: 'mvp-2-2',
+      kind: 'announcement',
+      headline: '⭐ Karim named Match #2 MVP (GW #2)',
+      detail: 'Recorded 2 goal(s) and 1 assist(s) in the 15-minute clash.',
+      ts: new Date().toISOString(),
+    },
+  ],
+};
+
+export const DEMO_SEASON_RECORDS: SeasonRecords = {
+  highest_gw_club: {
+    manager_id: 'demo-1',
+    display_name: 'Yako',
+    team_name: 'Yako Royals',
+    avatar_url: null,
+    gameweek_number: 2,
+    points: 42,
+  },
+  most_goals_night: {
+    player_id: 'Karim',
+    display_name: 'Karim',
+    photo_url: null,
+    kit_number: 10,
+    gameweek_number: 2,
+    value: 4,
+  },
+  most_pts_night: {
+    player_id: 'Karim',
+    display_name: 'Karim',
+    photo_url: null,
+    kit_number: 10,
+    gameweek_number: 2,
+    value: 23,
+  },
+  most_mvps: {
+    player_id: 'Karim',
+    display_name: 'Karim',
+    photo_url: null,
+    kit_number: 10,
+    value: 2,
+  },
+  highest_match_rating: {
+    player_id: 'Omar',
+    display_name: 'Omar',
+    photo_url: null,
+    kit_number: 7,
+    gameweek_number: 2,
+    match_number: 1,
+    value: 9.4,
+  },
+  longest_h2h_streak: {
+    manager_id: 'demo-1',
+    display_name: 'Yako',
+    team_name: 'Yako Royals',
+    avatar_url: null,
+    streak: 2,
+  },
+};
 
 

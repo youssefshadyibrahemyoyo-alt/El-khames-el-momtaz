@@ -194,6 +194,7 @@ export default function SquadScreen({
     { name: 'Triple Captain', icon: '👑', desc: t('chipTripleDesc') },
     { name: 'Wildcard', icon: '🃏', desc: t('chipWildcardDesc') },
     { name: 'Bench Boost', icon: '🪑', desc: t('chipBenchDesc') },
+    { name: 'Free Hit', icon: '⚡', desc: t('chipFreeHitDesc') },
   ];
 
   function executeSwap(starterId: string, benchId: string) {

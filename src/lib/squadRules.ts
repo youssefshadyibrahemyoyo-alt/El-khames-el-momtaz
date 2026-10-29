@@ -38,7 +38,9 @@ export function calculateTransfersAndHits(params: {
       ? selected.filter(id => !baselineIds.includes(id)).length
       : 0;
   const pointsHits =
-    activeChip === 'Wildcard' ? 0 : Math.max(0, transfersUsed - freeTransfers) * 4;
+    activeChip === 'Wildcard' || activeChip === 'Free Hit'
+      ? 0
+      : Math.max(0, transfersUsed - freeTransfers) * 4;
   return { transfersUsed, pointsHits };
 }
 
@@ -51,7 +53,12 @@ export function computeFreeTransfers(params: {
   if (currentSquad?.free_transfers) {
     return currentSquad.free_transfers;
   }
-  if (!previousSquad || previousWeekNumber <= 1 || previousSquad.chip === 'Wildcard') {
+  if (
+    !previousSquad ||
+    previousWeekNumber <= 1 ||
+    previousSquad.chip === 'Wildcard' ||
+    previousSquad.chip === 'Free Hit'
+  ) {
     return 1;
   }
   const carried = Math.max(0, (previousSquad.free_transfers ?? 1) - (previousSquad.transfers_used ?? 0));

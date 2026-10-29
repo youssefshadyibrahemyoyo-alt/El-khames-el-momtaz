@@ -117,4 +117,8 @@ GROUP BY fp.id;
 --   - public.get_player_form_map()                        [3-GW rolling fantasy form average per player]
 --   - public.list_league_months()                         [scored Cairo calendar months for monthly tables]
 --   - public.monthly_standings(p_month_key)               [Manager of the Month standings per YYYY-MM]
+--   - public.get_league_news_feed()                       [Clubhouse Bulletins + automatic Live League Wire]
+--   - public.admin_post_news / admin_toggle_pin_news / admin_delete_news
+--   - public.get_season_records()                         [All-Time Season Hall of Records]
+--   - 4 Chips supported across save_squad / save_pre_gw_lineup: Triple Captain, Wildcard, Bench Boost, Free Hit
 

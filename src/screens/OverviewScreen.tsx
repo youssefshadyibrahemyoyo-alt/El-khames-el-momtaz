@@ -14,6 +14,7 @@ import { useLanguage } from '../i18n/LanguageContext';
 import type { TranslationKey } from '../i18n/translations';
 import AnimatedNumber from '../components/AnimatedNumber';
 import InstallAppBanner from '../components/InstallAppBanner';
+import LatestNewsSection from '../components/LatestNewsSection';
 
 type Props = {
   isAdmin: boolean;
@@ -176,72 +177,76 @@ export default function OverviewScreen({
         </div>
       </section>
 
-      <section
-        className="panel stagger-item"
-        style={{ '--stagger-i': 4 } as React.CSSProperties}
-      >
-        <div className="panel-heading">
-          <div>
-            <h3>{t('howLeagueWorks')}</h3>
-            <p>{t('howLeagueSub')}</p>
-          </div>
-          <span className="tag">{t('leagueRulesTag')}</span>
-        </div>
-        <div className="rule-grid">
-          <div className="hover-lift-card">
-            <ShieldCheck />
-            <strong>{t('ruleSquadTitle')}</strong>
-            <span>{t('ruleSquadDesc')}</span>
-          </div>
-          <div className="hover-lift-card">
-            <Award />
-            <strong>{t('ruleCapTitle')}</strong>
-            <span>{t('ruleCapDesc')}</span>
-          </div>
-          <div className="hover-lift-card">
-            <Sparkles />
-            <strong>{t('ruleTransferTitle')}</strong>
-            <span>{t('ruleTransferDesc')}</span>
-          </div>
-          <div className="hover-lift-card">
-            <Eye />
-            <strong>{t('ruleInspectTitle')}</strong>
-            <span>{t('ruleInspectDesc')}</span>
-          </div>
-        </div>
-      </section>
+      <LatestNewsSection demoMode={demoMode} isAdmin={isAdmin} />
 
-      {scoringRules.length > 0 && (
+      <div className="home-bottom-grid">
         <section
           className="panel stagger-item"
-          style={{ '--stagger-i': 5 } as React.CSSProperties}
+          style={{ '--stagger-i': 5, marginTop: 0 } as React.CSSProperties}
         >
           <div className="panel-heading">
             <div>
-              <h3>{t('scoringHeading')}</h3>
-              <p>{t('scoringSub')}</p>
+              <h3>{t('howLeagueWorks')}</h3>
+              <p>{t('howLeagueSub')}</p>
             </div>
-            <span className="tag">
-              <Trophy size={11} style={{ verticalAlign: 'middle', marginInlineEnd: 4 }} />
-              {t('pointsTag')}
-            </span>
+            <span className="tag">{t('leagueRulesTag')}</span>
           </div>
-          <div className="scoring-pills-grid">
-            {scoringRules.map((rule, idx) => (
-              <div
-                key={rule.key}
-                className="scoring-pill hover-lift-card stagger-item"
-                style={{ '--stagger-i': idx + 2 } as React.CSSProperties}
-              >
-                <span>{labelForRule(rule)}</span>
-                <strong className={rule.points >= 0 ? 'pts-pos' : 'pts-neg'}>
-                  {rule.points > 0 ? `+${rule.points}` : rule.points} {t('ptsUnit')}
-                </strong>
-              </div>
-            ))}
+          <div className="rule-grid rule-grid-2col">
+            <div className="hover-lift-card">
+              <ShieldCheck />
+              <strong>{t('ruleSquadTitle')}</strong>
+              <span>{t('ruleSquadDesc')}</span>
+            </div>
+            <div className="hover-lift-card">
+              <Award />
+              <strong>{t('ruleCapTitle')}</strong>
+              <span>{t('ruleCapDesc')}</span>
+            </div>
+            <div className="hover-lift-card">
+              <Sparkles />
+              <strong>{t('ruleTransferTitle')}</strong>
+              <span>{t('ruleTransferDesc')}</span>
+            </div>
+            <div className="hover-lift-card">
+              <Eye />
+              <strong>{t('ruleInspectTitle')}</strong>
+              <span>{t('ruleInspectDesc')}</span>
+            </div>
           </div>
         </section>
-      )}
+
+        {scoringRules.length > 0 && (
+          <section
+            className="panel stagger-item"
+            style={{ '--stagger-i': 6, marginTop: 0 } as React.CSSProperties}
+          >
+            <div className="panel-heading">
+              <div>
+                <h3>{t('scoringHeading')}</h3>
+                <p>{t('scoringSub')}</p>
+              </div>
+              <span className="tag">
+                <Trophy size={11} style={{ verticalAlign: 'middle', marginInlineEnd: 4 }} />
+                {t('pointsTag')}
+              </span>
+            </div>
+            <div className="scoring-pills-grid">
+              {scoringRules.map((rule, idx) => (
+                <div
+                  key={rule.key}
+                  className="scoring-pill hover-lift-card stagger-item"
+                  style={{ '--stagger-i': idx + 2 } as React.CSSProperties}
+                >
+                  <span>{labelForRule(rule)}</span>
+                  <strong className={rule.points >= 0 ? 'pts-pos' : 'pts-neg'}>
+                    {rule.points > 0 ? `+${rule.points}` : rule.points} {t('ptsUnit')}
+                  </strong>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+      </div>
     </>
   );
 }

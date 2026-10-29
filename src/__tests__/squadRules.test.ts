@@ -56,14 +56,19 @@ describe('squadRules', () => {
       computeFreeTransfers({ currentSquad: null, previousSquad: gw2Squad, previousWeekNumber: 2 })
     ).toBe(2);
 
-    // Wildcard resets next week's free transfers to 1
+    // Wildcard & Free Hit both reset next week's free transfers to 1
     const wildcardSquad: SquadRecord = { ...gw2Squad, chip: 'Wildcard', transfers_used: 5 };
     expect(
       computeFreeTransfers({ currentSquad: null, previousSquad: wildcardSquad, previousWeekNumber: 2 })
     ).toBe(1);
+
+    const freeHitSquad: SquadRecord = { ...gw2Squad, chip: 'Free Hit', transfers_used: 6 };
+    expect(
+      computeFreeTransfers({ currentSquad: null, previousSquad: freeHitSquad, previousWeekNumber: 2 })
+    ).toBe(1);
   });
 
-  it('calculates 4-point hits and waives hits when Wildcard is active', () => {
+  it('calculates 4-point hits and waives hits when Wildcard or Free Hit is active', () => {
     const base = ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7'];
     const next = ['p1', 'p2', 'p3', 'p4', 'p8', 'p9', 'p10']; // 3 transfers
 
@@ -82,6 +87,15 @@ describe('squadRules', () => {
         baselineIds: base,
         freeTransfers: 1,
         activeChip: 'Wildcard',
+      })
+    ).toEqual({ transfersUsed: 3, pointsHits: 0 });
+
+    expect(
+      calculateTransfersAndHits({
+        selected: next,
+        baselineIds: base,
+        freeTransfers: 1,
+        activeChip: 'Free Hit',
       })
     ).toEqual({ transfersUsed: 3, pointsHits: 0 });
 

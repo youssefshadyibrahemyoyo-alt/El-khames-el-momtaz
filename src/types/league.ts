@@ -5,6 +5,7 @@ export type LeaderboardTab =
   | 'h2h'
   | 'cup'
   | 'highlights'
+  | 'records'
   | 'goals'
   | 'assists'
   | 'contributions'
@@ -16,7 +17,7 @@ export type AccountRole = 'admin_player' | 'player';
 
 export type ApprovalStatus = 'pending' | 'approved' | 'rejected';
 
-export type ChipName = 'Triple Captain' | 'Wildcard' | 'Bench Boost';
+export type ChipName = 'Triple Captain' | 'Wildcard' | 'Bench Boost' | 'Free Hit';
 
 export type Profile = {
   id: string;
@@ -423,6 +424,81 @@ export type MonthlyStanding = {
   avatar_url?: string | null;
   points: number;
   gameweeks_played: number;
+};
+
+export type NewsCategory = 'announcement' | 'injury' | 'matchday' | 'transfer';
+
+export type LeagueNewsBulletin = {
+  id: number;
+  category: NewsCategory;
+  title: string;
+  body: string;
+  is_pinned: boolean;
+  author_name: string;
+  created_at: string;
+};
+
+export type AutoWireItem = {
+  key: string;
+  kind: NewsCategory;
+  headline: string;
+  detail: string;
+  ts: string;
+};
+
+export type LeagueNewsFeed = {
+  bulletins: LeagueNewsBulletin[];
+  auto_wire: AutoWireItem[];
+};
+
+export type SeasonRecords = {
+  highest_gw_club: {
+    manager_id: string;
+    display_name: string;
+    team_name?: string | null;
+    avatar_url?: string | null;
+    gameweek_number: number;
+    points: number;
+  } | null;
+  most_goals_night: {
+    player_id: string;
+    display_name: string;
+    photo_url?: string | null;
+    kit_number?: number | null;
+    gameweek_number: number;
+    value: number;
+  } | null;
+  most_pts_night: {
+    player_id: string;
+    display_name: string;
+    photo_url?: string | null;
+    kit_number?: number | null;
+    gameweek_number: number;
+    value: number;
+  } | null;
+  most_mvps: {
+    player_id: string;
+    display_name: string;
+    photo_url?: string | null;
+    kit_number?: number | null;
+    value: number;
+  } | null;
+  highest_match_rating: {
+    player_id: string;
+    display_name: string;
+    photo_url?: string | null;
+    kit_number?: number | null;
+    gameweek_number: number;
+    match_number: number;
+    value: number;
+  } | null;
+  longest_h2h_streak: {
+    manager_id: string;
+    display_name: string;
+    team_name?: string | null;
+    avatar_url?: string | null;
+    streak: number;
+  } | null;
 };
 
 

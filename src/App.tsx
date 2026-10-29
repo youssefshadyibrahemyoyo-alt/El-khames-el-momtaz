@@ -330,12 +330,22 @@ export default function App() {
         : [];
 
       if (!target) {
-        const latestSquad =
+        const immediateLatestSquad =
           squads
             .slice()
             .sort(
               (a, b) => (numberOf.get(b.gameweek_id) ?? 0) - (numberOf.get(a.gameweek_id) ?? 0)
             )[0] ?? null;
+
+        const latestSquad =
+          squads
+            .slice()
+            .sort((a, b) => {
+              const aNonFh = a.chip === 'Free Hit' ? 0 : 1;
+              const bNonFh = b.chip === 'Free Hit' ? 0 : 1;
+              if (bNonFh !== aNonFh) return bNonFh - aNonFh;
+              return (numberOf.get(b.gameweek_id) ?? 0) - (numberOf.get(a.gameweek_id) ?? 0);
+            })[0] ?? null;
 
         let latestIds: string[] = [];
         if (latestSquad) {
@@ -356,8 +366,10 @@ export default function App() {
         setBaseFree(
           computeFreeTransfers({
             currentSquad: null,
-            previousSquad: latestSquad,
-            previousWeekNumber: latestSquad ? (numberOf.get(latestSquad.gameweek_id) ?? 0) : 0,
+            previousSquad: immediateLatestSquad,
+            previousWeekNumber: immediateLatestSquad
+              ? (numberOf.get(immediateLatestSquad.gameweek_id) ?? 0)
+              : 0,
           })
         );
 
@@ -430,12 +442,21 @@ export default function App() {
       }
 
       const current = squads.find(s => s.gameweek_id === target.id) ?? null;
-      const previous =
+      const immediatePrevious =
         squads
           .filter(s => (numberOf.get(s.gameweek_id) ?? 0) < target.number)
           .sort(
             (a, b) => (numberOf.get(b.gameweek_id) ?? 0) - (numberOf.get(a.gameweek_id) ?? 0)
           )[0] ?? null;
+      const previous =
+        squads
+          .filter(s => (numberOf.get(s.gameweek_id) ?? 0) < target.number)
+          .sort((a, b) => {
+            const aNonFh = a.chip === 'Free Hit' ? 0 : 1;
+            const bNonFh = b.chip === 'Free Hit' ? 0 : 1;
+            if (bNonFh !== aNonFh) return bNonFh - aNonFh;
+            return (numberOf.get(b.gameweek_id) ?? 0) - (numberOf.get(a.gameweek_id) ?? 0);
+          })[0] ?? null;
 
       setUsedChips(
         squads.filter(s => s.chip && s.gameweek_id !== target.id).map(s => String(s.chip))
@@ -444,8 +465,10 @@ export default function App() {
       setBaseFree(
         computeFreeTransfers({
           currentSquad: current,
-          previousSquad: previous,
-          previousWeekNumber: previous ? (numberOf.get(previous.gameweek_id) ?? 0) : 0,
+          previousSquad: immediatePrevious,
+          previousWeekNumber: immediatePrevious
+            ? (numberOf.get(immediatePrevious.gameweek_id) ?? 0)
+            : 0,
         })
       );
 

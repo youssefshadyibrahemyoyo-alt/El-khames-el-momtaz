@@ -13,6 +13,7 @@ import type {
   LeaguePlayer,
   ManagerTrophyMap,
   MonthlyStanding,
+  SeasonRecords,
   SquadInspection,
   Standing,
 } from '../types/league';
@@ -25,6 +26,7 @@ import {
   DEMO_HIGHLIGHTS,
   DEMO_MONTHLY_STANDINGS,
   DEMO_MONTHS,
+  DEMO_SEASON_RECORDS,
   DEMO_STANDINGS,
 } from '../lib/demoData';
 import {
@@ -81,6 +83,12 @@ export default function LeaderboardScreen({
   const [highlightGwId, setHighlightGwId] = useState<number | 'latest'>('latest');
   const [highlights, setHighlights] = useState<GameweekHighlights | null>(null);
   const [highlightsLoading, setHighlightsLoading] = useState(false);
+
+  // All-Time Season Records state
+  const [records, setRecords] = useState<SeasonRecords | null>(
+    demoMode ? DEMO_SEASON_RECORDS : null
+  );
+  const [recordsLoading, setRecordsLoading] = useState(false);
 
   // Knockout Cup state
   const [cupData, setCupData] = useState<CupOverview | null>(null);
@@ -257,6 +265,27 @@ export default function LeaderboardScreen({
     };
   }, [demoMode, tab, highlightGwId]);
 
+  // Load All-Time Season Records
+  useEffect(() => {
+    if (tab !== 'records') return;
+    if (demoMode || !supabase) {
+      setRecords(DEMO_SEASON_RECORDS);
+      return;
+    }
+    let cancelled = false;
+    setRecordsLoading(true);
+    supabase.rpc('get_season_records').then(({ data, error }) => {
+      if (cancelled) return;
+      if (!error && data) {
+        setRecords(data as SeasonRecords);
+      }
+      setRecordsLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [demoMode, tab]);
+
   // Load player stat leaderboards
   useEffect(() => {
     if (
@@ -265,7 +294,8 @@ export default function LeaderboardScreen({
       tab === 'managers' ||
       tab === 'h2h' ||
       tab === 'cup' ||
-      tab === 'highlights'
+      tab === 'highlights' ||
+      tab === 'records'
     ) {
       return;
     }
@@ -340,11 +370,15 @@ export default function LeaderboardScreen({
     }
   }
 
-  const tabs: { id: LeaderboardTab; label: string }[] = [
+  const competitionTabs: { id: LeaderboardTab; label: string }[] = [
     { id: 'managers', label: t('tabManagers') },
     { id: 'h2h', label: `⚔️ ${t('tabH2H')}` },
     { id: 'cup', label: `🏆 ${t('tabCup')}` },
     { id: 'highlights', label: `✨ ${t('tabHighlights')}` },
+    { id: 'records', label: `🏅 ${t('tabRecords')}` },
+  ];
+
+  const playerStatTabs: { id: LeaderboardTab; label: string }[] = [
     { id: 'goals', label: t('tabGoals') },
     { id: 'assists', label: t('tabAssists') },
     { id: 'contributions', label: t('tabContributions') },
@@ -356,6 +390,7 @@ export default function LeaderboardScreen({
     h2h: t('descH2H'),
     cup: t('descCup'),
     highlights: t('descHighlights'),
+    records: t('descRecords'),
     goals: `${t('descGoals')} · ${t('tapForProfileHint')}`,
     assists: `${t('descAssists')} · ${t('tapForProfileHint')}`,
     contributions: `${t('descContributions')} · ${t('tapForProfileHint')}`,
@@ -461,24 +496,47 @@ export default function LeaderboardScreen({
                   ? t('tabCup')
                   : tab === 'highlights'
                     ? t('totwHeading')
-                    : t('playerLeaderboardTitle')}
+                    : tab === 'records'
+                      ? t('tabRecords')
+                      : t('playerLeaderboardTitle')}
           </h3>
           <p>{descriptions[tab]}</p>
         </div>
         <Trophy color="#b9954b" />
       </div>
 
-      <div className="leaderboard-tabs">
-        {tabs.map(item => (
-          <button
-            key={item.id}
-            type="button"
-            className={tab === item.id ? 'primary tab-pill-active' : 'secondary'}
-            onClick={() => setTab(item.id)}
-          >
-            {item.label}
-          </button>
-        ))}
+      <div className="leaderboard-nav-groups">
+        <div className="leaderboard-nav-group">
+          <span className="eyebrow">{t('compGroupLabel')}</span>
+          <div className="leaderboard-tabs">
+            {competitionTabs.map(item => (
+              <button
+                key={item.id}
+                type="button"
+                className={tab === item.id ? 'primary tab-pill-active' : 'secondary'}
+                onClick={() => setTab(item.id)}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="leaderboard-nav-group">
+          <span className="eyebrow">{t('statsGroupLabel')}</span>
+          <div className="leaderboard-tabs">
+            {playerStatTabs.map(item => (
+              <button
+                key={item.id}
+                type="button"
+                className={tab === item.id ? 'primary tab-pill-active' : 'secondary'}
+                onClick={() => setTab(item.id)}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* 1. CLASSIC MANAGERS STANDINGS */}
@@ -1146,6 +1204,178 @@ export default function LeaderboardScreen({
         </div>
       )}
 
+      {/* 3B. ALL-TIME SEASON RECORDS (HALL OF RECORDS) */}
+      {tab === 'records' && (
+        <div key="records-stage" className="screen-stage">
+          {recordsLoading ? (
+            <p className="muted">{t('loadingPoints')}</p>
+          ) : (
+            <div className="records-hall-grid">
+              {/* 1. Highest Single-GW Club Score */}
+              <div className="record-showcase-card hover-lift-card">
+                <div className="record-card-icon">👑</div>
+                <span className="eyebrow">{t('recHighestGwClub')}</span>
+                {records?.highest_gw_club ? (
+                  <>
+                    <strong className="record-big-value">
+                      {records.highest_gw_club.points} <small>{t('ptsUnit')}</small>
+                    </strong>
+                    <div className="record-holder-line">
+                      <strong>
+                        {clubTitleOf(
+                          records.highest_gw_club.team_name,
+                          records.highest_gw_club.display_name
+                        )}
+                      </strong>
+                      <span>
+                        {records.highest_gw_club.display_name} · GW #
+                        {records.highest_gw_club.gameweek_number}
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <p className="muted record-empty-note">{t('recordAwaitingFirstMatch')}</p>
+                )}
+              </div>
+
+              {/* 2. Most Goals in One Night */}
+              <div
+                className={`record-showcase-card hover-lift-card ${
+                  records?.most_goals_night ? 'clickable-row' : ''
+                }`}
+                onClick={() =>
+                  records?.most_goals_night &&
+                  onOpenPlayerProfile(records.most_goals_night.player_id)
+                }
+              >
+                <div className="record-card-icon">⚽</div>
+                <span className="eyebrow">{t('recMostGoalsNight')}</span>
+                {records?.most_goals_night ? (
+                  <>
+                    <strong className="record-big-value">
+                      {records.most_goals_night.value} <small>{t('goalsSuffix')}</small>
+                    </strong>
+                    <div className="record-holder-line">
+                      <strong>{records.most_goals_night.display_name}</strong>
+                      <span>GW #{records.most_goals_night.gameweek_number}</span>
+                    </div>
+                  </>
+                ) : (
+                  <p className="muted record-empty-note">{t('recordAwaitingFirstMatch')}</p>
+                )}
+              </div>
+
+              {/* 3. Most Player Points in One Night */}
+              <div
+                className={`record-showcase-card hover-lift-card ${
+                  records?.most_pts_night ? 'clickable-row' : ''
+                }`}
+                onClick={() =>
+                  records?.most_pts_night && onOpenPlayerProfile(records.most_pts_night.player_id)
+                }
+              >
+                <div className="record-card-icon">🔥</div>
+                <span className="eyebrow">{t('recMostPtsNight')}</span>
+                {records?.most_pts_night ? (
+                  <>
+                    <strong className="record-big-value">
+                      {records.most_pts_night.value} <small>{t('ptsUnit')}</small>
+                    </strong>
+                    <div className="record-holder-line">
+                      <strong>{records.most_pts_night.display_name}</strong>
+                      <span>GW #{records.most_pts_night.gameweek_number}</span>
+                    </div>
+                  </>
+                ) : (
+                  <p className="muted record-empty-note">{t('recordAwaitingFirstMatch')}</p>
+                )}
+              </div>
+
+              {/* 4. All-Time Match MVP Leader */}
+              <div
+                className={`record-showcase-card hover-lift-card ${
+                  records?.most_mvps ? 'clickable-row' : ''
+                }`}
+                onClick={() =>
+                  records?.most_mvps && onOpenPlayerProfile(records.most_mvps.player_id)
+                }
+              >
+                <div className="record-card-icon">⭐</div>
+                <span className="eyebrow">{t('recMostMvps')}</span>
+                {records?.most_mvps ? (
+                  <>
+                    <strong className="record-big-value">
+                      {records.most_mvps.value} <small>{t('mvpAwardsSuffix')}</small>
+                    </strong>
+                    <div className="record-holder-line">
+                      <strong>{records.most_mvps.display_name}</strong>
+                    </div>
+                  </>
+                ) : (
+                  <p className="muted record-empty-note">{t('recordAwaitingFirstMatch')}</p>
+                )}
+              </div>
+
+              {/* 5. Highest Match Rating */}
+              <div
+                className={`record-showcase-card hover-lift-card ${
+                  records?.highest_match_rating ? 'clickable-row' : ''
+                }`}
+                onClick={() =>
+                  records?.highest_match_rating &&
+                  onOpenPlayerProfile(records.highest_match_rating.player_id)
+                }
+              >
+                <div className="record-card-icon">💎</div>
+                <span className="eyebrow">{t('recHighestRating')}</span>
+                {records?.highest_match_rating ? (
+                  <>
+                    <strong className="record-big-value">
+                      {Number(records.highest_match_rating.value).toFixed(1)}{' '}
+                      <small>/ 10</small>
+                    </strong>
+                    <div className="record-holder-line">
+                      <strong>{records.highest_match_rating.display_name}</strong>
+                      <span>
+                        GW #{records.highest_match_rating.gameweek_number} · Match #
+                        {records.highest_match_rating.match_number}
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <p className="muted record-empty-note">{t('recordAwaitingFirstMatch')}</p>
+                )}
+              </div>
+
+              {/* 6. Longest H2H Win Streak */}
+              <div className="record-showcase-card hover-lift-card">
+                <div className="record-card-icon">⚔️</div>
+                <span className="eyebrow">{t('recLongestStreak')}</span>
+                {records?.longest_h2h_streak ? (
+                  <>
+                    <strong className="record-big-value">
+                      {records.longest_h2h_streak.streak}{' '}
+                      <small>{t('winsInARowSuffix')}</small>
+                    </strong>
+                    <div className="record-holder-line">
+                      <strong>
+                        {clubTitleOf(
+                          records.longest_h2h_streak.team_name,
+                          records.longest_h2h_streak.display_name
+                        )}
+                      </strong>
+                      <span>{records.longest_h2h_streak.display_name}</span>
+                    </div>
+                  </>
+                ) : (
+                  <p className="muted record-empty-note">{t('recordAwaitingFirstMatch')}</p>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* 4. PLAYER STAT TABS (Goals, Assists, Contributions, Ratings) */}
       {isPlayerStatTab && !demoMode && (
         <div key={tab} className="screen-stage">
@@ -1238,6 +1468,16 @@ export default function LeaderboardScreen({
         <SquadInspectorModal
           managerName={inspectTarget.managerName}
           gameweekNumber={inspectTarget.gw.number}
+          gameweekId={inspectTarget.gw.id}
+          demoMode={demoMode}
+          currentUserId={currentUserId}
+          inspectedManagerId={inspectTarget.managerId}
+          myClubName={
+            clubTitleOf(
+              standings.find(s => s.manager_id === currentUserId)?.team_name,
+              standings.find(s => s.manager_id === currentUserId)?.display_name ?? 'My Club'
+            )
+          }
           loading={inspectLoading}
           error={inspectError}
           inspection={inspectData}
