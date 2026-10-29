@@ -238,7 +238,7 @@ export default function App() {
       setTargetGw(target);
 
       const fallbackGw = target ?? active ?? rows[rows.length - 1] ?? null;
-      if (fallbackGw) setGameweekNumber(fallbackGw.number);
+      setGameweekNumber(fallbackGw ? fallbackGw.number : 1);
 
       const { data: mine, error: mineError } = await supabase!
         .from('fantasy_squads')
@@ -288,11 +288,21 @@ export default function App() {
               chip: null,
             });
           }
+        } else {
+          setBaselineIds([]);
+          setSelected([]);
+          setCaptain('');
+          setViceCaptain('');
+          setActiveChip(null);
+          setUsedChips([]);
+          setSavedSnapshot({ ids: [], captain: '', viceCaptain: '', chip: null });
         }
         setSquadError(
           active
-            ? 'Transfers are closed for the active gameweek. Ask an admin to create the next gameweek.'
-            : 'No open gameweek yet. Ask an admin to create one.'
+            ? 'Transfers are closed for the active gameweek. Ask an admin to generate the next gameweek.'
+            : isAdmin
+              ? 'No open gameweek yet. Open Admin → Gameweeks and confirm generating Gameweek #1.'
+              : 'No open gameweek yet. Ask an admin to generate Gameweek #1.'
         );
         setSquadLoading(false);
         return;
@@ -435,6 +445,7 @@ export default function App() {
     baselineIds,
     freeTransfers: baseFree,
     activeChip,
+    gameweekNumber: demoMode ? 2 : (targetGw?.number ?? gameweekNumber),
   });
 
   const effectiveDemoPoints = computeDemoPoints({

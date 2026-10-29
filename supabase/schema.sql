@@ -90,9 +90,12 @@ LEFT JOIN (
 GROUP BY fp.id;
 
 -- 3. Core RPCs:
---   - public.save_squad(p_gameweek_id, p_captain, p_vice, p_player_ids, p_chip)
---   - public.start_gameweek(p_gameweek_id)           [auto-rolls over missing squads]
---   - public.league_standings()                      [season standings with auto-rollover]
---   - public.gameweek_standings(p_gameweek_id)       [single-GW standings]
---   - public.inspect_gameweek_squad(p_gw, p_mgr)     [post-deadline squad & points inspector]
---   - public.save_match_stats(p_match_id, p_rows)    [atomic match stats entry]
+--   - public.save_squad(p_gameweek_id, p_captain, p_vice, p_player_ids, p_chip) [GW1 = 0 hits]
+--   - public.admin_generate_gameweek(p_transfer_deadline) [explicit confirmed GW creation]
+--   - public.admin_reset_all_rounds()                     [reset season/test rounds to GW1]
+--   - public.start_gameweek(p_gameweek_id)                [auto-rolls over missing squads]
+--   - public.league_standings()                           [season standings with auto-rollover]
+--   - public.gameweek_standings(p_gameweek_id)            [single-GW standings]
+--   - public.inspect_gameweek_squad(p_gw, p_mgr)          [post-deadline squad & points inspector]
+--   - public.get_player_profile(p_player_id)              [full player profile, bio & career stats]
+--   - public.save_match_stats(p_match_id, p_rows)         [atomic match stats entry]

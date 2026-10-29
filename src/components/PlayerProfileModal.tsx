@@ -1,5 +1,16 @@
 import { useEffect, useState } from 'react';
-import { Award, Flag, Heart, Shirt, Star, Trophy, UserCheck, X, Footprints } from 'lucide-react';
+import {
+  Award,
+  Flag,
+  Footprints,
+  Heart,
+  Maximize2,
+  Shirt,
+  Star,
+  Trophy,
+  UserCheck,
+  X,
+} from 'lucide-react';
 import type { LeaguePlayer, PlayerProfileDetail } from '../types/league';
 import { useLanguage } from '../i18n/LanguageContext';
 import { supabase } from '../lib/supabase';
@@ -16,6 +27,8 @@ type Props = {
   onClose: () => void;
 };
 
+type PortraitFraming = 'vertical' | 'screenshot' | 'wide';
+
 export default function PlayerProfileModal({
   playerId,
   demoMode,
@@ -29,9 +42,13 @@ export default function PlayerProfileModal({
   const [profile, setProfile] = useState<PlayerProfileDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [framing, setFraming] = useState<PortraitFraming>('vertical');
+  const [lightboxOpen, setLightboxOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
+    setFraming('vertical');
+    setLightboxOpen(false);
 
     async function load() {
       setLoading(true);
@@ -67,14 +84,34 @@ export default function PlayerProfileModal({
     };
   }, [playerId, demoMode, fallbackPlayer]);
 
-  // Allow Escape key to close modal
+  // Allow Escape key to close lightbox first, then modal
   useEffect(() => {
     const onKey = (ev: KeyboardEvent) => {
-      if (ev.key === 'Escape') onClose();
+      if (ev.key === 'Escape') {
+        if (lightboxOpen) {
+          setLightboxOpen(false);
+        } else {
+          onClose();
+        }
+      }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  }, [lightboxOpen, onClose]);
+
+  const handlePhotoLoaded = (img: HTMLImageElement) => {
+    const w = img.naturalWidth;
+    const h = img.naturalHeight;
+    if (!w || !h) return;
+    const ratio = h / w;
+    if (ratio > 1.75) {
+      setFraming('screenshot');
+    } else if (ratio < 1.1) {
+      setFraming('wide');
+    } else {
+      setFraming('vertical');
+    }
+  };
 
   const footLabel = (foot: string | null | undefined) => {
     if (!foot) return t('notSetValue');
@@ -106,7 +143,7 @@ export default function PlayerProfileModal({
 
         {!loading && !error && profile && (
           <>
-            {/* HERO STADIUM BANNER */}
+            {/* HERO STADIUM BANNER WITH PRO 3:4 PORTRAIT SHOWCASE */}
             <div className="profile-hero-banner">
               {profile.kit_number != null && (
                 <div className="profile-kit-watermark" aria-hidden="true">
@@ -114,16 +151,42 @@ export default function PlayerProfileModal({
                 </div>
               )}
 
-              <div className="profile-avatar-wrap">
-                {profile.photo_url ? (
-                  <img src={profile.photo_url} alt={profile.display_name} />
-                ) : (
-                  <span>{profile.display_name.slice(0, 1).toUpperCase()}</span>
-                )}
-                {profile.kit_number != null && (
-                  <span className="profile-kit-pill">#{profile.kit_number}</span>
-                )}
-              </div>
+              {profile.photo_url ? (
+                <button
+                  type="button"
+                  className={`profile-portrait-card portrait-framing-${framing}`}
+                  title={t('tapToZoomPhoto')}
+                  onClick={() => setLightboxOpen(true)}
+                >
+                  <img
+                    className="profile-portrait-blur"
+                    src={profile.photo_url}
+                    alt=""
+                    aria-hidden="true"
+                  />
+                  <img
+                    className="profile-portrait-main"
+                    src={profile.photo_url}
+                    alt={profile.display_name}
+                    onLoad={ev => handlePhotoLoaded(ev.currentTarget)}
+                  />
+                  {profile.kit_number != null && (
+                    <span className="profile-kit-pill">#{profile.kit_number}</span>
+                  )}
+                  <span className="profile-zoom-badge" aria-hidden="true">
+                    <Maximize2 size={12} />
+                  </span>
+                </button>
+              ) : (
+                <div className="profile-portrait-card profile-portrait-placeholder">
+                  <span className="profile-portrait-initial">
+                    {profile.display_name.slice(0, 1).toUpperCase()}
+                  </span>
+                  {profile.kit_number != null && (
+                    <span className="profile-kit-pill">#{profile.kit_number}</span>
+                  )}
+                </div>
+              )}
 
               <div className="profile-hero-info">
                 <div className="profile-hero-badges">
@@ -147,20 +210,20 @@ export default function PlayerProfileModal({
                 </div>
 
                 {profile.bio && <p className="profile-bio-quote">“{profile.bio}”</p>}
-              </div>
 
-              {onToggleSquadPlayer && fallbackPlayer && (
-                <div className="profile-hero-cta">
-                  <button
-                    type="button"
-                    className={isSelectedInSquad ? 'secondary compact-btn' : 'primary compact-btn'}
-                    disabled={!isSelectedInSquad && !canAddToSquad}
-                    onClick={() => onToggleSquadPlayer(fallbackPlayer)}
-                  >
-                    {isSelectedInSquad ? t('removePlayerBtn') : `+ ${t('addPlayerBtn')}`}
-                  </button>
-                </div>
-              )}
+                {onToggleSquadPlayer && fallbackPlayer && (
+                  <div className="profile-hero-cta">
+                    <button
+                      type="button"
+                      className={isSelectedInSquad ? 'secondary compact-btn' : 'primary compact-btn'}
+                      disabled={!isSelectedInSquad && !canAddToSquad}
+                      onClick={() => onToggleSquadPlayer(fallbackPlayer)}
+                    >
+                      {isSelectedInSquad ? t('removePlayerBtn') : `+ ${t('addPlayerBtn')}`}
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* ESSENTIAL BIO GRID */}
@@ -301,7 +364,10 @@ export default function PlayerProfileModal({
               ) : (
                 <div className="profile-match-log">
                   {profile.recent_matches.map((m, idx) => (
-                    <div className="profile-match-row" key={`${m.gameweek_number}-${m.match_number}-${idx}`}>
+                    <div
+                      className="profile-match-row"
+                      key={`${m.gameweek_number}-${m.match_number}-${idx}`}
+                    >
                       <div className="match-row-title">
                         <strong>
                           GW {m.gameweek_number} · M{m.match_number}
@@ -334,6 +400,41 @@ export default function PlayerProfileModal({
                 </div>
               )}
             </div>
+
+            {/* FULL PHOTO LIGHTBOX OVERLAY */}
+            {lightboxOpen && profile.photo_url && (
+              <div
+                className="photo-lightbox-backdrop"
+                onClick={ev => {
+                  ev.stopPropagation();
+                  setLightboxOpen(false);
+                }}
+              >
+                <div
+                  className="photo-lightbox-dialog"
+                  onClick={ev => ev.stopPropagation()}
+                >
+                  <div className="photo-lightbox-topbar">
+                    <strong>
+                      {profile.display_name}
+                      {profile.kit_number != null ? ` · #${profile.kit_number}` : ''}
+                    </strong>
+                    <button
+                      type="button"
+                      className="secondary compact-btn"
+                      onClick={() => setLightboxOpen(false)}
+                    >
+                      <X size={14} /> {t('closeBtn')}
+                    </button>
+                  </div>
+                  <img
+                    className="photo-lightbox-img"
+                    src={profile.photo_url}
+                    alt={profile.display_name}
+                  />
+                </div>
+              </div>
+            )}
           </>
         )}
       </div>

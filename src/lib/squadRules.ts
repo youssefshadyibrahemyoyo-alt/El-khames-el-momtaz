@@ -27,8 +27,12 @@ export function calculateTransfersAndHits(params: {
   baselineIds: string[];
   freeTransfers: number;
   activeChip: string | null;
+  gameweekNumber?: number;
 }): { transfersUsed: number; pointsHits: number } {
-  const { selected, baselineIds, freeTransfers, activeChip } = params;
+  const { selected, baselineIds, freeTransfers, activeChip, gameweekNumber } = params;
+  if (gameweekNumber != null && gameweekNumber <= 1) {
+    return { transfersUsed: 0, pointsHits: 0 };
+  }
   const transfersUsed =
     baselineIds.length === SQUAD_SIZE
       ? selected.filter(id => !baselineIds.includes(id)).length

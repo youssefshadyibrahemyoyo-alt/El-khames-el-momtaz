@@ -237,6 +237,32 @@ export const translations = {
     footRight: 'Right',
     footLeft: 'Left',
     footBoth: 'Both',
+    tapToZoomPhoto: 'Tap photo to view full size',
+    fullPhotoPreview: 'Full Photo',
+
+    // Admin Gameweek Generation & Confirmation
+    generateNextGwTitle: 'Generate Next Gameweek',
+    generateGwBtn: 'Generate Gameweek',
+    deadlineCairoLabel: 'Transfer Deadline (Cairo Time)',
+    finishCurrentGwFirstHint: 'Finish the current open/active round before generating the next gameweek.',
+    confirmGenerateGwTitle: 'Confirm Generating Gameweek',
+    confirmGenerateGwDesc:
+      'This will create the round and open squad selection & transfers for all approved managers until the deadline.',
+    confirmGenerateBtn: 'Confirm & Generate',
+    cancelBtn: 'Cancel',
+    confirmStartGwTitle: 'Start & Lock Gameweek',
+    confirmStartGwDesc:
+      'Starting locks transfers for this round and automatically rolls over last week’s squad for any manager who made no changes.',
+    confirmStartBtn: 'Confirm & Start Round',
+    confirmEndGwTitle: 'End & Finalize Gameweek',
+    confirmEndGwDesc:
+      'Ending closes this round permanently, finalizes match points on the leaderboard, and unlocks generating the next gameweek.',
+    confirmEndBtn: 'Confirm & End Round',
+    resetAllRoundsBtn: 'Reset All Rounds',
+    confirmResetRoundsTitle: 'Reset All League Rounds?',
+    confirmResetRoundsDesc:
+      'This wipes all gameweeks, saved squads, transfer hits, and match stats back to 0 so you can start cleanly from Gameweek 1. Player profiles and member accounts are kept.',
+    confirmResetBtn: 'Yes, Reset Everything to GW 1',
   },
   ar: {
     brandEyebrow: 'فانتازي خميس الكورة',
@@ -474,6 +500,32 @@ export const translations = {
     footRight: 'اليمنى',
     footLeft: 'اليسرى',
     footBoth: 'القدمان',
+    tapToZoomPhoto: 'اضغط على الصورة لعرضها بالحجم الكامل',
+    fullPhotoPreview: 'الصورة الكاملة',
+
+    // Admin Gameweek Generation & Confirmation
+    generateNextGwTitle: 'إنشاء الجولة القادمة',
+    generateGwBtn: 'إنشاء الجولة',
+    deadlineCairoLabel: 'الموعد النهائي للانتقالات (توقيت القاهرة)',
+    finishCurrentGwFirstHint: 'يجب إنهاء الجولة المفتوحة أو الجارية أولاً قبل إنشاء الجولة التالية.',
+    confirmGenerateGwTitle: 'تأكيد إنشاء الجولة',
+    confirmGenerateGwDesc:
+      'سيتم فتح هذه الجولة أمام جميع المدربين لاختيار وحفظ التشكيلات والانتقالات حتى الموعد النهائي.',
+    confirmGenerateBtn: 'تأكيد وإنشاء الجولة',
+    cancelBtn: 'إلغاء',
+    confirmStartGwTitle: 'تأكيد بدء الجولة وإغلاق الانتقالات',
+    confirmStartGwDesc:
+      'بدء الجولة يُغلق الانتقالات ويُرحّل تلقائياً تشكيلة الجولة السابقة لأي مدرب لم يُجرِ تعديلات.',
+    confirmStartBtn: 'تأكيد وبدء الجولة',
+    confirmEndGwTitle: 'تأكيد إنهاء الجولة واعتماد النقاط',
+    confirmEndGwDesc:
+      'إنهاء الجولة يُغلقها نهائياً ويعتمد نقاط المباريات في الترتيب العام ويسمح بإنشاء الجولة التالية.',
+    confirmEndBtn: 'تأكيد وإنهاء الجولة',
+    resetAllRoundsBtn: 'إعادة ضبط جميع الجولات',
+    confirmResetRoundsTitle: 'إعادة ضبط جميع جولات الدوري؟',
+    confirmResetRoundsDesc:
+      'سيؤدي هذا إلى مسح جميع الجولات والتشكيلات وخصومات الانتقالات وإحصائيات المباريات للبدء من الصفر من الجولة 1، مع الاحتفاظ بملفات اللاعبين وحسابات الأعضاء.',
+    confirmResetBtn: 'نعم، إعادة الضبط للجولة 1',
   },
 } as const;
 

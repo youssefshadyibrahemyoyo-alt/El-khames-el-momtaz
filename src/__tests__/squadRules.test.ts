@@ -79,6 +79,17 @@ describe('squadRules', () => {
         activeChip: 'Wildcard',
       })
     ).toEqual({ transfersUsed: 3, pointsHits: 0 });
+
+    // Gameweek 1 never charges transfer hits no matter how many edits a manager makes
+    expect(
+      calculateTransfersAndHits({
+        selected: next,
+        baselineIds: base,
+        freeTransfers: 1,
+        activeChip: null,
+        gameweekNumber: 1,
+      })
+    ).toEqual({ transfersUsed: 0, pointsHits: 0 });
   });
 
   it('skips expired draft gameweeks when picking target gameweek', () => {
