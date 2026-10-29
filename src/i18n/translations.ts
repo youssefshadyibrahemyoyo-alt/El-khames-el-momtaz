@@ -386,6 +386,9 @@ export const translations = {
     monthlyFilterPrefix: 'Month:',
     trophyMotmWins: 'Manager of the Month',
     monthlyRoundsPlayed: 'rounds played',
+    clubNameRequiredNotice:
+      'Choose Your Official Fantasy Club Name! Every manager competes under their Club Name on the leaderboard.',
+    clubNameRequiredError: 'Please enter your Fantasy Club Name (at least 2 characters).',
   },
   ar: {
     brandEyebrow: 'فانتازي خميس الكورة',
@@ -772,6 +775,9 @@ export const translations = {
     monthlyFilterPrefix: 'شهر:',
     trophyMotmWins: 'مدرب الشهر',
     monthlyRoundsPlayed: 'جولات',
+    clubNameRequiredNotice:
+      'اختر اسم ناديك الرسمي في الفانتازي! يظهر اسم النادي كعنوان رئيسي في جدول الترتيب.',
+    clubNameRequiredError: 'يرجى كتابة اسم فريق الفانتازي (حرفين على الأقل).',
   },
 } as const;
 

@@ -831,7 +831,7 @@ export default function App() {
           />
         )}
 
-        {myProfileOpen && (
+        {(myProfileOpen || (!demoMode && !profileLoading && profile && !profile.team_name?.trim())) && (
           <ManagerProfileModal
             profile={
               profile ?? {
@@ -845,8 +845,10 @@ export default function App() {
               }
             }
             demoMode={demoMode}
+            requireClubName={Boolean(!demoMode && profile && !profile.team_name?.trim())}
             trophies={managerTrophies}
             onUpdated={updated => {
+              const wasMissingClub = Boolean(!demoMode && profile && !profile.team_name?.trim());
               setProfile(updated);
               setStandings(prev =>
                 prev.map(s =>
@@ -860,6 +862,9 @@ export default function App() {
                     : s
                 )
               );
+              if (wasMissingClub && updated.team_name?.trim()) {
+                setMyProfileOpen(false);
+              }
             }}
             onClose={() => setMyProfileOpen(false)}
           />

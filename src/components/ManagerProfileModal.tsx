@@ -7,6 +7,7 @@ import { supabase, uploadManagerAvatar } from '../lib/supabase';
 type Props = {
   profile: Profile;
   demoMode: boolean;
+  requireClubName?: boolean;
   trophies?: ManagerTrophyMap;
   onUpdated: (updated: Profile) => void;
   onClose: () => void;
@@ -15,6 +16,7 @@ type Props = {
 export default function ManagerProfileModal({
   profile,
   demoMode,
+  requireClubName = false,
   trophies = {},
   onUpdated,
   onClose,
@@ -32,11 +34,11 @@ export default function ManagerProfileModal({
 
   useEffect(() => {
     const onKey = (ev: KeyboardEvent) => {
-      if (ev.key === 'Escape') onClose();
+      if (ev.key === 'Escape' && !requireClubName) onClose();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  }, [onClose, requireClubName]);
 
   async function handleFileSelect(file: File | undefined) {
     if (!file) return;
@@ -63,8 +65,13 @@ export default function ManagerProfileModal({
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     const trimmedName = displayName.trim();
+    const trimmedTeam = teamName.trim();
     if (trimmedName.length < 2) {
       setError('Display name must be at least 2 characters.');
+      return;
+    }
+    if (trimmedTeam.length < 2) {
+      setError(t('clubNameRequiredError'));
       return;
     }
 
@@ -72,7 +79,7 @@ export default function ManagerProfileModal({
       onUpdated({
         ...profile,
         display_name: trimmedName,
-        team_name: teamName.trim() || null,
+        team_name: trimmedTeam,
         avatar_url: avatarUrl,
       });
       setMsg(t('profileSavedNotice'));
@@ -85,7 +92,7 @@ export default function ManagerProfileModal({
     try {
       const { data, error: rpcError } = await supabase.rpc('update_my_manager_profile', {
         p_display_name: trimmedName,
-        p_team_name: teamName.trim() || null,
+        p_team_name: trimmedTeam,
         p_avatar_url: avatarUrl,
       });
 
@@ -136,7 +143,12 @@ export default function ManagerProfileModal({
   const budgetVal = Number(profile.budget ?? 50);
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
+    <div
+      className="modal-backdrop"
+      onClick={() => {
+        if (!requireClubName) onClose();
+      }}
+    >
       <div
         className="modal-card modal-sheet-spring manager-profile-modal"
         onClick={e => e.stopPropagation()}
@@ -150,10 +162,22 @@ export default function ManagerProfileModal({
               {t('myProfileSub')}
             </p>
           </div>
-          <button type="button" className="secondary compact-btn" onClick={onClose}>
-            <X size={14} /> {t('closeBtn')}
-          </button>
+          {!requireClubName && (
+            <button type="button" className="secondary compact-btn" onClick={onClose}>
+              <X size={14} /> {t('closeBtn')}
+            </button>
+          )}
         </div>
+
+        {requireClubName && (
+          <div className="fpl-squad-alert-banner" style={{ marginBottom: 12 }}>
+            <Shield size={18} />
+            <div>
+              <strong>{t('fantasyTeamNameLabel')} *</strong>
+              <p>{t('clubNameRequiredNotice')}</p>
+            </div>
+          </div>
+        )}
 
         <form onSubmit={handleSave} className="manager-profile-form">
           {/* AVATAR UPLOAD HERO */}
@@ -208,11 +232,13 @@ export default function ManagerProfileModal({
             <label>
               <span>
                 <Shield size={12} style={{ verticalAlign: 'middle', marginInlineEnd: 4 }} />
-                {t('fantasyTeamNameLabel')}
+                {t('fantasyTeamNameLabel')} *
               </span>
               <input
                 type="text"
+                minLength={2}
                 maxLength={40}
+                required
                 placeholder={t('fantasyTeamPlaceholder')}
                 value={teamName}
                 onChange={e => setTeamName(e.target.value)}
@@ -294,9 +320,11 @@ export default function ManagerProfileModal({
           {msg && <div className="notice positive-notice">{msg}</div>}
 
           <div className="gw-confirm-actions" style={{ marginTop: 6 }}>
-            <button type="button" className="secondary compact-btn" onClick={onClose}>
-              {t('closeBtn')}
-            </button>
+            {!requireClubName && (
+              <button type="button" className="secondary compact-btn" onClick={onClose}>
+                {t('closeBtn')}
+              </button>
+            )}
             <button
               type="submit"
               className="primary compact-btn"

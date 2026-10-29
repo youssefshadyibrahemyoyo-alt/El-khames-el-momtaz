@@ -9,6 +9,7 @@ export default function AuthScreen() {
   const { isDark, toggleTheme } = useTheme();
   const [mode, setMode] = useState<'signin' | 'signup' | 'forgot'>('signin');
   const [displayName, setDisplayName] = useState('');
+  const [teamName, setTeamName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
@@ -55,14 +56,19 @@ export default function AuthScreen() {
     try {
       if (mode === 'signup') {
         const cleanName = displayName.trim();
-        if (!cleanName) {
+        const cleanTeam = teamName.trim();
+        if (!cleanName || cleanName.length < 2) {
           setMessage(lang === 'ar' ? 'يرجى كتابة اسمك.' : 'Please enter your name.');
+          return;
+        }
+        if (cleanTeam.length < 2) {
+          setMessage(t('clubNameRequiredError'));
           return;
         }
         const { data, error } = await supabase.auth.signUp({
           email: cleanEmail,
           password,
-          options: { data: { display_name: cleanName } },
+          options: { data: { display_name: cleanName, team_name: cleanTeam } },
         });
         if (error) {
           setMessage(error.message);
@@ -184,16 +190,31 @@ export default function AuthScreen() {
 
         <form onSubmit={submit} key={mode} className="screen-stage">
           {mode === 'signup' && (
-            <label>
-              {t('yourName')}
-              <input
-                required
-                value={displayName}
-                onChange={e => setDisplayName(e.target.value)}
-                placeholder="Ahmed"
-                autoComplete="name"
-              />
-            </label>
+            <>
+              <label>
+                {t('fantasyTeamNameLabel')} *
+                <input
+                  required
+                  minLength={2}
+                  maxLength={40}
+                  value={teamName}
+                  onChange={e => setTeamName(e.target.value)}
+                  placeholder={t('fantasyTeamPlaceholder')}
+                />
+              </label>
+              <label>
+                {t('yourName')} *
+                <input
+                  required
+                  minLength={2}
+                  maxLength={40}
+                  value={displayName}
+                  onChange={e => setDisplayName(e.target.value)}
+                  placeholder="Ahmed"
+                  autoComplete="name"
+                />
+              </label>
+            </>
           )}
           <label>
             {t('email')}

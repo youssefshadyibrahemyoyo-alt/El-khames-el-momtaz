@@ -113,13 +113,9 @@ export default function Sidebar({
               <div className="avatar">{shownName.slice(0, 1).toUpperCase()}</div>
             )}
             <div className="account-copy">
-              <strong>{shownName}</strong>
+              <strong>{teamName?.trim() || `${shownName} FC`}</strong>
               <span>
-                {teamName
-                  ? `🛡️ ${teamName}`
-                  : isAdmin
-                    ? t('roleAdminTitle')
-                    : t('rolePlayerTitle')}
+                {shownName} · {isAdmin ? t('roleAdminTitle') : t('rolePlayerTitle')}
               </span>
             </div>
           </button>

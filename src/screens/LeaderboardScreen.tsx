@@ -394,6 +394,9 @@ export default function LeaderboardScreen({
   const medalBadgeFor = (idx: number) =>
     idx === 0 ? '👑' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : String(idx + 1).padStart(2, '0');
 
+  const clubTitleOf = (teamName?: string | null, displayName?: string | null) =>
+    teamName?.trim() || `${displayName || 'Manager'} FC`;
+
   const podiumSubtitleFor = (idx: number) =>
     idx === 0
       ? t('podiumChampion')
@@ -533,7 +536,12 @@ export default function LeaderboardScreen({
                       style={{ '--stagger-i': Math.min(index, 10) } as React.CSSProperties}
                       key={row.manager_id}
                       onClick={() => {
-                        if (inspectable) void openInspector(row.manager_id, row.display_name);
+                        if (inspectable) {
+                          void openInspector(
+                            row.manager_id,
+                            `${clubTitleOf(row.team_name, row.display_name)} (${row.display_name})`
+                          );
+                        }
                       }}
                     >
                       <span className={`rank ${index < 3 ? 'podium-rank' : ''}`}>
@@ -544,21 +552,17 @@ export default function LeaderboardScreen({
                         <img
                           className="leaderboard-photo"
                           src={row.avatar_url}
-                          alt={row.display_name}
+                          alt={clubTitleOf(row.team_name, row.display_name)}
                         />
                       ) : (
                         <div className="player-photo small-photo">
-                          {(row.display_name || '?').slice(0, 1).toUpperCase()}
+                          {clubTitleOf(row.team_name, row.display_name).slice(0, 1).toUpperCase()}
                         </div>
                       )}
 
                       <div className="leaderboard-player-info">
-                        <strong style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
-                          <span>
-                            {row.team_name ? `${row.team_name} · ` : ''}
-                            {row.display_name}
-                            {row.manager_id === currentUserId ? ` ${t('youTag')}` : ''}
-                          </span>
+                        <strong className="leaderboard-club-heading">
+                          <span>{clubTitleOf(row.team_name, row.display_name)}</span>
                           {(trophies[row.manager_id]?.cup_wins ?? 0) > 0 && (
                             <span
                               className="trophy-inline-badge trophy-inline-cup"
@@ -584,9 +588,16 @@ export default function LeaderboardScreen({
                             </span>
                           )}
                         </strong>
-                        <span>
-                          {podiumTag ? `${podiumTag} · ` : ''}
-                          {row.subLabel}
+                        <span className="leaderboard-manager-subline">
+                          <em className="leaderboard-username-pill">
+                            {row.display_name}
+                            {row.manager_id === currentUserId ? ` ${t('youTag')}` : ''}
+                          </em>
+                          <span>
+                            {' · '}
+                            {podiumTag ? `${podiumTag} · ` : ''}
+                            {row.subLabel}
+                          </span>
                         </span>
                       </div>
 
@@ -664,8 +675,12 @@ export default function LeaderboardScreen({
                           </div>
                         )}
                         <div className="h2h-side-meta">
-                          <strong>{fx.home.team_name || fx.home.display_name}</strong>
-                          {fx.home.team_name && <span>{fx.home.display_name}</span>}
+                          <strong>
+                            {fx.home.is_average
+                              ? fx.home.display_name
+                              : clubTitleOf(fx.home.team_name, fx.home.display_name)}
+                          </strong>
+                          {!fx.home.is_average && <span>{fx.home.display_name}</span>}
                         </div>
                       </div>
 
@@ -685,8 +700,12 @@ export default function LeaderboardScreen({
                         }`}
                       >
                         <div className="h2h-side-meta">
-                          <strong>{fx.away.team_name || fx.away.display_name}</strong>
-                          {fx.away.team_name && <span>{fx.away.display_name}</span>}
+                          <strong>
+                            {fx.away.is_average
+                              ? fx.away.display_name
+                              : clubTitleOf(fx.away.team_name, fx.away.display_name)}
+                          </strong>
+                          {!fx.away.is_average && <span>{fx.away.display_name}</span>}
                         </div>
                         {fx.away.avatar_url ? (
                           <img
@@ -749,12 +768,10 @@ export default function LeaderboardScreen({
                               </div>
                             )}
                             <div>
-                              <strong>{row.team_name || row.display_name}</strong>
-                              {row.team_name && (
-                                <span className="muted tiny" style={{ display: 'block' }}>
-                                  {row.display_name}
-                                </span>
-                              )}
+                              <strong>{clubTitleOf(row.team_name, row.display_name)}</strong>
+                              <span className="muted tiny" style={{ display: 'block' }}>
+                                {row.display_name}
+                              </span>
                             </div>
                           </div>
                         </td>
@@ -882,9 +899,18 @@ export default function LeaderboardScreen({
                             <div className="cup-tie-card" key={tie.id}>
                               <div className={`cup-tie-side ${homeWon ? 'cup-side-winner' : ''}`}>
                                 <span className="cup-side-name">
-                                  {tie.home.is_bye
-                                    ? t('cupByeLabel')
-                                    : tie.home.team_name || tie.home.display_name}
+                                  {tie.home.is_bye ? (
+                                    t('cupByeLabel')
+                                  ) : (
+                                    <>
+                                      <strong>
+                                        {clubTitleOf(tie.home.team_name, tie.home.display_name)}
+                                      </strong>
+                                      <small className="cup-side-username">
+                                        {tie.home.display_name}
+                                      </small>
+                                    </>
+                                  )}
                                 </span>
                                 <strong className="cup-side-pts">
                                   {tie.home.is_bye ? '—' : tie.home.points}
@@ -893,9 +919,18 @@ export default function LeaderboardScreen({
 
                               <div className={`cup-tie-side ${awayWon ? 'cup-side-winner' : ''}`}>
                                 <span className="cup-side-name">
-                                  {tie.away.is_bye
-                                    ? t('cupByeLabel')
-                                    : tie.away.team_name || tie.away.display_name}
+                                  {tie.away.is_bye ? (
+                                    t('cupByeLabel')
+                                  ) : (
+                                    <>
+                                      <strong>
+                                        {clubTitleOf(tie.away.team_name, tie.away.display_name)}
+                                      </strong>
+                                      <small className="cup-side-username">
+                                        {tie.away.display_name}
+                                      </small>
+                                    </>
+                                  )}
                                 </span>
                                 <strong className="cup-side-pts">
                                   {tie.away.is_bye ? '—' : tie.away.points}
@@ -1032,8 +1067,10 @@ export default function LeaderboardScreen({
                     <div>
                       <span className="banter-award-tag">{t('awardGwChampion')}</span>
                       <strong>
-                        {highlights.awards.gw_champion.team_name ||
-                          highlights.awards.gw_champion.display_name}
+                        {clubTitleOf(
+                          highlights.awards.gw_champion.team_name,
+                          highlights.awards.gw_champion.display_name
+                        )}
                       </strong>
                       <p>
                         {highlights.awards.gw_champion.display_name} ·{' '}
@@ -1069,12 +1106,16 @@ export default function LeaderboardScreen({
                     <div className="banter-award-icon">🧠</div>
                     <div>
                       <span className="banter-award-tag">{t('awardCaptainGenius')}</span>
-                      <strong>{highlights.awards.captain_genius.display_name}</strong>
+                      <strong>
+                        {clubTitleOf(
+                          highlights.awards.captain_genius.team_name,
+                          highlights.awards.captain_genius.display_name
+                        )}
+                      </strong>
                       <p>
-                        Captained <b>{highlights.awards.captain_genius.player_name}</b> for{' '}
-                        <b>
-                          +{highlights.awards.captain_genius.captain_points} {t('ptsUnit')}
-                        </b>
+                        {highlights.awards.captain_genius.display_name} · Captained{' '}
+                        <b>{highlights.awards.captain_genius.player_name}</b> (+
+                        {highlights.awards.captain_genius.captain_points} {t('ptsUnit')})
                       </p>
                     </div>
                   </div>
@@ -1085,10 +1126,16 @@ export default function LeaderboardScreen({
                     <div className="banter-award-icon">😭</div>
                     <div>
                       <span className="banter-award-tag">{t('awardBenchPain')}</span>
-                      <strong>{highlights.awards.bench_pain.display_name}</strong>
+                      <strong>
+                        {clubTitleOf(
+                          highlights.awards.bench_pain.team_name,
+                          highlights.awards.bench_pain.display_name
+                        )}
+                      </strong>
                       <p>
-                        Left <b>{highlights.awards.bench_pain.bench_points} pts</b> rotting on the
-                        bench ({highlights.awards.bench_pain.bench_names})!
+                        {highlights.awards.bench_pain.display_name} · Left{' '}
+                        <b>{highlights.awards.bench_pain.bench_points} pts</b> on the bench (
+                        {highlights.awards.bench_pain.bench_names})!
                       </p>
                     </div>
                   </div>
