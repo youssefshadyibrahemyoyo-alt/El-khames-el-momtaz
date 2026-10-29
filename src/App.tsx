@@ -1031,16 +1031,15 @@ const [didNotPlay, setDidNotPlay] = useState<string[]>([]);
                                 type="button"
                                 key={benchId}
                                 disabled={matchInProgress}
-                                onClick={() => {
-                                  setSelected(old => {
-                                    const next = [...old];
-                                    const starterIndex = next.indexOf(id);
-                                    const subIndex = next.indexOf(benchId);
-                                    if (starterIndex < 0 || subIndex < 0) return old;
+                                                               onClick={() => {
+                                  const next = [...selected];
+                                  const starterIndex = next.indexOf(id);
+                                  const subIndex = next.indexOf(benchId);
+                                  if (starterIndex >= 0 && subIndex >= 0) {
                                     [next[starterIndex], next[subIndex]] =
                                       [next[subIndex], next[starterIndex]];
-                                    return next;
-                                  });
+                                    applyLineup(next);
+                                  }
                                   setSwapStarter(null);
                                 }}
                               >
