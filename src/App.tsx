@@ -61,6 +61,7 @@ type LeaguePlayer = {
   price: number;
   points: number;
   photo_url: string | null;
+  is_active?: boolean;
 };
 
 type LeaderboardPlayer = {
