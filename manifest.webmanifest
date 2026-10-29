@@ -1,0 +1,22 @@
+{
+  "name": "El Khames El Momtaz",
+  "short_name": "El Khames",
+  "description": "Thursday football fantasy league",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#193f2c",
+  "theme_color": "#193f2c",
+  "icons": [
+    {
+      "src": "/hagz-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/hagz-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
