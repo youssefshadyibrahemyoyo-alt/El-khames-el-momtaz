@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Globe, Moon, Sun, UserPlus, LogIn } from 'lucide-react';
+import { Globe, KeyRound, Moon, Sun, UserPlus, LogIn } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useLanguage } from '../i18n/LanguageContext';
 import { useTheme } from '../theme/ThemeContext';
@@ -7,7 +7,7 @@ import { useTheme } from '../theme/ThemeContext';
 export default function AuthScreen() {
   const { lang, toggleLang, t } = useLanguage();
   const { isDark, toggleTheme } = useTheme();
-  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
+  const [mode, setMode] = useState<'signin' | 'signup' | 'forgot'>('signin');
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -24,6 +24,24 @@ export default function AuthScreen() {
       setMessage(lang === 'ar' ? 'يرجى إدخال البريد الإلكتروني.' : 'Please enter your email.');
       return;
     }
+
+    if (mode === 'forgot') {
+      setSubmitting(true);
+      try {
+        const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
+          redirectTo: window.location.origin,
+        });
+        if (error) {
+          setMessage(error.message);
+        } else {
+          setMessage(t('resetEmailSentNotice'));
+        }
+      } finally {
+        setSubmitting(false);
+      }
+      return;
+    }
+
     if (password.length < 6) {
       setMessage(
         lang === 'ar'
@@ -147,8 +165,20 @@ export default function AuthScreen() {
 
         <div className="panel-heading">
           <div>
-            <h3>{mode === 'signin' ? t('welcomeBack') : t('joinLeague')}</h3>
-            <p>{mode === 'signin' ? t('signInSub') : t('signUpSub')}</p>
+            <h3>
+              {mode === 'forgot'
+                ? t('forgotPasswordTitle')
+                : mode === 'signin'
+                  ? t('welcomeBack')
+                  : t('joinLeague')}
+            </h3>
+            <p>
+              {mode === 'forgot'
+                ? t('forgotPasswordSub')
+                : mode === 'signin'
+                  ? t('signInSub')
+                  : t('signUpSub')}
+            </p>
           </div>
         </div>
 
@@ -178,20 +208,51 @@ export default function AuthScreen() {
               autoComplete="email"
             />
           </label>
-          <label>
-            {t('password')}
-            <input
-              type="password"
-              required
-              minLength={6}
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              placeholder={t('passwordPlaceholder')}
-              autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
-            />
-          </label>
+          {mode !== 'forgot' && (
+            <label>
+              <span
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <span>{t('password')}</span>
+                {mode === 'signin' && (
+                  <button
+                    type="button"
+                    className="text-button"
+                    style={{ fontSize: 12, padding: 0 }}
+                    onClick={() => {
+                      setMode('forgot');
+                      setMessage('');
+                    }}
+                  >
+                    {t('forgotPasswordBtn')}
+                  </button>
+                )}
+              </span>
+              <input
+                type="password"
+                required
+                minLength={6}
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder={t('passwordPlaceholder')}
+                autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
+              />
+            </label>
+          )}
           <button className="primary full" type="submit" disabled={submitting}>
-            {mode === 'signin' ? t('signInBtn') : t('signUpBtn')}
+            {mode === 'forgot' ? (
+              <>
+                <KeyRound size={14} /> {t('sendResetLinkBtn')}
+              </>
+            ) : mode === 'signin' ? (
+              t('signInBtn')
+            ) : (
+              t('signUpBtn')
+            )}
           </button>
         </form>
 
@@ -201,11 +262,15 @@ export default function AuthScreen() {
           type="button"
           className="text-button full"
           onClick={() => {
-            setMode(mode === 'signin' ? 'signup' : 'signin');
+            setMode(mode === 'forgot' ? 'signin' : mode === 'signin' ? 'signup' : 'signin');
             setMessage('');
           }}
         >
-          {mode === 'signin' ? t('toggleToSignUp') : t('toggleToSignIn')}
+          {mode === 'forgot'
+            ? t('backToSignInBtn')
+            : mode === 'signin'
+              ? t('toggleToSignUp')
+              : t('toggleToSignIn')}
         </button>
         <p className="tiny muted center">{t('privateCairoNote')}</p>
       </section>

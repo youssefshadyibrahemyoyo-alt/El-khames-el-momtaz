@@ -3375,4 +3375,169 @@ button.profile-portrait-card:hover {
   color: var(--muted);
 }
 
+/* ============================================================
+   SIDELINE 15-MIN TIMER, PWA INSTALL BANNER & SQUAD READINESS
+   ============================================================ */
+
+.sideline-timer-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding: 11px 14px;
+  border-radius: 14px;
+  background: var(--panel2);
+  border: 1px solid var(--line);
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.sideline-timer-running {
+  border-color: rgba(31, 169, 98, 0.55);
+  background: rgba(31, 169, 98, 0.08);
+}
+
+.sideline-timer-urgent {
+  border-color: rgba(235, 179, 40, 0.72);
+  background: rgba(235, 179, 40, 0.14);
+}
+
+.sideline-timer-fulltime {
+  border-color: rgba(212, 175, 87, 0.85);
+  background: linear-gradient(135deg, rgba(212, 175, 87, 0.25), rgba(31, 169, 98, 0.16));
+}
+
+.sideline-timer-clock {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sideline-timer-clock svg {
+  color: var(--gold);
+}
+
+.sideline-timer-clock strong {
+  font-family: 'Space Grotesk', system-ui, monospace;
+  font-size: 24px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.03em;
+}
+
+.sideline-timer-tag {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.sideline-timer-presets,
+.sideline-timer-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.pwa-install-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--panel2), var(--panel));
+  border: 1px solid rgba(212, 175, 87, 0.42);
+}
+
+.pwa-install-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pwa-install-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: rgba(212, 175, 87, 0.18);
+  color: var(--gold-text);
+  flex-shrink: 0;
+}
+
+.pwa-install-left strong {
+  display: block;
+  font-size: 13.5px;
+}
+
+.pwa-install-left p {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.pwa-install-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.squad-readiness-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+  padding: 12px 16px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+}
+
+.squad-readiness-ok {
+  background: rgba(31, 169, 98, 0.12);
+  border-color: rgba(31, 169, 98, 0.48);
+}
+
+.squad-readiness-ok svg {
+  color: var(--green);
+  flex-shrink: 0;
+}
+
+.squad-readiness-warn {
+  background: rgba(235, 179, 40, 0.14);
+  border-color: rgba(235, 179, 40, 0.56);
+}
+
+.squad-readiness-warn svg {
+  color: #d49b11;
+  flex-shrink: 0;
+}
+
+.squad-readiness-banner strong {
+  display: block;
+  font-size: 13.5px;
+}
+
+.squad-readiness-banner p {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.manager-password-box {
+  padding: 11px 13px;
+  border-radius: 12px;
+  background: var(--panel2);
+  border: 1px solid var(--line);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+
 

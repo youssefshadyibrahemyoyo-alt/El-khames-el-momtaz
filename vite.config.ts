@@ -11,4 +11,15 @@ export default defineConfig({
     host: '0.0.0.0',
     allowedHosts: true,
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom'],
+          'vendor-supabase': ['@supabase/supabase-js'],
+          'vendor-icons': ['lucide-react'],
+        },
+      },
+    },
+  },
 });

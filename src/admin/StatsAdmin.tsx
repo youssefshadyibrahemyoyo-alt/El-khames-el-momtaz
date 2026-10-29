@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Crown, Flame, List, Minus, Plus, Zap } from 'lucide-react';
 import type { AdminProps } from './types';
 import { useLanguage } from '../i18n/LanguageContext';
+import SidelineMatchTimer from '../components/SidelineMatchTimer';
 
 type GW = { id: number; number: number; status: string };
 type Match = { id: string; match_number: number; status: string | null };
@@ -247,6 +248,8 @@ export default function StatsAdmin({ db, onChanged }: AdminProps) {
 
   return (
     <div>
+      <SidelineMatchTimer />
+
       <div className="stats-mode-bar">
         <p className="muted tiny" style={{ margin: 0 }}>
           Mark everyone who played this 15-min match so auto-subs work accurately. Hat-tricks (3+ goals) automatically earn bonus points!

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Camera, Crown, Shield, Trash2, Trophy, Wallet, X } from 'lucide-react';
+import { Camera, Crown, KeyRound, Shield, Trash2, Trophy, Wallet, X } from 'lucide-react';
 import type { ManagerTrophyMap, Profile } from '../types/league';
 import { useLanguage } from '../i18n/LanguageContext';
 import { supabase, uploadManagerAvatar } from '../lib/supabase';
@@ -23,6 +23,8 @@ export default function ManagerProfileModal({
   const [displayName, setDisplayName] = useState(profile.display_name || '');
   const [teamName, setTeamName] = useState(profile.team_name ?? '');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(profile.avatar_url ?? null);
+  const [newPassword, setNewPassword] = useState('');
+  const [updatingPwd, setUpdatingPwd] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
@@ -104,6 +106,30 @@ export default function ManagerProfileModal({
       }
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleUpdatePassword() {
+    if (demoMode || !supabase) return;
+    if (newPassword.trim().length < 6) {
+      setError('Password must be at least 6 characters.');
+      return;
+    }
+    setUpdatingPwd(true);
+    setError('');
+    setMsg('');
+    try {
+      const { error: pwdErr } = await supabase.auth.updateUser({
+        password: newPassword.trim(),
+      });
+      if (pwdErr) {
+        setError(pwdErr.message);
+      } else {
+        setNewPassword('');
+        setMsg(t('passwordUpdatedNotice'));
+      }
+    } finally {
+      setUpdatingPwd(false);
     }
   }
 
@@ -228,6 +254,34 @@ export default function ManagerProfileModal({
               </div>
             </div>
           </div>
+
+          {/* CHANGE PASSWORD (SELF-SERVICE) */}
+          {!demoMode && (
+            <div className="manager-password-box">
+              <span>
+                <KeyRound size={12} style={{ verticalAlign: 'middle', marginInlineEnd: 4 }} />
+                {t('changePasswordHeading')}
+              </span>
+              <div style={{ display: 'flex', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
+                <input
+                  type="password"
+                  minLength={6}
+                  placeholder={t('newPasswordPlaceholder')}
+                  value={newPassword}
+                  onChange={e => setNewPassword(e.target.value)}
+                  style={{ flex: '1 1 180px' }}
+                />
+                <button
+                  type="button"
+                  className="secondary compact-btn"
+                  disabled={updatingPwd || newPassword.trim().length < 6}
+                  onClick={() => void handleUpdatePassword()}
+                >
+                  {updatingPwd ? '…' : t('updatePasswordBtn')}
+                </button>
+              </div>
+            </div>
+          )}
 
           {error && <div className="notice">{error}</div>}
           {msg && <div className="notice positive-notice">{msg}</div>}

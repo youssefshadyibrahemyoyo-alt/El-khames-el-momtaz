@@ -1,10 +1,19 @@
 import React from 'react';
-import { Award, CheckCircle2, Eye, ShieldCheck, Sparkles, Trophy } from 'lucide-react';
+import {
+  AlertCircle,
+  Award,
+  CheckCircle2,
+  Eye,
+  ShieldCheck,
+  Sparkles,
+  Trophy,
+} from 'lucide-react';
 import type { Gameweek, ScoringRule, Screen, Standing } from '../types/league';
 import { SQUAD_BUDGET } from '../lib/squadRules';
 import { useLanguage } from '../i18n/LanguageContext';
 import type { TranslationKey } from '../i18n/translations';
 import AnimatedNumber from '../components/AnimatedNumber';
+import InstallAppBanner from '../components/InstallAppBanner';
 
 type Props = {
   isAdmin: boolean;
@@ -18,6 +27,8 @@ type Props = {
   standingsLoading: boolean;
   standingsError: string;
   gameweek: Gameweek | null;
+  targetGw?: Gameweek | null;
+  isSquadSavedForTargetGw?: boolean;
   scoringRules: ScoringRule[];
   onNavigate: (s: Screen) => void;
 };
@@ -34,6 +45,8 @@ export default function OverviewScreen({
   standingsLoading,
   standingsError,
   gameweek,
+  targetGw = null,
+  isSquadSavedForTargetGw = false,
   scoringRules,
   onNavigate,
 }: Props) {
@@ -48,6 +61,41 @@ export default function OverviewScreen({
 
   return (
     <>
+      <InstallAppBanner />
+
+      {!demoMode && targetGw && (
+        <div
+          className={`squad-readiness-banner ${
+            isSquadSavedForTargetGw ? 'squad-readiness-ok' : 'squad-readiness-warn'
+          }`}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            {isSquadSavedForTargetGw ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
+            <div>
+              <strong>
+                GW #{targetGw.number} ·{' '}
+                {isSquadSavedForTargetGw
+                  ? t('squadReadyBannerTitle')
+                  : t('squadIncompleteBannerTitle')}
+              </strong>
+              <p>
+                {isSquadSavedForTargetGw
+                  ? t('squadReadyBannerSub')
+                  : t('squadIncompleteBannerSub')}
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            className={isSquadSavedForTargetGw ? 'secondary compact-btn' : 'primary compact-btn'}
+            onClick={() => onNavigate('squad')}
+          >
+            {t('viewSquadBtn')}
+          </button>
+        </div>
+      )}
+
       <section className="hero stagger-item" style={{ '--stagger-i': 0 } as React.CSSProperties}>
         <div className="hero-floodlight hero-floodlight-left" aria-hidden="true" />
         <div className="hero-floodlight hero-floodlight-right" aria-hidden="true" />

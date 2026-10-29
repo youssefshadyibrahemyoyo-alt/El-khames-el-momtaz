@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Trash2, UserCheck, UserX } from 'lucide-react';
+import { KeyRound, MessageCircle, Trash2, UserCheck, UserX } from 'lucide-react';
 import type { AdminProps } from './types';
+import { openWhatsAppShare } from '../lib/shareCardCanvas';
 
 type Member = {
   id: string;
+  email?: string | null;
   display_name: string;
   team_name?: string | null;
   avatar_url?: string | null;
@@ -16,19 +18,29 @@ export default function RegistrationsAdmin({ db, onChanged }: AdminProps) {
   const [members, setMembers] = useState<Member[]>([]);
   const [autoApprove, setAutoApprove] = useState(true);
   const [msg, setMsg] = useState('');
+  const [lastResetCreds, setLastResetCreds] = useState<{
+    name: string;
+    email: string;
+    password: string;
+  } | null>(null);
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
-    const [membersRes, settingsRes] = await Promise.all([
-      db
-        .from('profiles')
-        .select('id,display_name,team_name,avatar_url,budget,role,player_approval_status')
-        .order('created_at', { ascending: true }),
+    const [rpcRes, settingsRes] = await Promise.all([
+      db.rpc('admin_list_members'),
       db.from('league_settings').select('auto_approve_signups').eq('id', 1).maybeSingle(),
     ]);
 
-    if (membersRes.error) setMsg(membersRes.error.message);
-    else setMembers((membersRes.data ?? []) as Member[]);
+    if (!rpcRes.error && rpcRes.data) {
+      setMembers(rpcRes.data as Member[]);
+    } else {
+      const fallback = await db
+        .from('profiles')
+        .select('id,display_name,team_name,avatar_url,budget,role,player_approval_status')
+        .order('created_at', { ascending: true });
+      if (fallback.error) setMsg(fallback.error.message);
+      else setMembers((fallback.data ?? []) as Member[]);
+    }
 
     if (!settingsRes.error && settingsRes.data) {
       setAutoApprove(Boolean(settingsRes.data.auto_approve_signups));
@@ -69,6 +81,37 @@ export default function RegistrationsAdmin({ db, onChanged }: AdminProps) {
       setMsg(`${m.display_name} is now ${status === 'approved' ? 'approved' : 'removed from the league'}.`);
       await load();
       onChanged();
+    }
+    setBusy(false);
+  }
+
+  async function resetMemberPassword(m: Member) {
+    const newPass = window.prompt(
+      `Set a new password for ${m.display_name}${m.email ? ` (${m.email})` : ''} — minimum 6 characters:`,
+      'khames2026'
+    );
+    if (!newPass) return;
+    if (newPass.trim().length < 6) {
+      setMsg('New password must be at least 6 characters.');
+      return;
+    }
+
+    setBusy(true);
+    setMsg('');
+    setLastResetCreds(null);
+    const { error } = await db.rpc('admin_reset_member_password', {
+      p_user_id: m.id,
+      p_new_password: newPass.trim(),
+    });
+    if (error) {
+      setMsg(`Could not reset password for ${m.display_name}: ${error.message}`);
+    } else {
+      setMsg(`✅ Password updated immediately for ${m.display_name}!`);
+      setLastResetCreds({
+        name: m.display_name,
+        email: m.email || '(their registered email)',
+        password: newPass.trim(),
+      });
     }
     setBusy(false);
   }
@@ -174,8 +217,18 @@ export default function RegistrationsAdmin({ db, onChanged }: AdminProps) {
               <span>
                 {m.role === 'admin_player' ? 'Admin + player' : 'Player'} · Budget £
                 {Number(m.budget ?? 50).toFixed(1)}m
+                {m.email ? ` · ✉️ ${m.email}` : ''}
               </span>
             </div>
+            <button
+              type="button"
+              className="secondary compact-btn"
+              disabled={busy}
+              title="Set a new password immediately"
+              onClick={() => void resetMemberPassword(m)}
+            >
+              <KeyRound size={13} /> Reset Password
+            </button>
             {m.role !== 'admin_player' && (
               <>
                 <button
@@ -228,7 +281,33 @@ export default function RegistrationsAdmin({ db, onChanged }: AdminProps) {
         </div>
       )}
 
-      {msg && <div className="notice inline-notice">{msg}</div>}
+      {msg && (
+        <div
+          className="notice inline-notice"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 8,
+          }}
+        >
+          <span>{msg}</span>
+          {lastResetCreds && (
+            <button
+              type="button"
+              className="primary compact-btn"
+              onClick={() =>
+                openWhatsAppShare(
+                  `🔑 *El Khames El Momtaz — Password Reset*\n\nHey ${lastResetCreds.name}! Your login is ready:\n📧 *Email:* ${lastResetCreds.email}\n🔒 *New Password:* ${lastResetCreds.password}\n\n👉 https://elkhameselmomtaz.vercel.app/`
+                )
+              }
+            >
+              <MessageCircle size={13} /> Send Login via WhatsApp
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }

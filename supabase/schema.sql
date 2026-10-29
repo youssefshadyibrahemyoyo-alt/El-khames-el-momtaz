@@ -111,4 +111,6 @@ GROUP BY fp.id;
 --   - public.admin_create_cup(p_name)                     [launch single-elimination Knockout Cup bracket]
 --   - public.get_cup_overview()                           [Knockout Cup bracket ties & Cup Champion]
 --   - public.get_manager_trophy_cabinet()                 [permanent GW Winner & Cup Champion counts per manager]
+--   - public.admin_list_members()                         [admin member list with registered auth emails]
+--   - public.admin_reset_member_password(p_user, p_pass)  [instant 1-click admin password reset]
 

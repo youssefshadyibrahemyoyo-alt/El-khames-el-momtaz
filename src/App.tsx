@@ -135,8 +135,11 @@ export default function App() {
       setProfileLoading(false);
     }
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, next) => {
+    const { data: listener } = supabase.auth.onAuthStateChange((event, next) => {
       setSession(next);
+      if (event === 'PASSWORD_RECOVERY') {
+        setMyProfileOpen(true);
+      }
       if (next) {
         void fetchProfile(next.user.id);
       } else {
@@ -676,6 +679,8 @@ export default function App() {
               standingsLoading={standingsLoading}
               standingsError={standingsError}
               gameweek={gameweek}
+              targetGw={targetGw}
+              isSquadSavedForTargetGw={savedSnapshot.ids.length === SQUAD_SIZE && !hasUnsaved}
               scoringRules={scoringRules}
               onNavigate={setScreen}
             />
