@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Camera, Trash2 } from 'lucide-react';
+import { Camera, ImageOff, Trash2 } from 'lucide-react';
 import type { AdminProps } from './types';
 import { uploadPlayerPhoto } from '../lib/supabase';
 
@@ -79,6 +79,30 @@ export default function PlayersAdmin({ db, onChanged }: AdminProps) {
       if (error) setMsg(`Could not save ${p.display_name}: ${error.message}`);
       else {
         setMsg(`${e.name.trim()} saved.`);
+        await load();
+        onChanged();
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function removeFootballPlayer(p: Row) {
+    if (
+      !window.confirm(
+        `Delete "${p.display_name}" completely from the player market? (Tip: if you only want to hide them from future picks while keeping past stats, untick Active instead.)`
+      )
+    ) {
+      return;
+    }
+    setBusy(true);
+    setMsg('');
+    try {
+      const { error } = await db.rpc('admin_delete_football_player', { p_player_id: p.id });
+      if (error) {
+        setMsg(`Could not delete ${p.display_name}: ${error.message}`);
+      } else {
+        setMsg(`Removed ${p.display_name} from the player pool.`);
         await load();
         onChanged();
       }
@@ -170,7 +194,7 @@ export default function PlayersAdmin({ db, onChanged }: AdminProps) {
   return (
     <div>
       <p className="muted tiny">
-        Upload player photos from your phone or PC, edit £m prices, or untick “Active” to hide a player from new picks.
+        Upload player photos from your phone or PC, edit £m prices, untick “Active” to hide a player, or click Delete to remove them completely.
       </p>
 
       <div className="admin-form">
@@ -211,7 +235,7 @@ export default function PlayersAdmin({ db, onChanged }: AdminProps) {
               <th>Player</th>
               <th>Price (£m)</th>
               <th>Active</th>
-              <th></th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -243,11 +267,11 @@ export default function PlayersAdmin({ db, onChanged }: AdminProps) {
                         <button
                           type="button"
                           className="icon-btn"
-                          title="Remove photo"
+                          title="Clear photo"
                           disabled={isUploading || busy}
                           onClick={() => void clearPhoto(p)}
                         >
-                          <Trash2 size={14} />
+                          <ImageOff size={14} />
                         </button>
                       )}
                     </div>
@@ -276,14 +300,25 @@ export default function PlayersAdmin({ db, onChanged }: AdminProps) {
                     />
                   </td>
                   <td>
-                    <button
-                      type="button"
-                      className="primary compact-btn"
-                      disabled={busy || !dirty(p)}
-                      onClick={() => void save(p)}
-                    >
-                      Save
-                    </button>
+                    <div style={{ display: 'inline-flex', gap: 6 }}>
+                      <button
+                        type="button"
+                        className="primary compact-btn"
+                        disabled={busy || !dirty(p)}
+                        onClick={() => void save(p)}
+                      >
+                        Save
+                      </button>
+                      <button
+                        type="button"
+                        className="secondary compact-btn"
+                        disabled={busy}
+                        title={`Delete ${p.display_name}`}
+                        onClick={() => void removeFootballPlayer(p)}
+                      >
+                        <Trash2 size={13} /> Delete
+                      </button>
+                    </div>
                   </td>
                 </tr>
               );
