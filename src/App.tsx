@@ -417,10 +417,13 @@ const [didNotPlay, setDidNotPlay] = useState<string[]>([]);
       setUsedChips(
         squads.filter(s => s.chip && s.gameweek_id !== target.id).map(s => String(s.chip))
       );
+        const prevWeekNum = previous ? (numberOf.get(previous.gameweek_id) ?? 0) : 0;
       setBaseFree(
-        previous
-          ? Math.min(2, Math.max(0, (previous.free_transfers ?? 1) - (previous.transfers_used ?? 0)) + 1)
-          : 1
+        current?.free_transfers
+          ? current.free_transfers
+          : !previous || prevWeekNum <= 1 || previous.chip === 'Wildcard'
+            ? 1
+            : Math.min(2, Math.max(0, (previous.free_transfers ?? 1) - (previous.transfers_used ?? 0)) + 1)
       );
 
       async function readIds(squadId: string): Promise<string[]> {
