@@ -1474,10 +1474,15 @@ const [didNotPlay, setDidNotPlay] = useState<string[]>([]);
                             <strong>{player.display_name}</strong>
                             {leaderboardTab === 'ratings' && <span>{player.matches_rated ?? 0} ratings recorded</span>}
                           </div>
-                          <strong className="leaderboard-stat">
-                            {leaderboardValue(player)}
-                            {leaderboardTab === 'ratings' ? '' : ` ${leaderboardTab === 'contributions' ? 'G+A' : leaderboardTab === 'goals' ? 'G' : 'A'}`}
-                          </strong>
+                                    <strong className="leaderboard-stat">
+            {leaderboardTab === 'managers'
+              ? `${player.points} pts`
+              : leaderboardTab === 'ratings'
+                ? '—'
+                : leaderboardTab === 'contributions'
+                  ? `${player.points} G+A`
+                  : `${player.points} ${leaderboardTab === 'goals' ? 'G' : 'A'}`}
+          </strong>
                         </div>
                       ))}
               </div>
