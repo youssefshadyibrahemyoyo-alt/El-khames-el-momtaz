@@ -1081,17 +1081,16 @@ const [didNotPlay, setDidNotPlay] = useState<string[]>([]);
                           className="egypt-bench-swap"
                           disabled={matchInProgress || !swapStarter}
                           title={swapStarter ? `Swap with ${playerById.get(swapStarter)?.name}` : 'Select a starter first'}
-                          onClick={() => {
+                                                    onClick={() => {
                             if (!swapStarter) return;
-                            setSelected(old => {
-                              const next = [...old];
-                              const starterIndex = next.indexOf(swapStarter);
-                              const subIndex = next.indexOf(id);
-                              if (starterIndex < 0 || subIndex < 0) return old;
+                            const next = [...selected];
+                            const starterIndex = next.indexOf(swapStarter);
+                            const subIndex = next.indexOf(id);
+                            if (starterIndex >= 0 && subIndex >= 0) {
                               [next[starterIndex], next[subIndex]] =
                                 [next[subIndex], next[starterIndex]];
-                              return next;
-                            });
+                              applyLineup(next);
+                            }
                             setSwapStarter(null);
                           }}
                         >
