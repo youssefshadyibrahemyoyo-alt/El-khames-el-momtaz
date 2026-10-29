@@ -221,7 +221,7 @@ const [didNotPlay, setDidNotPlay] = useState<string[]>([]);
   const isAdmin = role === 'admin_player';
   const approved = demoMode || profile?.player_approval_status === 'approved';
 
-  const players: LeaguePlayer[] = demoMode
+    const players: LeaguePlayer[] = demoMode
     ? demoPlayers
     : realPlayers.map(p => ({
         id: p.id,
@@ -229,22 +229,33 @@ const [didNotPlay, setDidNotPlay] = useState<string[]>([]);
         price: Number(p.price),
         points: 0,
         photo_url: p.photo_url,
+        is_active: p.is_active,
       }));
 
   const playerById = new Map(players.map(p => [p.id, p]));
   const filteredPlayers = players.filter(p => {
-  const matchesSearch = p.name
-    .toLowerCase()
-    .includes(playerSearch.toLowerCase());
+    const visible = p.is_active !== false || selected.includes(p.id);
+    const matchesSearch = p.name.toLowerCase().includes(playerSearch.toLowerCase());
+    const matchesPrice =
+      priceFilter === 'all' ||
+      (priceFilter === 'under5' && p.price < 5) ||
+      (priceFilter === '5to7' && p.price >= 5 && p.price <= 7) ||
+      (priceFilter === 'over7' && p.price > 7);
 
-  const matchesPrice =
-    priceFilter === 'all' ||
-    (priceFilter === 'under5' && p.price < 5) ||
-    (priceFilter === '5to7' && p.price >= 5 && p.price <= 7) ||
-    (priceFilter === 'over7' && p.price > 7);
+    return visible && matchesSearch && matchesPrice;
+  });
 
-  return matchesSearch && matchesPrice;
-});
+  function applyLineup(next: string[]) {
+    const nextStarters = next.slice(0, 5);
+    const nextCap = nextStarters.includes(captain) ? captain : (nextStarters[0] ?? '');
+    const nextVice =
+      nextStarters.includes(viceCaptain) && viceCaptain !== nextCap
+        ? viceCaptain
+        : (nextStarters.find(id => id !== nextCap) ?? '');
+    setSelected(next);
+    setCaptain(nextCap);
+    setViceCaptain(nextVice);
+  }
 
   // Preview of transfers and hits. The database repeats these checks when you save.
   const transfersUsed = baselineIds.length === 7
