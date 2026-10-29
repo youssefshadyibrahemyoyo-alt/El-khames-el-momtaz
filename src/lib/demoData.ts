@@ -1,7 +1,10 @@
 import type {
+  CupOverview,
+  FanPotnPoll,
   GameweekHighlights,
   H2HOverview,
   LeaguePlayer,
+  ManagerTrophyMap,
   PlayerProfileDetail,
   PublicMatch,
   ScoringRule,
@@ -338,6 +341,8 @@ export function buildDemoPlayerProfile(player: LeaguePlayer): PlayerProfileDetai
     playstyle: player.playstyle ?? 'All-Rounder',
     age: player.age ?? 22,
     bio: player.bio ?? 'Key squad member in the Thursday night 5-a-side sessions.',
+    availability_status: player.availability_status ?? 'available',
+    availability_note: player.availability_note ?? null,
     ownership_pct: 50,
     stats: {
       matches_played: mp,
@@ -417,3 +422,95 @@ export function buildDemoInspection(managerName: string): SquadInspection {
     }),
   };
 }
+
+export const DEMO_FAN_POLL: FanPotnPoll = {
+  has_poll: true,
+  gameweek_id: 2,
+  gameweek_number: 2,
+  total_votes: 4,
+  my_vote_player_id: 'Karim',
+  candidates: [
+    {
+      player_id: 'Karim',
+      display_name: 'Karim',
+      photo_url: null,
+      kit_number: 10,
+      votes: 3,
+      vote_pct: 75,
+      gw_points: 23,
+      is_leader: true,
+    },
+    {
+      player_id: 'Omar',
+      display_name: 'Omar',
+      photo_url: null,
+      kit_number: 7,
+      votes: 1,
+      vote_pct: 25,
+      gw_points: 11,
+      is_leader: false,
+    },
+    {
+      player_id: 'Mazen',
+      display_name: 'Mazen',
+      photo_url: null,
+      kit_number: 1,
+      votes: 0,
+      vote_pct: 0,
+      gw_points: 10,
+      is_leader: false,
+    },
+  ],
+};
+
+export const DEMO_CUP: CupOverview = {
+  has_cup: true,
+  cup_id: 1,
+  name: 'El Khames Cup #1',
+  status: 'active',
+  champion: null,
+  ties: [
+    {
+      id: 1,
+      round_order: 1,
+      round_name: 'Semi-Finals',
+      slot_index: 1,
+      gameweek_id: 2,
+      gameweek_number: 2,
+      gameweek_status: 'completed',
+      winner_manager_id: 'demo-1',
+      home: { manager_id: 'demo-1', display_name: 'Yako', team_name: 'Yako Royals', points: 42 },
+      away: { manager_id: 'demo-4', display_name: 'Benas', team_name: 'El Khames FC', points: 28 },
+    },
+    {
+      id: 2,
+      round_order: 1,
+      round_name: 'Semi-Finals',
+      slot_index: 2,
+      gameweek_id: 2,
+      gameweek_number: 2,
+      gameweek_status: 'completed',
+      winner_manager_id: 'demo-2',
+      home: { manager_id: 'demo-2', display_name: 'Shady', team_name: 'Cairo Wolves', points: 35 },
+      away: { manager_id: 'demo-3', display_name: 'Moaaz', team_name: 'Zamalek Stars', points: 33 },
+    },
+    {
+      id: 3,
+      round_order: 2,
+      round_name: 'Grand Final',
+      slot_index: 1,
+      gameweek_id: 3,
+      gameweek_number: 3,
+      gameweek_status: 'open',
+      winner_manager_id: null,
+      home: { manager_id: 'demo-1', display_name: 'Yako', team_name: 'Yako Royals', points: 0 },
+      away: { manager_id: 'demo-2', display_name: 'Shady', team_name: 'Cairo Wolves', points: 0 },
+    },
+  ],
+};
+
+export const DEMO_TROPHIES: ManagerTrophyMap = {
+  'demo-1': { gw_wins: 2, cup_wins: 1 },
+  'demo-2': { gw_wins: 1, cup_wins: 0 },
+};
+

@@ -193,12 +193,31 @@ export default function PlayerProfileModal({
                   <span className="profile-status-chip">
                     {profile.is_active ? t('activeBadge') : t('inactiveBadge')}
                   </span>
+                  {profile.availability_status === 'doubtful' && (
+                    <span className="fpl-flag-chip fpl-flag-chip--doubtful">
+                      🟡 {t('availDoubtful')}
+                    </span>
+                  )}
+                  {profile.availability_status === 'out' && (
+                    <span className="fpl-flag-chip fpl-flag-chip--out">
+                      🔴 {t('availOut')}
+                    </span>
+                  )}
+                  {(!profile.availability_status || profile.availability_status === 'available') && (
+                    <span className="fpl-flag-chip fpl-flag-chip--available">
+                      🟢 {t('availAvailable')}
+                    </span>
+                  )}
                   <span className="profile-ownership-chip">
                     <UserCheck size={11} /> {t('selectedByLabel')} {profile.ownership_pct}%
                   </span>
                 </div>
 
                 <h2>{profile.display_name}</h2>
+
+                {profile.availability_note && (
+                  <p className="fpl-profile-avail-note">⚠️ {profile.availability_note}</p>
+                )}
 
                 <div className="profile-price-row">
                   <strong className="profile-price-tag">

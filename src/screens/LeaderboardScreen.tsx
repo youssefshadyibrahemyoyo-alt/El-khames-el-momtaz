@@ -1,6 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import { Crown, Eye, Flame, Sparkles, Swords, Trophy } from 'lucide-react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Crown, Eye, Flame, MessageCircle, Share2, Sparkles, Swords, Trophy } from 'lucide-react';
 import type {
+  CupOverview,
+  CupTie,
   Gameweek,
   GameweekHighlights,
   GameweekStanding,
@@ -8,6 +10,7 @@ import type {
   LeaderboardPlayer,
   LeaderboardTab,
   LeaguePlayer,
+  ManagerTrophyMap,
   SquadInspection,
   Standing,
 } from '../types/league';
@@ -15,10 +18,15 @@ import { useLanguage } from '../i18n/LanguageContext';
 import { supabase } from '../lib/supabase';
 import {
   buildDemoInspection,
+  DEMO_CUP,
   DEMO_H2H,
   DEMO_HIGHLIGHTS,
   DEMO_STANDINGS,
 } from '../lib/demoData';
+import {
+  openWhatsAppShare,
+  shareOrDownloadHighlightsCard,
+} from '../lib/shareCardCanvas';
 import SquadInspectorModal from '../components/SquadInspectorModal';
 import FutPlayerCard from '../components/FutPlayerCard';
 import AnimatedNumber from '../components/AnimatedNumber';
@@ -32,6 +40,8 @@ type LeaderboardScreenProps = {
   standingsError: string;
   gameweeks: Gameweek[];
   demoPlayers: LeaguePlayer[];
+  trophies?: ManagerTrophyMap;
+  onCupChanged?: () => void;
   onOpenPlayerProfile: (playerId: string) => void;
 };
 
@@ -44,6 +54,8 @@ export default function LeaderboardScreen({
   standingsError,
   gameweeks,
   demoPlayers,
+  trophies = {},
+  onCupChanged,
   onOpenPlayerProfile,
 }: LeaderboardScreenProps) {
   const { t } = useLanguage();
@@ -61,6 +73,55 @@ export default function LeaderboardScreen({
   const [highlightGwId, setHighlightGwId] = useState<number | 'latest'>('latest');
   const [highlights, setHighlights] = useState<GameweekHighlights | null>(null);
   const [highlightsLoading, setHighlightsLoading] = useState(false);
+
+  // Knockout Cup state
+  const [cupData, setCupData] = useState<CupOverview | null>(null);
+  const [cupLoading, setCupLoading] = useState(false);
+  const [cupBusy, setCupBusy] = useState(false);
+  const [cupMsg, setCupMsg] = useState('');
+
+  const loadCup = useCallback(async () => {
+    if (demoMode || !supabase) {
+      setCupData(DEMO_CUP);
+      return;
+    }
+    setCupLoading(true);
+    const { data, error } = await supabase.rpc('get_cup_overview');
+    if (!error && data) {
+      setCupData(data as CupOverview);
+    }
+    setCupLoading(false);
+  }, [demoMode]);
+
+  useEffect(() => {
+    if (tab !== 'cup') return;
+    void loadCup();
+  }, [tab, loadCup]);
+
+  async function handleLaunchCup() {
+    if (demoMode || !supabase) return;
+    const customName = window.prompt(
+      'Enter a name for the Knockout Cup tournament:',
+      'El Khames Cup'
+    );
+    if (!customName || !customName.trim()) return;
+    setCupBusy(true);
+    setCupMsg('');
+    try {
+      const { error } = await supabase.rpc('admin_create_cup', {
+        p_name: customName.trim(),
+      });
+      if (error) {
+        setCupMsg(error.message);
+      } else {
+        setCupMsg(`🏆 Launched "${customName.trim()}"!`);
+        await loadCup();
+        onCupChanged?.();
+      }
+    } finally {
+      setCupBusy(false);
+    }
+  }
 
   const [players, setPlayers] = useState<LeaderboardPlayer[]>([]);
   const [playersLoading, setPlayersLoading] = useState(false);
@@ -159,6 +220,7 @@ export default function LeaderboardScreen({
       !supabase ||
       tab === 'managers' ||
       tab === 'h2h' ||
+      tab === 'cup' ||
       tab === 'highlights'
     ) {
       return;
@@ -237,6 +299,7 @@ export default function LeaderboardScreen({
   const tabs: { id: LeaderboardTab; label: string }[] = [
     { id: 'managers', label: t('tabManagers') },
     { id: 'h2h', label: `⚔️ ${t('tabH2H')}` },
+    { id: 'cup', label: `🏆 ${t('tabCup')}` },
     { id: 'highlights', label: `✨ ${t('tabHighlights')}` },
     { id: 'goals', label: t('tabGoals') },
     { id: 'assists', label: t('tabAssists') },
@@ -247,6 +310,7 @@ export default function LeaderboardScreen({
   const descriptions: Record<LeaderboardTab, string> = {
     managers: t('descManagers'),
     h2h: t('descH2H'),
+    cup: t('descCup'),
     highlights: t('descHighlights'),
     goals: `${t('descGoals')} · ${t('tapForProfileHint')}`,
     assists: `${t('descAssists')} · ${t('tapForProfileHint')}`,
@@ -337,9 +401,11 @@ export default function LeaderboardScreen({
               ? t('leagueTableTitle')
               : tab === 'h2h'
                 ? t('h2hTableHeading')
-                : tab === 'highlights'
-                  ? t('totwHeading')
-                  : t('playerLeaderboardTitle')}
+                : tab === 'cup'
+                  ? t('tabCup')
+                  : tab === 'highlights'
+                    ? t('totwHeading')
+                    : t('playerLeaderboardTitle')}
           </h3>
           <p>{descriptions[tab]}</p>
         </div>
@@ -426,10 +492,28 @@ export default function LeaderboardScreen({
                       )}
 
                       <div className="leaderboard-player-info">
-                        <strong>
-                          {row.team_name ? `${row.team_name} · ` : ''}
-                          {row.display_name}
-                          {row.manager_id === currentUserId ? ` ${t('youTag')}` : ''}
+                        <strong style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
+                          <span>
+                            {row.team_name ? `${row.team_name} · ` : ''}
+                            {row.display_name}
+                            {row.manager_id === currentUserId ? ` ${t('youTag')}` : ''}
+                          </span>
+                          {(trophies[row.manager_id]?.cup_wins ?? 0) > 0 && (
+                            <span
+                              className="trophy-inline-badge trophy-inline-cup"
+                              title={t('trophyCupWins')}
+                            >
+                              🏆 ×{trophies[row.manager_id].cup_wins}
+                            </span>
+                          )}
+                          {(trophies[row.manager_id]?.gw_wins ?? 0) > 0 && (
+                            <span
+                              className="trophy-inline-badge trophy-inline-gw"
+                              title={t('trophyGwWins')}
+                            >
+                              👑 ×{trophies[row.manager_id].gw_wins}
+                            </span>
+                          )}
                         </strong>
                         <span>
                           {podiumTag ? `${podiumTag} · ` : ''}
@@ -625,6 +709,141 @@ export default function LeaderboardScreen({
         </div>
       )}
 
+      {/* 2B. KNOCKOUT CUP BRACKET */}
+      {tab === 'cup' && (
+        <div className="screen-stage" key="cup-bracket">
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: 10,
+              marginBottom: 14,
+            }}
+          >
+            <div>
+              {cupData?.has_cup && (
+                <h4 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 7 }}>
+                  <Trophy size={16} style={{ color: 'var(--gold)' }} />
+                  {cupData.name}
+                  <span
+                    className={`gw-status-pill ${
+                      cupData.status === 'completed' ? 'gw-status-finished' : 'gw-status-active'
+                    }`}
+                  >
+                    {cupData.status}
+                  </span>
+                </h4>
+              )}
+            </div>
+
+            {isAdmin && !demoMode && (
+              <button
+                type="button"
+                className="primary compact-btn"
+                disabled={cupBusy}
+                onClick={() => void handleLaunchCup()}
+              >
+                <Trophy size={14} /> {t('cupLaunchBtn')}
+              </button>
+            )}
+          </div>
+
+          {cupMsg && <div className="notice">{cupMsg}</div>}
+          {cupLoading && <p className="muted">{t('loadingPoints')}</p>}
+
+          {!cupLoading && (!cupData || !cupData.has_cup) && (
+            <div className="gw-empty-state">
+              <Trophy size={28} style={{ color: 'var(--gold)', marginBottom: 6 }} />
+              <p className="muted" style={{ margin: 0 }}>
+                {t('cupNoTournamentYet')}
+              </p>
+            </div>
+          )}
+
+          {!cupLoading && cupData?.has_cup && (
+            <>
+              {cupData.champion && (
+                <div className="cup-champion-banner">
+                  <Crown size={24} />
+                  <div>
+                    <span className="eyebrow">{t('cupChampionTitle')}</span>
+                    <strong>
+                      {cupData.champion.team_name || cupData.champion.display_name}
+                    </strong>
+                    {cupData.champion.team_name && (
+                      <small style={{ display: 'block', opacity: 0.85 }}>
+                        {cupData.champion.display_name}
+                      </small>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <div className="cup-bracket-columns">
+                {Array.from(
+                  (cupData.ties ?? []).reduce((acc, tie) => {
+                    const list = acc.get(tie.round_order) ?? [];
+                    list.push(tie);
+                    acc.set(tie.round_order, list);
+                    return acc;
+                  }, new Map<number, CupTie[]>())
+                )
+                  .sort(([a], [b]) => a - b)
+                  .map(([roundOrder, roundTies]) => (
+                    <div className="cup-round-column" key={roundOrder}>
+                      <div className="cup-round-header">
+                        <strong>{roundTies[0]?.round_name ?? `Round ${roundOrder}`}</strong>
+                        {roundTies[0]?.gameweek_number && (
+                          <span>GW #{roundTies[0].gameweek_number}</span>
+                        )}
+                      </div>
+
+                      <div className="cup-round-ties">
+                        {roundTies.map(tie => {
+                          const homeWon =
+                            tie.winner_manager_id != null &&
+                            tie.winner_manager_id === tie.home.manager_id;
+                          const awayWon =
+                            tie.winner_manager_id != null &&
+                            tie.winner_manager_id === tie.away.manager_id;
+
+                          return (
+                            <div className="cup-tie-card" key={tie.id}>
+                              <div className={`cup-tie-side ${homeWon ? 'cup-side-winner' : ''}`}>
+                                <span className="cup-side-name">
+                                  {tie.home.is_bye
+                                    ? t('cupByeLabel')
+                                    : tie.home.team_name || tie.home.display_name}
+                                </span>
+                                <strong className="cup-side-pts">
+                                  {tie.home.is_bye ? '—' : tie.home.points}
+                                </strong>
+                              </div>
+
+                              <div className={`cup-tie-side ${awayWon ? 'cup-side-winner' : ''}`}>
+                                <span className="cup-side-name">
+                                  {tie.away.is_bye
+                                    ? t('cupByeLabel')
+                                    : tie.away.team_name || tie.away.display_name}
+                                </span>
+                                <strong className="cup-side-pts">
+                                  {tie.away.is_bye ? '—' : tie.away.points}
+                                </strong>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
       {/* 3. TEAM OF THE WEEK & BANTER TROPHIES */}
       {tab === 'highlights' && (
         <div className="screen-stage" key={`hl-${highlightGwId}`}>
@@ -665,8 +884,40 @@ export default function LeaderboardScreen({
                 <div>
                   <span className="eyebrow">GW #{highlights.gameweek_number}</span>
                   <h4>{t('totwHeading')}</h4>
+                  <span className="muted tiny">{t('totwSub')}</span>
                 </div>
-                <span className="muted tiny">{t('totwSub')}</span>
+
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    className="primary compact-btn"
+                    onClick={() => void shareOrDownloadHighlightsCard(highlights)}
+                  >
+                    <Share2 size={13} /> {t('shareRecapCardBtn')}
+                  </button>
+                  <button
+                    type="button"
+                    className="secondary compact-btn"
+                    onClick={() => {
+                      const gwN = highlights.gameweek_number ?? 1;
+                      const king =
+                        highlights.awards?.gw_champion?.team_name ||
+                        highlights.awards?.gw_champion?.display_name ||
+                        '—';
+                      const kingPts = highlights.awards?.gw_champion?.points ?? 0;
+                      const boot = highlights.awards?.golden_boot?.display_name || '—';
+                      const bootGoals = highlights.awards?.golden_boot?.goals ?? 0;
+                      const totwLine = (highlights.team_of_the_week ?? [])
+                        .map(p => `${p.display_name} (${p.points})`)
+                        .join(', ');
+                      openWhatsAppShare(
+                        `🏆 *EL KHAMES EL MOMTAZ — GW #${gwN} RECAP!*\n\n👑 *King of Thursday:* ${king} (${kingPts} pts)\n⚽ *Golden Boot:* ${boot} (${bootGoals} goals)\n🌟 *Dream V TOTW:* ${totwLine}\n\n🗳️ Cast your *Fans’ Player of the Night* vote now:\n👉 https://elkhameselmomtaz.vercel.app/`
+                      );
+                    }}
+                  >
+                    <MessageCircle size={13} /> WhatsApp
+                  </button>
+                </div>
               </div>
 
               <div className="egypt-pitch pitch-3d-stadium" style={{ marginBottom: 18 }}>

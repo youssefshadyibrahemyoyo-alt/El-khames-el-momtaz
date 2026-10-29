@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
-import { Camera, Shield, Trash2, Wallet, X } from 'lucide-react';
-import type { Profile } from '../types/league';
+import { Camera, Crown, Shield, Trash2, Trophy, Wallet, X } from 'lucide-react';
+import type { ManagerTrophyMap, Profile } from '../types/league';
 import { useLanguage } from '../i18n/LanguageContext';
 import { supabase, uploadManagerAvatar } from '../lib/supabase';
 
 type Props = {
   profile: Profile;
   demoMode: boolean;
+  trophies?: ManagerTrophyMap;
   onUpdated: (updated: Profile) => void;
   onClose: () => void;
 };
@@ -14,6 +15,7 @@ type Props = {
 export default function ManagerProfileModal({
   profile,
   demoMode,
+  trophies = {},
   onUpdated,
   onClose,
 }: Props) {
@@ -204,6 +206,27 @@ export default function ManagerProfileModal({
               </small>
             </div>
             <strong>£{budgetVal.toFixed(1)}m</strong>
+          </div>
+
+          {/* PERMANENT MANAGER TROPHY CABINET */}
+          <div className="manager-trophy-cabinet">
+            <span className="eyebrow">{t('trophyCabinetHeading')}</span>
+            <div className="manager-trophy-pills">
+              <div className="trophy-cabinet-tile">
+                <Trophy size={16} style={{ color: 'var(--gold)' }} />
+                <div>
+                  <strong>{trophies[profile.id]?.cup_wins ?? 0}</strong>
+                  <span>{t('trophyCupWins')}</span>
+                </div>
+              </div>
+              <div className="trophy-cabinet-tile">
+                <Crown size={16} style={{ color: 'var(--gold)' }} />
+                <div>
+                  <strong>{trophies[profile.id]?.gw_wins ?? 0}</strong>
+                  <span>{t('trophyGwWins')}</span>
+                </div>
+              </div>
+            </div>
           </div>
 
           {error && <div className="notice">{error}</div>}

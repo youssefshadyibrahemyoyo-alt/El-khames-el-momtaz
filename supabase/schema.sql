@@ -104,5 +104,11 @@ GROUP BY fp.id;
 --   - public.get_public_matches(p_gameweek_id)            [public 15-min match feed + MVP & Hat-tricks]
 --   - public.get_gameweek_highlights(p_gameweek_id)       [Team of the Week Dream 5 + Banter Trophies]
 --   - public.inspect_gameweek_squad(p_gw, p_mgr)          [post-deadline squad & points inspector]
---   - public.get_player_profile(p_player_id)              [full player profile, bio & career stats]
+--   - public.get_player_profile(p_player_id)              [full player profile, bio, availability & career stats]
 --   - public.save_match_stats(p_match_id, p_rows)         [atomic match stats entry incl. is_mvp]
+--   - public.get_fan_potn_poll(p_gameweek_id)             [Fans' Vote: Player of the Night poll & live tallies]
+--   - public.cast_fan_potn_vote(p_gameweek_id, p_player)  [cast/update logged-in fan vote]
+--   - public.admin_create_cup(p_name)                     [launch single-elimination Knockout Cup bracket]
+--   - public.get_cup_overview()                           [Knockout Cup bracket ties & Cup Champion]
+--   - public.get_manager_trophy_cabinet()                 [permanent GW Winner & Cup Champion counts per manager]
+

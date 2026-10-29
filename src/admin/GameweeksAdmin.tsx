@@ -3,6 +3,7 @@ import {
   AlertTriangle,
   CalendarPlus,
   CheckCircle2,
+  MessageCircle,
   Minus,
   Play,
   Plus,
@@ -20,6 +21,7 @@ import {
   fromCairoDateTimeInput,
   toCairoDateTimeInput,
 } from '../lib/cairoTime';
+import { openWhatsAppShare } from '../lib/shareCardCanvas';
 import { useLanguage } from '../i18n/LanguageContext';
 
 type GW = { id: number; number: number; status: string; transfer_deadline: string | null };
@@ -328,27 +330,46 @@ export default function GameweeksAdmin({ db, onChanged }: AdminProps) {
                       </button>
                     </td>
                     <td>
-                      {['draft', 'open'].includes(st) && (
-                        <button
-                          type="button"
-                          className="primary compact-btn"
-                          disabled={busy || hasActive}
-                          title={hasActive ? 'End the active gameweek first' : ''}
-                          onClick={() => setConfirmAction({ kind: 'start', gw: g })}
-                        >
-                          <Play size={13} /> Start
-                        </button>
-                      )}
-                      {st === 'active' && (
-                        <button
-                          type="button"
-                          className="primary compact-btn"
-                          disabled={busy}
-                          onClick={() => setConfirmAction({ kind: 'end', gw: g })}
-                        >
-                          <Square size={13} /> End
-                        </button>
-                      )}
+                      <div style={{ display: 'inline-flex', gap: 6, flexWrap: 'wrap' }}>
+                        {['draft', 'open'].includes(st) && (
+                          <>
+                            <button
+                              type="button"
+                              className="secondary compact-btn"
+                              title={t('shareWhatsAppDeadlineBtn')}
+                              onClick={() => {
+                                const dlText = g.transfer_deadline
+                                  ? formatCairoDeadline(g.transfer_deadline, lang)
+                                  : 'Thursday before kickoff';
+                                openWhatsAppShare(
+                                  `⚽ *EL KHAMES EL MOMTAZ — GW #${g.number} TRANSFERS OPEN!*\n\n⏰ *Deadline:* ${dlText}\n🔥 Check player availability flags (🟢/🟡/🔴), pick your Captain, and lock in your 7-man squad now!\n\n👉 https://elkhameselmomtaz.vercel.app/`
+                                );
+                              }}
+                            >
+                              <MessageCircle size={13} /> {t('shareWhatsAppDeadlineBtn')}
+                            </button>
+                            <button
+                              type="button"
+                              className="primary compact-btn"
+                              disabled={busy || hasActive}
+                              title={hasActive ? 'End the active gameweek first' : ''}
+                              onClick={() => setConfirmAction({ kind: 'start', gw: g })}
+                            >
+                              <Play size={13} /> Start
+                            </button>
+                          </>
+                        )}
+                        {st === 'active' && (
+                          <button
+                            type="button"
+                            className="primary compact-btn"
+                            disabled={busy}
+                            onClick={() => setConfirmAction({ kind: 'end', gw: g })}
+                          >
+                            <Square size={13} /> End
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );

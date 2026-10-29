@@ -3,11 +3,14 @@ export type Screen = 'overview' | 'squad' | 'players' | 'matches' | 'leaderboard
 export type LeaderboardTab =
   | 'managers'
   | 'h2h'
+  | 'cup'
   | 'highlights'
   | 'goals'
   | 'assists'
   | 'contributions'
   | 'ratings';
+
+export type AvailabilityStatus = 'available' | 'doubtful' | 'out';
 
 export type AccountRole = 'admin_player' | 'player';
 
@@ -57,6 +60,8 @@ export type FootballPlayer = {
   playstyle?: string | null;
   age?: number | null;
   bio?: string | null;
+  availability_status?: AvailabilityStatus | null;
+  availability_note?: string | null;
 };
 
 export type PlayerFantasyTotal = {
@@ -80,6 +85,8 @@ export type LeaguePlayer = {
   playstyle?: string | null;
   age?: number | null;
   bio?: string | null;
+  availability_status?: AvailabilityStatus | null;
+  availability_note?: string | null;
 };
 
 export type PlayerRecentMatch = {
@@ -108,6 +115,8 @@ export type PlayerProfileDetail = {
   playstyle: string | null;
   age: number | null;
   bio: string | null;
+  availability_status?: AvailabilityStatus | null;
+  availability_note?: string | null;
   ownership_pct: number;
   stats: {
     matches_played: number;
@@ -331,3 +340,67 @@ export type PriceChangePreview = {
   new_price: number;
   delta: number;
 };
+
+export type FanPotnCandidate = {
+  player_id: string;
+  display_name: string;
+  photo_url: string | null;
+  kit_number: number | null;
+  votes: number;
+  vote_pct: number;
+  gw_points: number;
+  is_leader: boolean;
+};
+
+export type FanPotnPoll = {
+  has_poll: boolean;
+  gameweek_id?: number;
+  gameweek_number?: number;
+  total_votes?: number;
+  my_vote_player_id?: string | null;
+  candidates?: FanPotnCandidate[];
+};
+
+export type CupSide = {
+  manager_id: string | null;
+  display_name: string;
+  team_name?: string | null;
+  avatar_url?: string | null;
+  points: number;
+  is_bye?: boolean;
+};
+
+export type CupTie = {
+  id: number;
+  round_order: number;
+  round_name: string;
+  slot_index: number;
+  gameweek_id: number | null;
+  gameweek_number: number | null;
+  gameweek_status: string | null;
+  winner_manager_id: string | null;
+  home: CupSide;
+  away: CupSide;
+};
+
+export type CupOverview = {
+  has_cup: boolean;
+  cup_id?: number;
+  name?: string;
+  status?: 'active' | 'completed';
+  champion?: {
+    manager_id: string;
+    display_name: string;
+    team_name?: string | null;
+    avatar_url?: string | null;
+  } | null;
+  ties?: CupTie[];
+};
+
+export type ManagerTrophyEntry = {
+  gw_wins: number;
+  cup_wins: number;
+};
+
+export type ManagerTrophyMap = Record<string, ManagerTrophyEntry>;
+

@@ -163,6 +163,24 @@ export default function PlayerMarketScreen({
                     <span className="inline-kit-chip">#{p.kit_number}</span>
                   )}
                   {p.name}
+                  {p.availability_status === 'doubtful' && (
+                    <span
+                      className="fpl-flag-chip fpl-flag-chip--doubtful"
+                      style={{ marginInlineStart: 6 }}
+                      title={p.availability_note || t('availDoubtful')}
+                    >
+                      🟡 {t('availDoubtShort')}
+                    </span>
+                  )}
+                  {p.availability_status === 'out' && (
+                    <span
+                      className="fpl-flag-chip fpl-flag-chip--out"
+                      style={{ marginInlineStart: 6 }}
+                      title={p.availability_note || t('availOut')}
+                    >
+                      🔴 {t('availOutShort')}
+                    </span>
+                  )}
                 </strong>
                 <span>
                   {!p.is_active
@@ -172,6 +190,7 @@ export default function PlayerMarketScreen({
                       : t('availableToSelect')}{' '}
                   · {p.points} {t('ptsUnit')} ({p.matchesPlayed} {t('matchesShort')})
                   {metaExtras ? ` · ${metaExtras}` : ''}
+                  {p.availability_note ? ` · ⚠️ ${p.availability_note}` : ''}
                 </span>
               </div>
 

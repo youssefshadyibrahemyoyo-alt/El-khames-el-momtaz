@@ -8,6 +8,8 @@ import {
   syncSquadLeaders,
 } from '../lib/squadRules';
 import { fromCairoDateTimeInput, toCairoDateTimeInput } from '../lib/cairoTime';
+import { translations } from '../i18n/translations';
+import { DEMO_CUP, DEMO_FAN_POLL } from '../lib/demoData';
 import type { Gameweek, LeaguePlayer, SquadRecord } from '../types/league';
 
 describe('squadRules', () => {
@@ -152,3 +154,14 @@ describe('cairoTime', () => {
     }
   });
 });
+
+describe('i18n & tournament fixtures', () => {
+  it('keeps English and Arabic translation keys 100% in sync and validates cup & fan poll structures', () => {
+    expect(Object.keys(translations.ar).sort()).toEqual(Object.keys(translations.en).sort());
+    expect(DEMO_CUP.has_cup).toBe(true);
+    expect(DEMO_CUP.ties?.length).toBeGreaterThanOrEqual(3);
+    expect(DEMO_FAN_POLL.has_poll).toBe(true);
+    expect(DEMO_FAN_POLL.candidates?.[0]?.is_leader).toBe(true);
+  });
+});
+

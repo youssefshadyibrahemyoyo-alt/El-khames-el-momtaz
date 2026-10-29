@@ -1,5 +1,6 @@
 import React from 'react';
 import { Info } from 'lucide-react';
+import type { AvailabilityStatus } from '../types/league';
 
 type Props = {
   slotNumber: number;
@@ -8,6 +9,8 @@ type Props = {
   photoUrl?: string | null;
   statLabel: string;
   secondaryNote?: string | null;
+  availabilityStatus?: AvailabilityStatus | null;
+  availabilityNote?: string | null;
   isCaptain?: boolean;
   isTripleCaptain?: boolean;
   isViceCaptain?: boolean;
@@ -27,6 +30,8 @@ export default function FutPlayerCard({
   photoUrl,
   statLabel,
   secondaryNote,
+  availabilityStatus,
+  availabilityNote,
   isCaptain = false,
   isTripleCaptain = false,
   isViceCaptain = false,
@@ -67,6 +72,22 @@ export default function FutPlayerCard({
         </span>
 
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+          {availabilityStatus === 'doubtful' && (
+            <span
+              className="fpl-flag-chip fpl-flag-chip--doubtful"
+              title={availabilityNote || '50/50 Doubtful'}
+            >
+              🟡 50/50
+            </span>
+          )}
+          {availabilityStatus === 'out' && (
+            <span
+              className="fpl-flag-chip fpl-flag-chip--out"
+              title={availabilityNote || 'Out Tonight'}
+            >
+              🔴 OUT
+            </span>
+          )}
           {isCaptain && (
             <span className="fut-armband captain-armband">
               {isTripleCaptain ? '3×C' : 'C'}

@@ -1,14 +1,25 @@
 import React, { useEffect, useState } from 'react';
-import { ArrowLeftRight, CheckCircle2, RotateCcw, Sparkles } from 'lucide-react';
+import {
+  AlertTriangle,
+  ArrowLeftRight,
+  CheckCircle2,
+  RotateCcw,
+  Share2,
+  Sparkles,
+} from 'lucide-react';
 import type { ChipName, Gameweek, LeaguePlayer, Screen } from '../types/league';
 import { useLanguage } from '../i18n/LanguageContext';
 import { SQUAD_BUDGET, SQUAD_SIZE, STARTERS_COUNT } from '../lib/squadRules';
+import { shareOrDownloadSquadCard } from '../lib/shareCardCanvas';
 import FutPlayerCard from '../components/FutPlayerCard';
 import AnimatedNumber from '../components/AnimatedNumber';
 import ConfettiBurst from '../components/ConfettiBurst';
 
 type SquadScreenProps = {
   demoMode: boolean;
+  managerName?: string;
+  teamName?: string | null;
+  gameweekNumber?: number;
   squadLoading: boolean;
   squadSaving: boolean;
   playersError: string;
@@ -41,6 +52,9 @@ type SquadScreenProps = {
 
 export default function SquadScreen({
   demoMode,
+  managerName = 'Manager',
+  teamName = null,
+  gameweekNumber = 1,
   squadLoading,
   squadSaving,
   playersError,
@@ -76,6 +90,7 @@ export default function SquadScreen({
   const [matchInProgress, setMatchInProgress] = useState(false);
   const [didNotPlay, setDidNotPlay] = useState<string[]>([]);
   const [demoNotice, setDemoNotice] = useState('');
+  const [sharingCard, setSharingCard] = useState(false);
 
   useEffect(() => {
     if (justSwapped.length === 0) return;
@@ -85,6 +100,34 @@ export default function SquadScreen({
 
   const starters = selected.slice(0, STARTERS_COUNT);
   const bench = selected.slice(STARTERS_COUNT, SQUAD_SIZE);
+
+  const flaggedInSquad = selected
+    .map(id => playerById.get(id))
+    .filter(
+      (p): p is LeaguePlayer =>
+        Boolean(p && (p.availability_status === 'doubtful' || p.availability_status === 'out'))
+    );
+
+  async function handleShareSquadImage() {
+    if (selected.length < SQUAD_SIZE) return;
+    setSharingCard(true);
+    try {
+      await shareOrDownloadSquadCard({
+        managerName,
+        teamName,
+        gameweekNumber: targetGw?.number ?? gameweekNumber,
+        selectedCost,
+        managerBudget,
+        activeChip,
+        starters: starters.map(id => playerById.get(id)).filter((p): p is LeaguePlayer => Boolean(p)),
+        bench: bench.map(id => playerById.get(id)).filter((p): p is LeaguePlayer => Boolean(p)),
+        captainId: captain,
+        viceCaptainId: viceCaptain,
+      });
+    } finally {
+      setSharingCard(false);
+    }
+  }
 
   const chips: { name: ChipName; icon: string; desc: string }[] = [
     { name: 'Triple Captain', icon: '👑', desc: t('chipTripleDesc') },
@@ -117,11 +160,43 @@ export default function SquadScreen({
             <h3>{t('myFantasySquad')}</h3>
             <p>{t('mySquadSub')}</p>
           </div>
-          <span className="budget">
-            <AnimatedNumber value={selectedCost} decimals={1} prefix="£" suffix="m" /> / £
-            {managerBudget.toFixed(1)}m
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            {selected.length === SQUAD_SIZE && (
+              <button
+                type="button"
+                className="secondary compact-btn"
+                disabled={sharingCard}
+                onClick={() => void handleShareSquadImage()}
+              >
+                <Share2 size={14} /> {t('shareSquadCardBtn')}
+              </button>
+            )}
+            <span className="budget">
+              <AnimatedNumber value={selectedCost} decimals={1} prefix="£" suffix="m" /> / £
+              {managerBudget.toFixed(1)}m
+            </span>
+          </div>
         </div>
+
+        {flaggedInSquad.length > 0 && (
+          <div className="fpl-squad-alert-banner spring-pop">
+            <AlertTriangle size={17} />
+            <div>
+              <strong>{t('availSquadAlertTitle')}</strong>
+              <p>
+                {t('availSquadAlertSub')}{' '}
+                {flaggedInSquad
+                  .map(
+                    p =>
+                      `${p.name} (${
+                        p.availability_status === 'out' ? t('availOut') : t('availDoubtful')
+                      }${p.availability_note ? ` — ${p.availability_note}` : ''})`
+                  )
+                  .join(' · ')}
+              </p>
+            </div>
+          </div>
+        )}
 
         <div className="budget-track">
           <span style={{ width: `${Math.min((selectedCost / managerBudget) * 100, 100)}%` }} />
@@ -211,6 +286,8 @@ export default function SquadScreen({
                         name={p.name}
                         photoUrl={p.photo_url}
                         statLabel={`£${p.price.toFixed(1)}m · ${p.points} ${t('ptsUnit')}`}
+                        availabilityStatus={p.availability_status}
+                        availabilityNote={p.availability_note}
                         isCaptain={captain === id}
                         isTripleCaptain={captain === id && activeChip === 'Triple Captain'}
                         isViceCaptain={viceCaptain === id && captain !== id}
@@ -299,6 +376,16 @@ export default function SquadScreen({
                           <span className="inline-kit-chip">#{p.kit_number}</span>
                         )}
                         {p.name}
+                        {p.availability_status === 'doubtful' && (
+                          <span className="fpl-flag-chip fpl-flag-chip--doubtful" style={{ marginInlineStart: 5 }}>
+                            🟡 {t('availDoubtShort')}
+                          </span>
+                        )}
+                        {p.availability_status === 'out' && (
+                          <span className="fpl-flag-chip fpl-flag-chip--out" style={{ marginInlineStart: 5 }}>
+                            🔴 {t('availOutShort')}
+                          </span>
+                        )}
                       </strong>
                       <span>
                         £{p.price.toFixed(1)}m · {p.points} {t('ptsUnit')}

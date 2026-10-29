@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Camera, ImageOff, SlidersHorizontal, Trash2, X } from 'lucide-react';
 import type { AdminProps } from './types';
+import type { AvailabilityStatus } from '../types/league';
 import { uploadPlayerPhoto } from '../lib/supabase';
 
 type Row = {
@@ -16,6 +17,8 @@ type Row = {
   playstyle: string | null;
   age: number | null;
   bio: string | null;
+  availability_status: AvailabilityStatus | null;
+  availability_note: string | null;
 };
 
 type InlineEdit = {
@@ -35,6 +38,8 @@ type ProfileDraft = {
   playstyle: string;
   age: string;
   bio: string;
+  availability_status: AvailabilityStatus;
+  availability_note: string;
   is_active: boolean;
 };
 
@@ -82,7 +87,7 @@ export default function PlayersAdmin({ db, onChanged }: AdminProps) {
     const { data, error } = await db
       .from('football_players')
       .select(
-        'id,display_name,price,is_active,photo_url,kit_number,nationality,favourite_team,preferred_foot,playstyle,age,bio'
+        'id,display_name,price,is_active,photo_url,kit_number,nationality,favourite_team,preferred_foot,playstyle,age,bio,availability_status,availability_note'
       )
       .order('display_name', { ascending: true });
     if (error) {
@@ -157,6 +162,34 @@ export default function PlayersAdmin({ db, onChanged }: AdminProps) {
     }
   }
 
+  async function setQuickAvailability(p: Row, status: AvailabilityStatus) {
+    setBusy(true);
+    setMsg('');
+    try {
+      const { error } = await db
+        .from('football_players')
+        .update({ availability_status: status })
+        .eq('id', p.id);
+      if (error) {
+        setMsg(`Could not update availability: ${error.message}`);
+      } else {
+        setMsg(
+          `${p.display_name} marked ${
+            status === 'available'
+              ? '🟢 Playing Tonight'
+              : status === 'doubtful'
+                ? '🟡 50/50 Doubtful'
+                : '🔴 Out Tonight'
+          }.`
+        );
+        await load();
+        onChanged();
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
   function openFullProfileEditor(p: Row) {
     setEditingPlayer(p);
     setDraft({
@@ -169,6 +202,8 @@ export default function PlayersAdmin({ db, onChanged }: AdminProps) {
       playstyle: p.playstyle ?? '',
       age: p.age == null ? '' : String(p.age),
       bio: p.bio ?? '',
+      availability_status: p.availability_status ?? 'available',
+      availability_note: p.availability_note ?? '',
       is_active: p.is_active,
     });
   }
@@ -207,6 +242,8 @@ export default function PlayersAdmin({ db, onChanged }: AdminProps) {
           playstyle: draft.playstyle.trim() || null,
           age: ageVal,
           bio: draft.bio.trim() || null,
+          availability_status: draft.availability_status,
+          availability_note: draft.availability_note.trim() || null,
           is_active: draft.is_active,
         })
         .eq('id', editingPlayer.id);
@@ -413,6 +450,7 @@ export default function PlayersAdmin({ db, onChanged }: AdminProps) {
               <th>Player</th>
               <th>Info</th>
               <th>Price (£m)</th>
+              <th>Thursday Status</th>
               <th>Active</th>
               <th>Actions</th>
             </tr>
@@ -486,6 +524,34 @@ export default function PlayersAdmin({ db, onChanged }: AdminProps) {
                       value={e.price}
                       onChange={ev => setEdits(o => ({ ...o, [p.id]: { ...e, price: ev.target.value } }))}
                     />
+                  </td>
+                  <td>
+                    <div className="avail-quick-group" title={p.availability_note ?? undefined}>
+                      <button
+                        type="button"
+                        className={`avail-pill avail-pill--available ${(p.availability_status ?? 'available') === 'available' ? 'active' : ''}`}
+                        disabled={busy}
+                        onClick={() => void setQuickAvailability(p, 'available')}
+                      >
+                        🟢 In
+                      </button>
+                      <button
+                        type="button"
+                        className={`avail-pill avail-pill--doubtful ${p.availability_status === 'doubtful' ? 'active' : ''}`}
+                        disabled={busy}
+                        onClick={() => void setQuickAvailability(p, 'doubtful')}
+                      >
+                        🟡 50/50
+                      </button>
+                      <button
+                        type="button"
+                        className={`avail-pill avail-pill--out ${p.availability_status === 'out' ? 'active' : ''}`}
+                        disabled={busy}
+                        onClick={() => void setQuickAvailability(p, 'out')}
+                      >
+                        🔴 Out
+                      </button>
+                    </div>
                   </td>
                   <td>
                     <input
@@ -673,6 +739,33 @@ export default function PlayersAdmin({ db, onChanged }: AdminProps) {
                   placeholder="e.g. Thursday night top-bins specialist"
                   value={draft.bio}
                   onChange={e => setDraft({ ...draft, bio: e.target.value })}
+                />
+              </label>
+
+              <label>
+                Thursday Availability Flag (FPL)
+                <select
+                  value={draft.availability_status}
+                  onChange={e =>
+                    setDraft({
+                      ...draft,
+                      availability_status: e.target.value as AvailabilityStatus,
+                    })
+                  }
+                >
+                  <option value="available">🟢 Playing Tonight</option>
+                  <option value="doubtful">🟡 50/50 Doubtful</option>
+                  <option value="out">🔴 Out Tonight</option>
+                </select>
+              </label>
+
+              <label>
+                Availability Note (optional)
+                <input
+                  type="text"
+                  placeholder="e.g. Late work shift / Ankle knock"
+                  value={draft.availability_note}
+                  onChange={e => setDraft({ ...draft, availability_note: e.target.value })}
                 />
               </label>
             </div>

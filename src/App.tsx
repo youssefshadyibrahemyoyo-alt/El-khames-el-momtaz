@@ -7,6 +7,7 @@ import type {
   FootballPlayer,
   Gameweek,
   LeaguePlayer,
+  ManagerTrophyMap,
   PlayerFantasyTotal,
   Profile,
   ScoringRule,
@@ -27,7 +28,7 @@ import {
   STARTERS_COUNT,
   syncSquadLeaders,
 } from './lib/squadRules';
-import { DEFAULT_SCORING_RULES, DEMO_PLAYERS } from './lib/demoData';
+import { DEFAULT_SCORING_RULES, DEMO_PLAYERS, DEMO_TROPHIES } from './lib/demoData';
 import { useLanguage } from './i18n/LanguageContext';
 import Sidebar from './components/Sidebar';
 import Topbar from './components/Topbar';
@@ -104,10 +105,13 @@ export default function App() {
   const [profileModalPlayerId, setProfileModalPlayerId] = useState<string | null>(null);
   const [myProfileOpen, setMyProfileOpen] = useState(false);
 
-  // Standings
+  // Standings & Trophy Cabinet
   const [standings, setStandings] = useState<Standing[]>([]);
   const [standingsLoading, setStandingsLoading] = useState(false);
   const [standingsError, setStandingsError] = useState('');
+  const [managerTrophies, setManagerTrophies] = useState<ManagerTrophyMap>(
+    demoMode ? DEMO_TROPHIES : {}
+  );
 
   // Auth & profile listener
   useEffect(() => {
@@ -187,18 +191,23 @@ export default function App() {
       setPlayersLoading(true);
       setPlayersError('');
 
-      const [playersRes, totalsRes, rulesRes] = await Promise.all([
+      const [playersRes, totalsRes, rulesRes, trophiesRes] = await Promise.all([
         supabase!
           .from('football_players')
           .select(
-            'id,display_name,price,is_active,photo_url,kit_number,nationality,favourite_team,preferred_foot,playstyle,age,bio'
+            'id,display_name,price,is_active,photo_url,kit_number,nationality,favourite_team,preferred_foot,playstyle,age,bio,availability_status,availability_note'
           )
           .order('display_name', { ascending: true }),
         supabase!.from('player_fantasy_totals').select('player_id,total_points,matches_played'),
         supabase!.from('scoring_rules').select('key,label,points').order('points', { ascending: false }),
+        supabase!.rpc('get_manager_trophy_cabinet'),
       ]);
 
       if (cancelled) return;
+
+      if (!trophiesRes.error && trophiesRes.data) {
+        setManagerTrophies(trophiesRes.data as ManagerTrophyMap);
+      }
 
       if (playersRes.error) {
         setPlayersError(playersRes.error.message);
@@ -453,6 +462,8 @@ export default function App() {
         playstyle: p.playstyle ?? null,
         age: p.age ?? null,
         bio: p.bio ?? null,
+        availability_status: p.availability_status ?? 'available',
+        availability_note: p.availability_note ?? null,
       };
     });
   }, [demoMode, realPlayers, playerTotals]);
@@ -673,6 +684,9 @@ export default function App() {
           {screen === 'squad' && (
             <SquadScreen
               demoMode={demoMode}
+              managerName={profile?.display_name ?? (isAdmin ? 'Admin' : 'Manager')}
+              teamName={profile?.team_name ?? null}
+              gameweekNumber={targetGw?.number ?? gameweekNumber}
               squadLoading={squadLoading}
               squadSaving={squadSaving}
               playersError={playersError}
@@ -751,6 +765,8 @@ export default function App() {
               standingsError={standingsError}
               gameweeks={allGameweeks}
               demoPlayers={DEMO_PLAYERS}
+              trophies={managerTrophies}
+              onCupChanged={() => setReloadKey(k => k + 1)}
               onOpenPlayerProfile={setProfileModalPlayerId}
             />
           )}
@@ -814,6 +830,7 @@ export default function App() {
               }
             }
             demoMode={demoMode}
+            trophies={managerTrophies}
             onUpdated={updated => {
               setProfile(updated);
               setStandings(prev =>
