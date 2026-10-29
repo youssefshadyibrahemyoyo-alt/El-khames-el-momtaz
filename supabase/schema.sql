@@ -92,8 +92,9 @@ GROUP BY fp.id;
 -- 3. Core RPCs & Storage Buckets:
 --   - Buckets: 'player-photos' (admin player cards) & 'manager-avatars' (logged-in manager profile pics)
 --   - public.update_my_manager_profile(p_display_name, p_team_name, p_avatar_url)
---   - public.save_squad(p_gameweek_id, p_captain, p_vice, p_player_ids, p_chip) [GW1 = 0 hits, uses profiles.budget]
---   - public.admin_generate_gameweek(p_transfer_deadline) [confirmed GW creation + H2H round-robin sync]
+--   - public.save_pre_gw_lineup(p_captain, p_vice, p_player_ids, p_chip) [saves squad into manager_saved_lineups pre-GW1 or between finished GWs]
+--   - public.save_squad(p_gameweek_id, p_captain, p_vice, p_player_ids, p_chip) [GW1 = 0 hits, uses profiles.budget, mirrors manager_saved_lineups]
+--   - public.admin_generate_gameweek(p_transfer_deadline) [confirmed GW creation + auto-materializes manager_saved_lineups + H2H & Cup sync]
 --   - public.preview_gameweek_price_changes(p_gameweek_id)[FPL price rise/drop preview]
 --   - public.admin_end_gameweek(p_gameweek_id, p_price_changes) [applies price deltas & grows owners' budgets]
 --   - public.admin_reset_all_rounds()                     [reset season/test rounds & budgets to GW1]

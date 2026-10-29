@@ -118,13 +118,14 @@ export default function App() {
   useEffect(() => {
     if (!supabase) return;
     let active = true;
+    let loadedUserId: string | null = null;
 
-    async function fetchProfile(userId: string) {
-      setProfileLoading(true);
+    async function fetchProfile(uid: string, showLoader: boolean) {
+      if (showLoader) setProfileLoading(true);
       const { data, error } = await supabase!
         .from('profiles')
         .select('id,display_name,team_name,avatar_url,budget,role,player_approval_status')
-        .eq('id', userId)
+        .eq('id', uid)
         .single();
       if (!active) return;
       if (!error && data) {
@@ -142,8 +143,14 @@ export default function App() {
         setMyProfileOpen(true);
       }
       if (next) {
-        void fetchProfile(next.user.id);
+        const wasDifferentUser = loadedUserId !== next.user.id;
+        const isSameUserRefresh = event === 'TOKEN_REFRESHED' && !wasDifferentUser;
+        loadedUserId = next.user.id;
+        if (!isSameUserRefresh) {
+          void fetchProfile(next.user.id, wasDifferentUser || event === 'INITIAL_SESSION');
+        }
       } else {
+        loadedUserId = null;
         setProfile(null);
         setProfileLoading(false);
       }
@@ -155,14 +162,16 @@ export default function App() {
     };
   }, []);
 
+  const userId = session?.user?.id ?? null;
+
   // Refresh profile budget when reloadKey bumps (e.g. after End Gameweek price rises)
   useEffect(() => {
-    if (demoMode || !supabase || !session || reloadKey === 0) return;
+    if (demoMode || !supabase || !userId || reloadKey === 0) return;
     let cancelled = false;
     supabase
       .from('profiles')
       .select('id,display_name,team_name,avatar_url,budget,role,player_approval_status')
-      .eq('id', session.user.id)
+      .eq('id', userId)
       .single()
       .then(({ data, error }) => {
         if (cancelled || error || !data) return;
@@ -174,7 +183,7 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [demoMode, session, reloadKey]);
+  }, [demoMode, userId, reloadKey]);
 
   async function signOut() {
     if (supabase) await supabase.auth.signOut();
@@ -188,7 +197,7 @@ export default function App() {
 
   // Load players, fantasy totals & scoring rules
   useEffect(() => {
-    if (demoMode || !supabase || !session || !approved) return;
+    if (demoMode || !supabase || !userId || !approved) return;
     let cancelled = false;
 
     async function loadPool() {
@@ -253,11 +262,11 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [demoMode, session, approved, reloadKey]);
+  }, [demoMode, userId, approved, reloadKey]);
 
   // Load gameweeks & current manager's squad
   useEffect(() => {
-    if (demoMode || !supabase || !session || !approved) return;
+    if (demoMode || !supabase || !userId || !approved) return;
     let cancelled = false;
 
     async function loadSquad() {
@@ -283,15 +292,28 @@ export default function App() {
       setGameweek(active);
       setTargetGw(target);
 
+      const hasBlockingGw = rows.some(w =>
+        ['active', 'open', 'draft'].includes(String(w.status).toLowerCase())
+      );
+      const nextGwNumber = rows.length > 0 ? Math.max(...rows.map(w => w.number)) + 1 : 1;
       const fallbackGw = target ?? active ?? rows[rows.length - 1] ?? null;
-      setGameweekNumber(fallbackGw ? fallbackGw.number : 1);
+      setGameweekNumber(
+        target ? target.number : !hasBlockingGw ? nextGwNumber : fallbackGw ? fallbackGw.number : 1
+      );
 
-      const { data: mine, error: mineError } = await supabase!
-        .from('fantasy_squads')
-        .select(
-          'id,manager_id,gameweek_id,captain_player_id,vice_captain_player_id,chip,transfers_used,points_hit,free_transfers'
-        )
-        .eq('manager_id', session!.user.id);
+      const [{ data: mine, error: mineError }, { data: preSaved }] = await Promise.all([
+        supabase!
+          .from('fantasy_squads')
+          .select(
+            'id,manager_id,gameweek_id,captain_player_id,vice_captain_player_id,chip,transfers_used,points_hit,free_transfers'
+          )
+          .eq('manager_id', userId!),
+        supabase!
+          .from('manager_saved_lineups')
+          .select('player_ids,captain_player_id,vice_captain_player_id,chip')
+          .eq('manager_id', userId!)
+          .maybeSingle(),
+      ]);
 
       if (cancelled) return;
 
@@ -303,53 +325,106 @@ export default function App() {
 
       const squads = (mine ?? []) as SquadRecord[];
       const numberOf = new Map(rows.map(w => [w.id, w.number]));
+      const preSavedIds = Array.isArray(preSaved?.player_ids)
+        ? (preSaved.player_ids as string[]).map(String)
+        : [];
 
       if (!target) {
-        // Transfers closed: still display manager's latest saved squad so pitch isn't empty
         const latestSquad =
-          squads.sort(
-            (a, b) => (numberOf.get(b.gameweek_id) ?? 0) - (numberOf.get(a.gameweek_id) ?? 0)
-          )[0] ?? null;
+          squads
+            .slice()
+            .sort(
+              (a, b) => (numberOf.get(b.gameweek_id) ?? 0) - (numberOf.get(a.gameweek_id) ?? 0)
+            )[0] ?? null;
 
+        let latestIds: string[] = [];
         if (latestSquad) {
           const { data: sp } = await supabase!
             .from('squad_players')
             .select('player_id,slot')
             .eq('squad_id', latestSquad.id)
             .order('slot', { ascending: true });
-          if (!cancelled && sp) {
-            const ids = sp.map(r => String(r.player_id));
-            const synced = syncSquadLeaders(
-              ids,
-              latestSquad.captain_player_id ?? '',
-              latestSquad.vice_captain_player_id ?? ''
-            );
-            setSelected(synced.selected);
-            setCaptain(synced.captain);
-            setViceCaptain(synced.viceCaptain);
-            setSavedSnapshot({
-              ids: synced.selected,
-              captain: synced.captain,
-              viceCaptain: synced.viceCaptain,
-              chip: null,
-            });
+          if (sp) {
+            latestIds = sp.map(r => String(r.player_id));
           }
+        }
+
+        if (cancelled) return;
+
+        setUsedChips(squads.filter(s => s.chip).map(s => String(s.chip)));
+        setBaselineIds(latestIds);
+        setBaseFree(
+          computeFreeTransfers({
+            currentSquad: null,
+            previousSquad: latestSquad,
+            previousWeekNumber: latestSquad ? (numberOf.get(latestSquad.gameweek_id) ?? 0) : 0,
+          })
+        );
+
+        if (!hasBlockingGw && preSavedIds.length === SQUAD_SIZE) {
+          const synced = syncSquadLeaders(
+            preSavedIds,
+            String(preSaved?.captain_player_id ?? ''),
+            String(preSaved?.vice_captain_player_id ?? '')
+          );
+          const chipVal = preSaved?.chip ? String(preSaved.chip) : null;
+          setSelected(synced.selected);
+          setCaptain(synced.captain);
+          setViceCaptain(synced.viceCaptain);
+          setActiveChip(chipVal);
+          setSavedSnapshot({
+            ids: synced.selected,
+            captain: synced.captain,
+            viceCaptain: synced.viceCaptain,
+            chip: chipVal,
+          });
+        } else if (latestSquad && latestIds.length > 0) {
+          const synced = syncSquadLeaders(
+            latestIds,
+            latestSquad.captain_player_id ?? '',
+            latestSquad.vice_captain_player_id ?? ''
+          );
+          setSelected(synced.selected);
+          setCaptain(synced.captain);
+          setViceCaptain(synced.viceCaptain);
+          setActiveChip(null);
+          setSavedSnapshot({
+            ids: synced.selected,
+            captain: synced.captain,
+            viceCaptain: synced.viceCaptain,
+            chip: null,
+          });
+        } else if (preSavedIds.length === SQUAD_SIZE) {
+          const synced = syncSquadLeaders(
+            preSavedIds,
+            String(preSaved?.captain_player_id ?? ''),
+            String(preSaved?.vice_captain_player_id ?? '')
+          );
+          setSelected(synced.selected);
+          setCaptain(synced.captain);
+          setViceCaptain(synced.viceCaptain);
+          setActiveChip(null);
+          setSavedSnapshot({
+            ids: synced.selected,
+            captain: synced.captain,
+            viceCaptain: synced.viceCaptain,
+            chip: null,
+          });
         } else {
-          setBaselineIds([]);
           setSelected([]);
           setCaptain('');
           setViceCaptain('');
           setActiveChip(null);
-          setUsedChips([]);
           setSavedSnapshot({ ids: [], captain: '', viceCaptain: '', chip: null });
         }
-        setSquadError(
-          active
-            ? 'Transfers are closed for the active gameweek. Ask an admin to generate the next gameweek.'
-            : isAdmin
-              ? 'No open gameweek yet. Open Admin → Gameweeks and confirm generating Gameweek #1.'
-              : 'No open gameweek yet. Ask an admin to generate Gameweek #1.'
-        );
+
+        if (hasBlockingGw) {
+          setSquadError(
+            active
+              ? 'Transfers are locked while the active gameweek is in progress.'
+              : 'The transfer deadline for this gameweek has passed.'
+          );
+        }
         setSquadLoading(false);
         return;
       }
@@ -389,25 +464,45 @@ export default function App() {
         const currentIds = current ? await readIds(current.id) : [];
         if (cancelled) return;
 
-        const ids = current ? currentIds : previousIds;
-        const source = current ?? previous;
-        const synced = syncSquadLeaders(
-          ids,
-          source?.captain_player_id ?? '',
-          source?.vice_captain_player_id ?? ''
-        );
-
         setBaselineIds(previousIds);
-        setSelected(synced.selected);
-        setCaptain(synced.captain);
-        setViceCaptain(synced.viceCaptain);
-        setActiveChip(current?.chip ?? null);
-        setSavedSnapshot({
-          ids: synced.selected,
-          captain: synced.captain,
-          viceCaptain: synced.viceCaptain,
-          chip: current?.chip ?? null,
-        });
+
+        if (current || previous) {
+          const ids = current ? currentIds : previousIds;
+          const source = current ?? previous;
+          const synced = syncSquadLeaders(
+            ids,
+            source?.captain_player_id ?? '',
+            source?.vice_captain_player_id ?? ''
+          );
+          setSelected(synced.selected);
+          setCaptain(synced.captain);
+          setViceCaptain(synced.viceCaptain);
+          setActiveChip(current?.chip ?? null);
+          setSavedSnapshot({
+            ids: synced.selected,
+            captain: synced.captain,
+            viceCaptain: synced.viceCaptain,
+            chip: current?.chip ?? null,
+          });
+        } else if (preSavedIds.length === SQUAD_SIZE) {
+          const synced = syncSquadLeaders(
+            preSavedIds,
+            String(preSaved?.captain_player_id ?? ''),
+            String(preSaved?.vice_captain_player_id ?? '')
+          );
+          const chipVal = preSaved?.chip ? String(preSaved.chip) : null;
+          setSelected(synced.selected);
+          setCaptain(synced.captain);
+          setViceCaptain(synced.viceCaptain);
+          setActiveChip(chipVal);
+          setSavedSnapshot({ ids: [], captain: '', viceCaptain: '', chip: null });
+        } else {
+          setSelected([]);
+          setCaptain('');
+          setViceCaptain('');
+          setActiveChip(null);
+          setSavedSnapshot({ ids: [], captain: '', viceCaptain: '', chip: null });
+        }
       } catch (e: any) {
         setSquadError(`Could not load your squad: ${e?.message ?? 'Unknown error'}`);
       }
@@ -419,11 +514,11 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [demoMode, session, approved, reloadKey]);
+  }, [demoMode, userId, approved, reloadKey]);
 
   // Load league standings
   useEffect(() => {
-    if (demoMode || !supabase || !session || !approved) return;
+    if (demoMode || !supabase || !userId || !approved) return;
     if (screen !== 'overview' && screen !== 'leaderboard') return;
     let cancelled = false;
 
@@ -450,7 +545,7 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [demoMode, session, approved, screen, reloadKey]);
+  }, [demoMode, userId, approved, screen, reloadKey]);
 
   const players: LeaguePlayer[] = useMemo(() => {
     if (demoMode) return DEMO_PLAYERS;
@@ -519,6 +614,10 @@ export default function App() {
   });
 
   const managerBudget = Number(profile?.budget ?? SQUAD_BUDGET);
+  const isTransfersLocked =
+    !demoMode &&
+    !targetGw &&
+    allGameweeks.some(w => ['active', 'open', 'draft'].includes(String(w.status).toLowerCase()));
 
   function handleApplyLineup(next: string[]) {
     const synced = syncSquadLeaders(next, captain, viceCaptain);
@@ -543,6 +642,7 @@ export default function App() {
     setSessionMessage('');
 
     if (demoMode || !supabase || !session) {
+      setSavedSnapshot({ ids: [...selected], captain, viceCaptain, chip: activeChip });
       setSessionMessage(t('squadLockedInToast'));
       setCelebrateKey(k => k + 1);
       return;
@@ -553,8 +653,8 @@ export default function App() {
       return;
     }
 
-    if (!targetGw) {
-      setSquadError('Transfers are currently closed.');
+    if (isTransfersLocked) {
+      setSquadError(t('transfersClosedMsg'));
       return;
     }
 
@@ -578,20 +678,29 @@ export default function App() {
 
     setSquadSaving(true);
     try {
-      const { error } = await supabase.rpc('save_squad', {
-        p_gameweek_id: targetGw.id,
-        p_captain: captain,
-        p_vice: viceCaptain,
-        p_player_ids: selected,
-        p_chip: activeChip,
-      });
+      const { error } = targetGw
+        ? await supabase.rpc('save_squad', {
+            p_gameweek_id: targetGw.id,
+            p_captain: captain,
+            p_vice: viceCaptain,
+            p_player_ids: selected,
+            p_chip: activeChip,
+          })
+        : await supabase.rpc('save_pre_gw_lineup', {
+            p_captain: captain,
+            p_vice: viceCaptain,
+            p_player_ids: selected,
+            p_chip: activeChip,
+          });
 
       if (error) {
         setSquadError(`Could not save: ${error.message}`);
         return;
       }
 
-      setSessionMessage(`${t('squadLockedInToast')} (GW ${targetGw.number})`);
+      const gwLabel = targetGw ? targetGw.number : gameweekNumber;
+      setSavedSnapshot({ ids: [...selected], captain, viceCaptain, chip: activeChip });
+      setSessionMessage(`${t('squadLockedInToast')} (GW ${gwLabel})`);
       setCelebrateKey(k => k + 1);
       setReloadKey(k => k + 1);
     } finally {
@@ -709,6 +818,7 @@ export default function App() {
               sessionMessage={sessionMessage}
               onClearMessage={() => setSessionMessage('')}
               targetGw={targetGw}
+              isTransfersLocked={isTransfersLocked}
               selected={selected}
               playerById={playerById}
               selectedCost={selectedCost}

@@ -38,6 +38,7 @@ type SquadScreenProps = {
   sessionMessage: string;
   onClearMessage: () => void;
   targetGw: Gameweek | null;
+  isTransfersLocked?: boolean;
   selected: string[];
   playerById: Map<string, LeaguePlayer>;
   selectedCost: number;
@@ -75,6 +76,7 @@ export default function SquadScreen({
   sessionMessage,
   onClearMessage,
   targetGw,
+  isTransfersLocked = false,
   selected,
   playerById,
   selectedCost,
@@ -439,8 +441,10 @@ export default function SquadScreen({
             {squadLoading
               ? t('loadingSavedSquad')
               : targetGw
-                ? `${t('pickingForGw')} ${targetGw.number} (${targetGw.status})`
-                : t('transfersClosedMsg')}
+                ? `${t('pickingForGw')} #${targetGw.number} (${targetGw.status})`
+                : !isTransfersLocked
+                  ? `${t('pickingForUpcomingGw')} #${gameweekNumber}`
+                  : t('transfersClosedMsg')}
           </p>
         )}
 
@@ -748,6 +752,15 @@ export default function SquadScreen({
           </>
         )}
 
+        {squadError && (
+          <div className="notice inline-notice spring-pop" style={{ marginTop: 12 }}>
+            <span className="toast-content">
+              <AlertTriangle size={16} />
+              {squadError}
+            </span>
+          </div>
+        )}
+
         {(sessionMessage || demoNotice) && (
           <div className="notice inline-notice celebration-toast spring-pop">
             <span className="toast-content">
@@ -772,11 +785,21 @@ export default function SquadScreen({
             type="button"
             className="primary save-squad-cta"
             disabled={
-              squadSaving || squadLoading || matchInProgress || selected.length !== SQUAD_SIZE
+              squadSaving ||
+              squadLoading ||
+              matchInProgress ||
+              isTransfersLocked ||
+              selected.length !== SQUAD_SIZE
             }
             onClick={onSaveSquad}
           >
-            {squadSaving ? t('savingSquadBtn') : t('saveSquadBtn')}
+            {isTransfersLocked
+              ? t('transfersLockedBtn')
+              : squadSaving
+                ? t('savingSquadBtn')
+                : !hasUnsaved && selected.length === SQUAD_SIZE
+                  ? `✓ ${t('savedSquadBadge')}`
+                  : t('saveSquadBtn')}
           </button>
         </div>
 
