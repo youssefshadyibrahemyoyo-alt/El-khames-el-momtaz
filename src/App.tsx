@@ -788,7 +788,7 @@ const [didNotPlay, setDidNotPlay] = useState<string[]>([]);
           </div>
         )}
 
-        {!approved && (
+                {!demoMode && !profileLoading && profile && !approved && (
           <div className="approval-banner">
             <LockKeyhole size={18} />
             <div>
