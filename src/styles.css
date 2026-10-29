@@ -2133,3 +2133,15 @@ button:active {
 
 /* League table: highlight your own row */
 .leaderboard-player.is-me { border-color: var(--gold, #b9954b); background: rgba(185, 149, 75, .12); }
+/* Keep transfer deadline visible on tablets and phones */
+@media (max-width: 1050px) {
+  .topbar {
+    flex-wrap: wrap;
+  }
+
+  .deadline {
+    display: inline-flex;
+    font-size: 10px;
+    padding: 7px 10px;
+  }
+}
