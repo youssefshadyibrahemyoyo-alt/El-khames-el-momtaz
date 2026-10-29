@@ -1,0 +1,621 @@
+/* ==========================================================================
+   El Khames El Momtaz — 3D Stadium Pitch, FUT Cards, Spring Transitions & Hype
+   ========================================================================== */
+
+:root {
+  --spring-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --bounce-ease: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* 1. SPRING PAGE & STAGGERED CASCADE ENTRANCES */
+@keyframes screenSlideFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.994);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.screen-stage {
+  animation: screenSlideFadeIn 320ms var(--spring-ease) both;
+}
+
+@keyframes staggerCascade {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.stagger-item {
+  animation: staggerCascade 380ms var(--spring-ease) both;
+  animation-delay: calc(var(--stagger-i, 0) * 42ms);
+}
+
+@keyframes springPopIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.94) translateY(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.spring-pop {
+  animation: springPopIn 280ms var(--bounce-ease) both;
+}
+
+.hover-lift-card {
+  transition: transform 220ms var(--spring-ease), border-color 200ms ease,
+    box-shadow 220ms ease;
+}
+
+.hover-lift-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--line-strong);
+  box-shadow: var(--shadow-hover);
+}
+
+/* Theme Sun/Moon Icon Spin */
+@keyframes iconSpinPop {
+  from {
+    opacity: 0;
+    transform: rotate(-75deg) scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: rotate(0deg) scale(1);
+  }
+}
+
+.theme-icon-wrap {
+  display: inline-flex;
+  animation: iconSpinPop 280ms var(--bounce-ease) both;
+}
+
+/* Hero Ambient Floodlights */
+.hero-floodlight {
+  position: absolute;
+  top: -70px;
+  width: 240px;
+  height: 240px;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(28px);
+  opacity: 0.42;
+}
+
+.hero-floodlight-left {
+  inset-inline-start: -40px;
+  background: radial-gradient(circle, rgba(235, 206, 128, 0.45), transparent 70%);
+}
+
+.hero-floodlight-right {
+  inset-inline-end: 12%;
+  background: radial-gradient(circle, rgba(72, 206, 128, 0.38), transparent 70%);
+}
+
+/* 2. 3D FLOODLIT STADIUM PITCH */
+.pitch-3d-stage {
+  perspective: 1150px;
+}
+
+.egypt-pitch.pitch-3d-stadium {
+  position: relative;
+  isolation: isolate;
+  min-width: 0;
+  min-height: 430px;
+  overflow: hidden;
+  padding: 20px 10px 16px;
+  border: 1px solid rgba(227, 198, 122, 0.35);
+  border-radius: 16px;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(255, 248, 214, 0.16), transparent 58%),
+    repeating-linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0.04) 0 42px,
+      rgba(0, 0, 0, 0.05) 42px 84px
+    ),
+    linear-gradient(160deg, #246c45 0%, #195334 52%, #113c25 100%);
+  box-shadow:
+    inset 0 0 42px rgba(5, 22, 13, 0.55),
+    0 14px 32px rgba(9, 29, 18, 0.26);
+  transform: rotateX(2.2deg);
+  transform-origin: center bottom;
+  transition: transform 320ms var(--spring-ease), box-shadow 320ms ease;
+}
+
+.stadium-beam {
+  position: absolute;
+  top: -80px;
+  width: 240px;
+  height: 300px;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.35;
+  filter: blur(18px);
+}
+
+.beam-left {
+  left: -60px;
+  background: conic-gradient(from 125deg at 20% 0%, rgba(255, 245, 204, 0.55), transparent 55%);
+}
+
+.beam-right {
+  right: -60px;
+  background: conic-gradient(from 200deg at 80% 0%, rgba(255, 245, 204, 0.55), transparent 55%);
+}
+
+.egypt-pitch-markings {
+  position: absolute;
+  z-index: 0;
+  inset: 12px;
+  border: 1.5px solid rgba(255, 255, 255, 0.24);
+  border-radius: 10px;
+  pointer-events: none;
+}
+
+.egypt-halfway {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  left: 0;
+  height: 1.5px;
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.egypt-centre-circle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 102px;
+  height: 102px;
+  border: 1.5px solid rgba(255, 255, 255, 0.22);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.egypt-goal-box {
+  position: absolute;
+  left: 50%;
+  width: 42%;
+  height: 40px;
+  border: 1.5px solid rgba(255, 255, 255, 0.22);
+  transform: translateX(-50%);
+}
+
+.egypt-goal-top {
+  top: 0;
+  border-top: 0;
+}
+
+.egypt-goal-bottom {
+  bottom: 0;
+  border-bottom: 0;
+}
+
+.egypt-pitch-title {
+  position: relative;
+  z-index: 1;
+  margin: 0 0 16px;
+  color: #f4dc96;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  text-align: center;
+  text-transform: uppercase;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+.egypt-formation {
+  position: relative;
+  z-index: 1;
+}
+
+/* 3. FUT-STYLE ULTIMATE TEAM SHIELD CARDS */
+.fut-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  padding: 8px 6px 9px;
+  border-radius: 14px 14px 18px 18px;
+  overflow: hidden;
+  backdrop-filter: blur(8px);
+  transition: transform 220ms var(--spring-ease), box-shadow 220ms ease,
+    border-color 200ms ease;
+}
+
+.fut-card:hover {
+  transform: translateY(-4px);
+}
+
+/* Standard Emerald Pro FUT Card */
+.fut-emerald-pro {
+  background: linear-gradient(160deg, rgba(19, 58, 38, 0.92), rgba(9, 31, 20, 0.95));
+  border: 1.5px solid rgba(185, 224, 198, 0.3);
+  box-shadow: 0 8px 20px rgba(5, 20, 12, 0.38);
+  color: #f4fbf6;
+}
+
+/* Gold Captain FUT Card */
+.fut-gold-captain {
+  background: linear-gradient(155deg, #4b3910 0%, #24462f 52%, #132c1d 100%);
+  border: 1.5px solid #f2d57e;
+  box-shadow:
+    0 0 20px rgba(242, 213, 126, 0.34),
+    0 10px 24px rgba(5, 20, 12, 0.45);
+  color: #fff9e6;
+}
+
+/* Silver-Emerald Vice-Captain FUT Card */
+.fut-silver-vc {
+  background: linear-gradient(155deg, #274a3c 0%, #163829 60%, #0e261b 100%);
+  border: 1.5px solid #cde4d7;
+  box-shadow:
+    0 0 14px rgba(205, 228, 215, 0.22),
+    0 8px 20px rgba(5, 20, 12, 0.4);
+  color: #f3faf6;
+}
+
+/* Selected Starter Ready for Bench Swap */
+.fut-card.selected {
+  border-color: #ffe28a;
+  box-shadow:
+    0 0 0 3px rgba(255, 226, 138, 0.42),
+    0 12px 26px rgba(0, 0, 0, 0.45);
+  transform: translateY(-4px) scale(1.02);
+}
+
+/* Holographic Shimmer Sweep on Gold Captain */
+@keyframes futShimmerSweep {
+  0% {
+    transform: translateX(-140%) skewX(-22deg);
+  }
+  45%,
+  100% {
+    transform: translateX(220%) skewX(-22deg);
+  }
+}
+
+.fut-shimmer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 241, 192, 0.22),
+    transparent
+  );
+  transform: translateX(-140%) skewX(-22deg);
+}
+
+.fut-gold-captain .fut-shimmer {
+  animation: futShimmerSweep 4.8s ease-in-out infinite;
+}
+
+.fut-top-ribbon {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0 2px;
+}
+
+.fut-slot-tag {
+  font-size: 9.5px;
+  font-weight: 800;
+  color: rgba(240, 221, 164, 0.85);
+}
+
+.fut-armband {
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.4px;
+}
+
+.captain-armband {
+  background: linear-gradient(135deg, #f5db87, #d6a73e);
+  color: #13281c;
+  box-shadow: 0 2px 8px rgba(245, 219, 135, 0.45);
+}
+
+.vc-armband {
+  background: #dfeee5;
+  color: #132d1f;
+}
+
+.fut-card-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  padding: 2px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+}
+
+.fut-avatar-ring {
+  display: grid;
+  place-items: center;
+  width: 50px;
+  height: 50px;
+  overflow: hidden;
+  border: 2px solid #e6c975;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 25%, #317652, #173d29);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.fut-avatar-ring img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.fut-initial {
+  color: #f6dc8f;
+  font-size: 19px;
+  font-weight: 800;
+}
+
+.fut-player-name {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  font-size: 11.5px;
+  line-height: 1.2;
+  text-align: center;
+  color: #ffffff;
+}
+
+.fut-stat-pill {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.34);
+  border: 1px solid rgba(240, 215, 141, 0.25);
+  color: #f5da8a;
+  font-size: 9.5px;
+  font-weight: 700;
+}
+
+.fut-card-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  margin-top: 2px;
+}
+
+/* 4. PITCH-TO-BENCH SWAP PULSE */
+@keyframes swapFlashPulse {
+  0% {
+    transform: scale(0.92);
+    box-shadow: 0 0 0 0 rgba(244, 216, 134, 0.85);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 10px rgba(244, 216, 134, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(244, 216, 134, 0);
+  }
+}
+
+.swap-flash,
+.swap-flash-row {
+  animation: swapFlashPulse 680ms var(--bounce-ease);
+}
+
+.ready-to-swap {
+  border-color: #f0d37d !important;
+  background: linear-gradient(135deg, #d8b458, #efd588) !important;
+  color: #11291c !important;
+}
+
+/* 5. ARMED CHIP AURA & BENCH BOOST GLOW */
+@keyframes chipAuraPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(223, 190, 102, 0.35), 0 6px 18px rgba(185, 149, 75, 0.18);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(223, 190, 102, 0.16), 0 8px 22px rgba(185, 149, 75, 0.3);
+  }
+}
+
+.chip-armed-glow {
+  animation: chipAuraPulse 2.4s ease-in-out infinite;
+}
+
+.chip-sparkle-icon {
+  margin-inline-start: auto;
+  color: var(--gold);
+}
+
+.bench-boost-glow {
+  border-color: var(--gold) !important;
+  box-shadow: 0 0 22px rgba(223, 192, 110, 0.22);
+}
+
+/* 6. URGENT DEADLINE PULSE (<3 HOURS LEFT) */
+@keyframes urgentPulseGlow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(223, 180, 78, 0.45);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(223, 180, 78, 0);
+  }
+}
+
+.urgent-pulse {
+  animation: urgentPulseGlow 1.8s ease-in-out infinite;
+}
+
+/* 7. TOP-3 LEADERBOARD PODIUM CARDS */
+.leaderboard-player.podium-gold {
+  border-color: rgba(228, 192, 98, 0.72);
+  background: linear-gradient(
+    105deg,
+    rgba(235, 203, 117, 0.18) 0%,
+    var(--panel-solid) 52%
+  );
+  box-shadow: 0 6px 22px rgba(196, 156, 62, 0.14);
+}
+
+.leaderboard-player.podium-silver {
+  border-color: rgba(176, 194, 184, 0.65);
+  background: linear-gradient(
+    105deg,
+    rgba(190, 208, 198, 0.16) 0%,
+    var(--panel-solid) 50%
+  );
+}
+
+.leaderboard-player.podium-bronze {
+  border-color: rgba(201, 143, 95, 0.58);
+  background: linear-gradient(
+    105deg,
+    rgba(205, 146, 96, 0.14) 0%,
+    var(--panel-solid) 50%
+  );
+}
+
+/* 8. MODAL & MOBILE BOTTOM-SHEET SPRING */
+@keyframes backdropFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modalDesktopPop {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes sheetSlideUp {
+  from {
+    opacity: 0.6;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modal-backdrop {
+  animation: backdropFadeIn 200ms ease both;
+}
+
+.modal-sheet-spring {
+  animation: modalDesktopPop 300ms var(--spring-ease) both;
+}
+
+@media (max-width: 640px) {
+  .modal-sheet-spring {
+    animation: sheetSlideUp 340ms var(--spring-ease) both;
+  }
+
+  .egypt-pitch.pitch-3d-stadium {
+    transform: none;
+    padding: 16px 6px 14px;
+  }
+
+  .fut-avatar-ring {
+    width: 42px;
+    height: 42px;
+  }
+}
+
+/* 9. CELEBRATION CONFETTI BURST & TOAST */
+.confetti-layer {
+  position: fixed;
+  top: 52%;
+  left: 50%;
+  z-index: 300;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+@keyframes stadiumConfettiBurst {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) rotate(0deg) scale(0.5);
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--tx), calc(var(--ty) + 120px)) rotate(var(--rot)) scale(1);
+  }
+}
+
+.confetti-piece {
+  position: absolute;
+  width: var(--piece-size, 8px);
+  height: calc(var(--piece-size, 8px) * 1.45);
+  border-radius: 2px;
+  background: var(--piece-color, #e6ca7d);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  animation: stadiumConfettiBurst 1150ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation-delay: var(--delay, 0ms);
+}
+
+.celebration-toast {
+  border-color: var(--gold) !important;
+  background: var(--gold-light) !important;
+  color: var(--gold-text) !important;
+  font-weight: 700;
+}
+
+.toast-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 10. REDUCED MOTION ACCESSIBILITY */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition: none !important;
+    animation: none !important;
+  }
+
+  .confetti-layer {
+    display: none !important;
+  }
+}
