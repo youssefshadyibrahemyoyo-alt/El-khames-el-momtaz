@@ -318,7 +318,6 @@ const [didNotPlay, setDidNotPlay] = useState<string[]>([]);
       const { data, error } = await supabase!
         .from('football_players')
         .select('id,display_name,price,is_active,photo_url')
-        .eq('is_active', true)
         .order('display_name', { ascending: true });
 
       if (cancelled) return;
@@ -335,7 +334,7 @@ const [didNotPlay, setDidNotPlay] = useState<string[]>([]);
 
     void loadPlayers();
     return () => { cancelled = true; };
-  }, [demoMode, session, approved]);
+  }, [demoMode, session, approved, reloadKey]);
 
   // Load gameweeks, then this manager's squad for the gameweek they are picking for.
   useEffect(() => {
