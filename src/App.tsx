@@ -905,12 +905,13 @@ const [didNotPlay, setDidNotPlay] = useState<string[]>([]);
               </div>
 
               {!demoMode && (
+                          {!demoMode && (
                 <p className="muted tiny">
                   {squadLoading
                     ? 'Loading your saved squad…'
-                    : gameweek
-                      ? `Gameweek ${gameweek.number} · ${gameweek.status}`
-                      : 'No active gameweek is available for saving.'}
+                    : targetGw
+                      ? `Picking squad for Gameweek ${targetGw.number} (${targetGw.status})`
+                      : 'Transfers are currently closed.'}
                 </p>
               )}
 
