@@ -1360,31 +1360,17 @@ const [didNotPlay, setDidNotPlay] = useState<string[]>([]);
                 (!isSelected &&
                   (selected.length >= 7 || selectedCost + p.price > 50))
               }
-              onClick={() => {
+                            onClick={() => {
                 if (matchInProgress) return;
-
-                setSelected(old => {
-                  if (old.includes(p.id)) {
-                    
-                    const next = old.filter(id => id !== p.id);
-
-                    if (captain === p.id) {
-                      setCaptain(next.slice(0, 5)[0] ?? '');
-                    }
-
-                    return next;
-                  }
-
-                  if (old.length >= 7 || selectedCost + p.price > 50) {
-                    return old;
-                  }
-
-                  const next = [...old, p.id];
-
-                  if (!captain) setCaptain(next[0]);
-
-                  return next;
-                });
+                if (selected.includes(p.id)) {
+                  applyLineup(selected.filter(id => id !== p.id));
+                  if (swapStarter === p.id) setSwapStarter(null);
+                  return;
+                }
+                if (selected.length >= 7 || Math.round((selectedCost + p.price) * 10) > 500) {
+                  return;
+                }
+                applyLineup([...selected, p.id]);
               }}
             >
               {isSelected ? 'Remove' : 'Add player'}
