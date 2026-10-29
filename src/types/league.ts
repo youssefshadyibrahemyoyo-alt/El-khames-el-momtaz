@@ -1,6 +1,13 @@
-export type Screen = 'overview' | 'squad' | 'players' | 'leaderboard' | 'admin';
+export type Screen = 'overview' | 'squad' | 'players' | 'matches' | 'leaderboard' | 'admin';
 
-export type LeaderboardTab = 'managers' | 'goals' | 'assists' | 'contributions' | 'ratings';
+export type LeaderboardTab =
+  | 'managers'
+  | 'h2h'
+  | 'highlights'
+  | 'goals'
+  | 'assists'
+  | 'contributions'
+  | 'ratings';
 
 export type AccountRole = 'admin_player' | 'player';
 
@@ -11,6 +18,9 @@ export type ChipName = 'Triple Captain' | 'Wildcard' | 'Bench Boost';
 export type Profile = {
   id: string;
   display_name: string;
+  team_name?: string | null;
+  avatar_url?: string | null;
+  budget?: number;
   role: AccountRole;
   player_approval_status: ApprovalStatus;
 };
@@ -18,14 +28,19 @@ export type Profile = {
 export type Standing = {
   manager_id: string;
   display_name: string;
+  team_name?: string | null;
+  avatar_url?: string | null;
   total_points: number;
   last_gameweek_points: number;
   gameweeks_played: number;
+  budget?: number;
 };
 
 export type GameweekStanding = {
   manager_id: string;
   display_name: string;
+  team_name?: string | null;
+  avatar_url?: string | null;
   points: number;
 };
 
@@ -75,6 +90,7 @@ export type PlayerRecentMatch = {
   saves: number;
   yellow_cards: number;
   red_cards: number;
+  is_mvp?: boolean;
   rating: number | null;
   fantasy_points: number;
 };
@@ -106,6 +122,8 @@ export type PlayerProfileDetail = {
     yellow_cards: number;
     red_cards: number;
     own_goals: number;
+    hat_tricks?: number;
+    mvp_awards?: number;
     average_rating: number | null;
     rated_matches: number;
   };
@@ -180,4 +198,136 @@ export type SquadInspection = {
   points_hit?: number;
   total_points?: number;
   players?: InspectedSquadPlayer[];
+};
+
+export type PublicMatchPlayer = {
+  player_id: string;
+  display_name: string;
+  photo_url: string | null;
+  kit_number: number | null;
+  goals: number;
+  assists: number;
+  saves: number;
+  penalty_saves: number;
+  penalties_missed: number;
+  yellow_cards: number;
+  red_cards: number;
+  own_goals: number;
+  rating: number | null;
+  is_mvp: boolean;
+  is_hat_trick: boolean;
+  fantasy_points: number;
+};
+
+export type PublicMatch = {
+  match_id: string;
+  gameweek_id: number;
+  gameweek_number: number;
+  match_number: number;
+  status: string;
+  ended_at: string | null;
+  players: PublicMatchPlayer[];
+};
+
+export type TotwPlayer = {
+  player_id: string;
+  display_name: string;
+  photo_url: string | null;
+  kit_number: number | null;
+  price: number;
+  points: number;
+  goals: number;
+  assists: number;
+  mvp_count: number;
+};
+
+export type GameweekHighlights = {
+  has_data: boolean;
+  gameweek_id?: number;
+  gameweek_number?: number;
+  team_of_the_week?: TotwPlayer[];
+  awards?: {
+    gw_champion?: {
+      manager_id: string;
+      display_name: string;
+      team_name?: string | null;
+      avatar_url?: string | null;
+      points: number;
+    } | null;
+    golden_boot?: {
+      player_id: string;
+      display_name: string;
+      photo_url?: string | null;
+      kit_number?: number | null;
+      goals: number;
+    } | null;
+    captain_genius?: {
+      manager_id: string;
+      display_name: string;
+      team_name?: string | null;
+      avatar_url?: string | null;
+      player_name: string;
+      captain_points: number;
+    } | null;
+    bench_pain?: {
+      manager_id: string;
+      display_name: string;
+      team_name?: string | null;
+      avatar_url?: string | null;
+      bench_points: number;
+      bench_names: string;
+    } | null;
+  };
+};
+
+export type H2HSide = {
+  manager_id: string | null;
+  display_name: string;
+  team_name?: string | null;
+  avatar_url?: string | null;
+  points: number;
+  is_average?: boolean;
+};
+
+export type H2HFixture = {
+  id: number;
+  home: H2HSide;
+  away: H2HSide;
+  status: string;
+  winner: 'home' | 'away' | 'draw' | 'pending';
+};
+
+export type H2HStanding = {
+  manager_id: string;
+  display_name: string;
+  team_name?: string | null;
+  avatar_url?: string | null;
+  played: number;
+  wins: number;
+  draws: number;
+  losses: number;
+  points_for: number;
+  points_against: number;
+  h2h_points: number;
+};
+
+export type H2HOverview = {
+  gameweek_id: number | null;
+  gameweek_number: number | null;
+  gameweek_status: string | null;
+  fixtures: H2HFixture[];
+  standings: H2HStanding[];
+};
+
+export type PriceChangePreview = {
+  player_id: string;
+  display_name: string;
+  photo_url: string | null;
+  kit_number: number | null;
+  old_price: number;
+  played: boolean;
+  gw_points: number;
+  ownership_pct: number;
+  new_price: number;
+  delta: number;
 };

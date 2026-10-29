@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Clock3, Globe, LogOut, Moon, Sun, Timer } from 'lucide-react';
+import { Clock3, Globe, LogOut, Moon, Sun, Timer, UserCog } from 'lucide-react';
 import type { Gameweek, Screen } from '../types/league';
 import { useLanguage } from '../i18n/LanguageContext';
 import { useTheme } from '../theme/ThemeContext';
@@ -15,6 +15,9 @@ type Props = {
   targetGw: Gameweek | null;
   isAdmin: boolean;
   demoMode: boolean;
+  avatarUrl?: string | null;
+  displayName?: string;
+  onOpenMyProfile: () => void;
   onSignOutOrToggleDemo: () => void;
 };
 
@@ -24,6 +27,9 @@ export default function Topbar({
   targetGw,
   isAdmin,
   demoMode,
+  avatarUrl,
+  displayName,
+  onOpenMyProfile,
   onSignOutOrToggleDemo,
 }: Props) {
   const { lang, toggleLang, t } = useLanguage();
@@ -39,6 +45,7 @@ export default function Topbar({
     overview: t('navHome'),
     squad: t('navSquad'),
     players: t('navPlayers'),
+    matches: t('navMatches'),
     leaderboard: t('navLeaderboard'),
     admin: t('navAdmin'),
   };
@@ -76,6 +83,20 @@ export default function Topbar({
             <strong>{countdownStr}</strong>
           </div>
         )}
+
+        <button
+          type="button"
+          className="secondary compact-btn topbar-profile-btn"
+          onClick={onOpenMyProfile}
+          title={t('myProfileBtn')}
+        >
+          {avatarUrl ? (
+            <img className="topbar-mini-avatar" src={avatarUrl} alt={displayName || 'Me'} />
+          ) : (
+            <UserCog size={14} />
+          )}
+          <span>{t('myProfileBtn')}</span>
+        </button>
 
         <button
           type="button"

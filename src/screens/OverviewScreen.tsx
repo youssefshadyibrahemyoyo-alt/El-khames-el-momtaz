@@ -10,6 +10,7 @@ type Props = {
   isAdmin: boolean;
   demoMode: boolean;
   selectedCost: number;
+  managerBudget?: number;
   effectiveDemoPoints: number;
   myStanding: Standing | null;
   myRank: number;
@@ -25,6 +26,7 @@ export default function OverviewScreen({
   isAdmin,
   demoMode,
   selectedCost,
+  managerBudget = SQUAD_BUDGET,
   effectiveDemoPoints,
   myStanding,
   myRank,
@@ -36,7 +38,7 @@ export default function OverviewScreen({
   onNavigate,
 }: Props) {
   const { t } = useLanguage();
-  const remaining = Math.max(0, SQUAD_BUDGET - selectedCost);
+  const remaining = Math.max(0, managerBudget - selectedCost);
 
   const labelForRule = (rule: ScoringRule) => {
     const key = `rule_${rule.key}` as TranslationKey;
@@ -83,7 +85,7 @@ export default function OverviewScreen({
           <span>{t('myTeamValue')}</span>
           <strong>
             <AnimatedNumber value={selectedCost} decimals={1} prefix="£" suffix="m" />{' '}
-            <small>/ £{SQUAD_BUDGET.toFixed(1)}m</small>
+            <small>/ £{managerBudget.toFixed(1)}m</small>
           </strong>
           <small className="positive">
             <CheckCircle2 size={13} />{' '}

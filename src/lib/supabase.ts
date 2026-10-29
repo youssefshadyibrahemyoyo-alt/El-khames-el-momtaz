@@ -16,6 +16,7 @@ export const supabase: SupabaseClient | null = isSupabaseConfigured
   : null;
 
 export const PLAYER_PHOTOS_BUCKET = 'player-photos';
+export const MANAGER_AVATARS_BUCKET = 'manager-avatars';
 
 /**
  * Automatically trims solid black phone-screenshot letterbox bars (top/bottom)
@@ -154,5 +155,29 @@ export async function uploadPlayerPhoto(
   }
 
   const { data } = db.storage.from(PLAYER_PHOTOS_BUCKET).getPublicUrl(filePath);
+  return data.publicUrl;
+}
+
+export async function uploadManagerAvatar(
+  db: SupabaseClient,
+  userId: string,
+  file: File
+): Promise<string> {
+  if (file.size > 8 * 1024 * 1024) {
+    throw new Error('Image must be under 8 MB.');
+  }
+
+  const prepared = await preparePlayerPhotoFile(file);
+  const filePath = `${userId}/${Date.now()}.${prepared.ext}`;
+
+  const { error: uploadError } = await db.storage
+    .from(MANAGER_AVATARS_BUCKET)
+    .upload(filePath, prepared.blob, { upsert: true, contentType: prepared.mime });
+
+  if (uploadError) {
+    throw new Error(uploadError.message);
+  }
+
+  const { data } = db.storage.from(MANAGER_AVATARS_BUCKET).getPublicUrl(filePath);
   return data.publicUrl;
 }

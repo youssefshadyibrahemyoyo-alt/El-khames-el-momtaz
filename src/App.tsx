@@ -22,6 +22,7 @@ import {
   hasUnsavedSquadChanges,
   isOverBudget,
   pickTargetGameweek,
+  SQUAD_BUDGET,
   SQUAD_SIZE,
   STARTERS_COUNT,
   syncSquadLeaders,
@@ -34,9 +35,11 @@ import AuthScreen from './screens/AuthScreen';
 import OverviewScreen from './screens/OverviewScreen';
 import SquadScreen from './screens/SquadScreen';
 import PlayerMarketScreen from './screens/PlayerMarketScreen';
+import MatchesScreen from './screens/MatchesScreen';
 import LeaderboardScreen from './screens/LeaderboardScreen';
 import AdminPanel from './admin/AdminPanel';
 import PlayerProfileModal from './components/PlayerProfileModal';
+import ManagerProfileModal from './components/ManagerProfileModal';
 
 export default function App() {
   const { t } = useLanguage();
@@ -99,6 +102,7 @@ export default function App() {
   const [sessionMessage, setSessionMessage] = useState('');
   const [celebrateKey, setCelebrateKey] = useState(0);
   const [profileModalPlayerId, setProfileModalPlayerId] = useState<string | null>(null);
+  const [myProfileOpen, setMyProfileOpen] = useState(false);
 
   // Standings
   const [standings, setStandings] = useState<Standing[]>([]);
@@ -114,12 +118,15 @@ export default function App() {
       setProfileLoading(true);
       const { data, error } = await supabase!
         .from('profiles')
-        .select('id,display_name,role,player_approval_status')
+        .select('id,display_name,team_name,avatar_url,budget,role,player_approval_status')
         .eq('id', userId)
         .single();
       if (!active) return;
       if (!error && data) {
-        setProfile(data as Profile);
+        setProfile({
+          ...(data as Profile),
+          budget: Number((data as Profile).budget ?? SQUAD_BUDGET),
+        });
       }
       setProfileLoading(false);
     }
@@ -139,6 +146,27 @@ export default function App() {
       listener.subscription.unsubscribe();
     };
   }, []);
+
+  // Refresh profile budget when reloadKey bumps (e.g. after End Gameweek price rises)
+  useEffect(() => {
+    if (demoMode || !supabase || !session || reloadKey === 0) return;
+    let cancelled = false;
+    supabase
+      .from('profiles')
+      .select('id,display_name,team_name,avatar_url,budget,role,player_approval_status')
+      .eq('id', session.user.id)
+      .single()
+      .then(({ data, error }) => {
+        if (cancelled || error || !data) return;
+        setProfile({
+          ...(data as Profile),
+          budget: Number((data as Profile).budget ?? SQUAD_BUDGET),
+        });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [demoMode, session, reloadKey]);
 
   async function signOut() {
     if (supabase) await supabase.auth.signOut();
@@ -468,6 +496,8 @@ export default function App() {
     savedChip: savedSnapshot.chip,
   });
 
+  const managerBudget = Number(profile?.budget ?? SQUAD_BUDGET);
+
   function handleApplyLineup(next: string[]) {
     const synced = syncSquadLeaders(next, captain, viceCaptain);
     setSelected(synced.selected);
@@ -480,7 +510,7 @@ export default function App() {
       handleApplyLineup(selected.filter(id => id !== player.id));
       return;
     }
-    if (selected.length >= SQUAD_SIZE || isOverBudget(selectedCost + player.price)) {
+    if (selected.length >= SQUAD_SIZE || isOverBudget(selectedCost + player.price, managerBudget)) {
       return;
     }
     handleApplyLineup([...selected, player.id]);
@@ -511,8 +541,8 @@ export default function App() {
       setSquadError('Select 7 different players before saving.');
       return;
     }
-    if (isOverBudget(selectedCost)) {
-      setSquadError('Your squad exceeds the £50.0m budget.');
+    if (isOverBudget(selectedCost, managerBudget)) {
+      setSquadError(`Your squad exceeds your £${managerBudget.toFixed(1)}m budget.`);
       return;
     }
     if (!captain || !starters.includes(captain)) {
@@ -571,6 +601,9 @@ export default function App() {
         isAdmin={isAdmin}
         demoMode={demoMode}
         displayName={profile?.display_name}
+        teamName={profile?.team_name}
+        avatarUrl={profile?.avatar_url}
+        onOpenMyProfile={() => setMyProfileOpen(true)}
         onSignOutOrToggleDemo={handleSignOutOrToggleDemo}
       />
 
@@ -581,6 +614,9 @@ export default function App() {
           targetGw={targetGw}
           isAdmin={isAdmin}
           demoMode={demoMode}
+          avatarUrl={profile?.avatar_url}
+          displayName={profile?.display_name}
+          onOpenMyProfile={() => setMyProfileOpen(true)}
           onSignOutOrToggleDemo={handleSignOutOrToggleDemo}
         />
 
@@ -621,6 +657,7 @@ export default function App() {
               isAdmin={isAdmin}
               demoMode={demoMode}
               selectedCost={selectedCost}
+              managerBudget={managerBudget}
               effectiveDemoPoints={effectiveDemoPoints}
               myStanding={myStanding}
               myRank={myRank}
@@ -646,6 +683,7 @@ export default function App() {
               selected={selected}
               playerById={playerById}
               selectedCost={selectedCost}
+              managerBudget={managerBudget}
               captain={captain}
               viceCaptain={viceCaptain}
               activeChip={activeChip}
@@ -688,9 +726,18 @@ export default function App() {
               playersError={playersError}
               selected={selected}
               selectedCost={selectedCost}
+              managerBudget={managerBudget}
               onAddOrRemovePlayer={handleAddOrRemovePlayer}
               onOpenPlayerProfile={setProfileModalPlayerId}
               onNavigate={setScreen}
+            />
+          )}
+
+          {screen === 'matches' && (
+            <MatchesScreen
+              demoMode={demoMode}
+              gameweeks={allGameweeks}
+              onOpenPlayerProfile={setProfileModalPlayerId}
             />
           )}
 
@@ -740,7 +787,8 @@ export default function App() {
             canAddToSquad={
               selected.length < SQUAD_SIZE &&
               !isOverBudget(
-                selectedCost + (playerById.get(profileModalPlayerId)?.price ?? 0)
+                selectedCost + (playerById.get(profileModalPlayerId)?.price ?? 0),
+                managerBudget
               )
             }
             onToggleSquadPlayer={
@@ -749,6 +797,39 @@ export default function App() {
                 : undefined
             }
             onClose={() => setProfileModalPlayerId(null)}
+          />
+        )}
+
+        {myProfileOpen && (
+          <ManagerProfileModal
+            profile={
+              profile ?? {
+                id: 'demo-user',
+                display_name: isAdmin ? 'Admin' : 'Player',
+                team_name: 'El Khames XI',
+                avatar_url: null,
+                budget: SQUAD_BUDGET,
+                role: isAdmin ? 'admin_player' : 'player',
+                player_approval_status: 'approved',
+              }
+            }
+            demoMode={demoMode}
+            onUpdated={updated => {
+              setProfile(updated);
+              setStandings(prev =>
+                prev.map(s =>
+                  s.manager_id === updated.id
+                    ? {
+                        ...s,
+                        display_name: updated.display_name,
+                        team_name: updated.team_name,
+                        avatar_url: updated.avatar_url,
+                      }
+                    : s
+                )
+              );
+            }}
+            onClose={() => setMyProfileOpen(false)}
           />
         )}
 

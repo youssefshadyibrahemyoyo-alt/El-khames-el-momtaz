@@ -10,6 +10,7 @@ type PlayerMarketScreenProps = {
   playersError: string;
   selected: string[];
   selectedCost: number;
+  managerBudget?: number;
   onAddOrRemovePlayer: (player: LeaguePlayer) => void;
   onOpenPlayerProfile: (playerId: string) => void;
   onNavigate: (screen: Screen) => void;
@@ -21,6 +22,7 @@ export default function PlayerMarketScreen({
   playersError,
   selected,
   selectedCost,
+  managerBudget = SQUAD_BUDGET,
   onAddOrRemovePlayer,
   onOpenPlayerProfile,
   onNavigate,
@@ -88,7 +90,7 @@ export default function PlayerMarketScreen({
           <span>{t('budgetRemainingLabel')}</span>
           <strong>
             <AnimatedNumber
-              value={Math.max(0, SQUAD_BUDGET - selectedCost)}
+              value={Math.max(0, managerBudget - selectedCost)}
               decimals={1}
               prefix="£"
               suffix="m"
@@ -98,7 +100,7 @@ export default function PlayerMarketScreen({
       </div>
 
       <div className="budget-track" style={{ marginTop: 14 }}>
-        <span style={{ width: `${Math.min((selectedCost / SQUAD_BUDGET) * 100, 100)}%` }} />
+        <span style={{ width: `${Math.min((selectedCost / managerBudget) * 100, 100)}%` }} />
       </div>
 
       {playersLoading && <p className="muted">{t('loadingPoints')}</p>}
@@ -138,7 +140,7 @@ export default function PlayerMarketScreen({
       <div className="player-list" key={sortBy}>
         {filteredPlayers.map((p, idx) => {
           const isSelected = selected.includes(p.id);
-          const cannotAfford = !isSelected && isOverBudget(selectedCost + p.price);
+          const cannotAfford = !isSelected && isOverBudget(selectedCost + p.price, managerBudget);
           const squadFull = !isSelected && selected.length >= SQUAD_SIZE;
           const metaExtras = [p.favourite_team, p.playstyle].filter(Boolean).join(' · ');
 
@@ -195,7 +197,7 @@ export default function PlayerMarketScreen({
         <button
           type="button"
           className="primary"
-          disabled={selected.length !== SQUAD_SIZE || isOverBudget(selectedCost)}
+          disabled={selected.length !== SQUAD_SIZE || isOverBudget(selectedCost, managerBudget)}
           onClick={() => onNavigate('squad')}
         >
           {selected.length === SQUAD_SIZE

@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Eye, Trophy } from 'lucide-react';
+import { Crown, Eye, Flame, Sparkles, Swords, Trophy } from 'lucide-react';
 import type {
   Gameweek,
+  GameweekHighlights,
   GameweekStanding,
+  H2HOverview,
   LeaderboardPlayer,
   LeaderboardTab,
   LeaguePlayer,
@@ -11,8 +13,14 @@ import type {
 } from '../types/league';
 import { useLanguage } from '../i18n/LanguageContext';
 import { supabase } from '../lib/supabase';
-import { buildDemoInspection, DEMO_STANDINGS } from '../lib/demoData';
+import {
+  buildDemoInspection,
+  DEMO_H2H,
+  DEMO_HIGHLIGHTS,
+  DEMO_STANDINGS,
+} from '../lib/demoData';
 import SquadInspectorModal from '../components/SquadInspectorModal';
+import FutPlayerCard from '../components/FutPlayerCard';
 import AnimatedNumber from '../components/AnimatedNumber';
 
 type LeaderboardScreenProps = {
@@ -43,6 +51,16 @@ export default function LeaderboardScreen({
   const [selectedGwId, setSelectedGwId] = useState<'overall' | number>('overall');
   const [gwStandings, setGwStandings] = useState<GameweekStanding[]>([]);
   const [gwLoading, setGwLoading] = useState(false);
+
+  // H2H state
+  const [h2hGwId, setH2hGwId] = useState<number | 'latest'>('latest');
+  const [h2hData, setH2hData] = useState<H2HOverview | null>(null);
+  const [h2hLoading, setH2hLoading] = useState(false);
+
+  // Highlights / Banter state
+  const [highlightGwId, setHighlightGwId] = useState<number | 'latest'>('latest');
+  const [highlights, setHighlights] = useState<GameweekHighlights | null>(null);
+  const [highlightsLoading, setHighlightsLoading] = useState(false);
 
   const [players, setPlayers] = useState<LeaderboardPlayer[]>([]);
   const [playersLoading, setPlayersLoading] = useState(false);
@@ -84,8 +102,67 @@ export default function LeaderboardScreen({
     };
   }, [demoMode, tab, selectedGwId]);
 
+  // Load 1v1 Head-to-Head
   useEffect(() => {
-    if (demoMode || !supabase || tab === 'managers') return;
+    if (tab !== 'h2h') return;
+    if (demoMode || !supabase) {
+      setH2hData(DEMO_H2H);
+      return;
+    }
+    let cancelled = false;
+    setH2hLoading(true);
+    supabase
+      .rpc('get_h2h_overview', {
+        p_gameweek_id: h2hGwId === 'latest' ? null : h2hGwId,
+      })
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (!error && data) {
+          setH2hData(data as H2HOverview);
+        }
+        setH2hLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [demoMode, tab, h2hGwId]);
+
+  // Load TOTW & Banter Highlights
+  useEffect(() => {
+    if (tab !== 'highlights') return;
+    if (demoMode || !supabase) {
+      setHighlights(DEMO_HIGHLIGHTS);
+      return;
+    }
+    let cancelled = false;
+    setHighlightsLoading(true);
+    supabase
+      .rpc('get_gameweek_highlights', {
+        p_gameweek_id: highlightGwId === 'latest' ? null : highlightGwId,
+      })
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (!error && data) {
+          setHighlights(data as GameweekHighlights);
+        }
+        setHighlightsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [demoMode, tab, highlightGwId]);
+
+  // Load player stat leaderboards
+  useEffect(() => {
+    if (
+      demoMode ||
+      !supabase ||
+      tab === 'managers' ||
+      tab === 'h2h' ||
+      tab === 'highlights'
+    ) {
+      return;
+    }
     let cancelled = false;
     setPlayersLoading(true);
     setPlayersError('');
@@ -159,6 +236,8 @@ export default function LeaderboardScreen({
 
   const tabs: { id: LeaderboardTab; label: string }[] = [
     { id: 'managers', label: t('tabManagers') },
+    { id: 'h2h', label: `⚔️ ${t('tabH2H')}` },
+    { id: 'highlights', label: `✨ ${t('tabHighlights')}` },
     { id: 'goals', label: t('tabGoals') },
     { id: 'assists', label: t('tabAssists') },
     { id: 'contributions', label: t('tabContributions') },
@@ -167,6 +246,8 @@ export default function LeaderboardScreen({
 
   const descriptions: Record<LeaderboardTab, string> = {
     managers: t('descManagers'),
+    h2h: t('descH2H'),
+    highlights: t('descHighlights'),
     goals: `${t('descGoals')} · ${t('tapForProfileHint')}`,
     assists: `${t('descAssists')} · ${t('tapForProfileHint')}`,
     contributions: `${t('descContributions')} · ${t('tapForProfileHint')}`,
@@ -218,6 +299,8 @@ export default function LeaderboardScreen({
     ? DEMO_STANDINGS.map(s => ({
         manager_id: s.manager_id,
         display_name: s.display_name,
+        team_name: s.team_name ?? null,
+        avatar_url: s.avatar_url ?? null,
         primaryPoints: s.total_points,
         subLabel: `${s.last_gameweek_points} ${t('ptsUnit')} (${t('lastGwPts')})`,
       }))
@@ -225,15 +308,22 @@ export default function LeaderboardScreen({
       ? standings.map(s => ({
           manager_id: s.manager_id,
           display_name: s.display_name,
+          team_name: s.team_name ?? null,
+          avatar_url: s.avatar_url ?? null,
           primaryPoints: s.total_points,
           subLabel: `${s.last_gameweek_points} ${t('ptsUnit')} (${t('lastGwPts')})`,
         }))
       : gwStandings.map(s => ({
           manager_id: s.manager_id,
           display_name: s.display_name,
+          team_name: s.team_name ?? null,
+          avatar_url: s.avatar_url ?? null,
           primaryPoints: s.points,
           subLabel: t('gwPtsLabel'),
         }));
+
+  const isPlayerStatTab =
+    tab === 'goals' || tab === 'assists' || tab === 'contributions' || tab === 'ratings';
 
   return (
     <section
@@ -242,7 +332,15 @@ export default function LeaderboardScreen({
     >
       <div className="panel-heading">
         <div>
-          <h3>{tab === 'managers' ? t('leagueTableTitle') : t('playerLeaderboardTitle')}</h3>
+          <h3>
+            {tab === 'managers'
+              ? t('leagueTableTitle')
+              : tab === 'h2h'
+                ? t('h2hTableHeading')
+                : tab === 'highlights'
+                  ? t('totwHeading')
+                  : t('playerLeaderboardTitle')}
+          </h3>
           <p>{descriptions[tab]}</p>
         </div>
         <Trophy color="#b9954b" />
@@ -261,6 +359,7 @@ export default function LeaderboardScreen({
         ))}
       </div>
 
+      {/* 1. CLASSIC MANAGERS STANDINGS */}
       {tab === 'managers' && !demoMode && gameweeks.length > 0 && (
         <div className="gw-picker-bar">
           <select
@@ -313,11 +412,22 @@ export default function LeaderboardScreen({
                       <span className={`rank ${index < 3 ? 'podium-rank' : ''}`}>
                         {medalBadgeFor(index)}
                       </span>
-                      <div className="player-photo small-photo">
-                        {(row.display_name || '?').slice(0, 1)}
-                      </div>
+
+                      {row.avatar_url ? (
+                        <img
+                          className="leaderboard-photo"
+                          src={row.avatar_url}
+                          alt={row.display_name}
+                        />
+                      ) : (
+                        <div className="player-photo small-photo">
+                          {(row.display_name || '?').slice(0, 1).toUpperCase()}
+                        </div>
+                      )}
+
                       <div className="leaderboard-player-info">
                         <strong>
+                          {row.team_name ? `${row.team_name} · ` : ''}
                           {row.display_name}
                           {row.manager_id === currentUserId ? ` ${t('youTag')}` : ''}
                         </strong>
@@ -326,11 +436,13 @@ export default function LeaderboardScreen({
                           {row.subLabel}
                         </span>
                       </div>
+
                       {inspectable && (
                         <span className="inspect-hint">
                           <Eye size={13} /> {t('viewSquadAction')}
                         </span>
                       )}
+
                       <strong className="leaderboard-stat">
                         <AnimatedNumber value={row.primaryPoints} decimals={0} /> {t('ptsUnit')}
                       </strong>
@@ -343,7 +455,332 @@ export default function LeaderboardScreen({
         </div>
       )}
 
-      {tab !== 'managers' && !demoMode && (
+      {/* 2. WEEKLY 1v1 HEAD-TO-HEAD RIVALRIES */}
+      {tab === 'h2h' && (
+        <div className="screen-stage" key={`h2h-${h2hGwId}`}>
+          {!demoMode && gameweeks.length > 0 && (
+            <div className="gw-picker-bar">
+              <select
+                className="player-price-filter"
+                value={h2hGwId}
+                onChange={e =>
+                  setH2hGwId(e.target.value === 'latest' ? 'latest' : Number(e.target.value))
+                }
+              >
+                <option value="latest">Latest Gameweek</option>
+                {gameweeks.map(g => (
+                  <option key={g.id} value={g.id}>
+                    {t('gameweekOption')} {g.number} ({g.status})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {h2hLoading && <p className="muted">{t('loadingPoints')}</p>}
+
+          {!h2hLoading && h2hData && (
+            <>
+              <h4 className="sub-section-heading">
+                <Swords size={15} /> {t('h2hFixturesHeading')}
+                {h2hData.gameweek_number ? ` · GW #${h2hData.gameweek_number}` : ''}
+              </h4>
+
+              {h2hData.fixtures.length === 0 ? (
+                <div className="gw-empty-state" style={{ marginBottom: 16 }}>
+                  <p className="muted tiny" style={{ margin: 0 }}>
+                    {t('h2hNoFixturesYet')}
+                  </p>
+                </div>
+              ) : (
+                <div className="h2h-fixtures-grid">
+                  {h2hData.fixtures.map(fx => (
+                    <div className="h2h-fixture-card" key={fx.id}>
+                      <div
+                        className={`h2h-side ${fx.winner === 'home' ? 'h2h-side-winner' : ''}`}
+                      >
+                        {fx.home.avatar_url ? (
+                          <img
+                            className="leaderboard-photo"
+                            src={fx.home.avatar_url}
+                            alt={fx.home.display_name}
+                          />
+                        ) : (
+                          <div className="player-photo small-photo">
+                            {fx.home.display_name.slice(0, 1).toUpperCase()}
+                          </div>
+                        )}
+                        <div className="h2h-side-meta">
+                          <strong>{fx.home.team_name || fx.home.display_name}</strong>
+                          {fx.home.team_name && <span>{fx.home.display_name}</span>}
+                        </div>
+                      </div>
+
+                      <div className="h2h-scorebox">
+                        {fx.winner === 'pending' ? (
+                          <span className="h2h-vs-pill">VS</span>
+                        ) : (
+                          <strong>
+                            {fx.home.points} — {fx.away.points}
+                          </strong>
+                        )}
+                      </div>
+
+                      <div
+                        className={`h2h-side h2h-side-away ${
+                          fx.winner === 'away' ? 'h2h-side-winner' : ''
+                        }`}
+                      >
+                        <div className="h2h-side-meta">
+                          <strong>{fx.away.team_name || fx.away.display_name}</strong>
+                          {fx.away.team_name && <span>{fx.away.display_name}</span>}
+                        </div>
+                        {fx.away.avatar_url ? (
+                          <img
+                            className="leaderboard-photo"
+                            src={fx.away.avatar_url}
+                            alt={fx.away.display_name}
+                          />
+                        ) : (
+                          <div className="player-photo small-photo">
+                            {fx.away.is_average
+                              ? '⚡'
+                              : fx.away.display_name.slice(0, 1).toUpperCase()}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <h4 className="sub-section-heading" style={{ marginTop: 18 }}>
+                <Trophy size={15} /> {t('h2hTableHeading')}
+              </h4>
+
+              <div className="admin-scroll">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Manager</th>
+                      <th>P</th>
+                      <th>W</th>
+                      <th>D</th>
+                      <th>L</th>
+                      <th>PF</th>
+                      <th>H2H Pts</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {h2hData.standings.map((row, idx) => (
+                      <tr key={row.manager_id}>
+                        <td>
+                          <strong>{medalBadgeFor(idx)}</strong>
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            {row.avatar_url ? (
+                              <img
+                                className="leaderboard-photo"
+                                src={row.avatar_url}
+                                alt={row.display_name}
+                                style={{ width: 30, height: 30, flexBasis: 30 }}
+                              />
+                            ) : (
+                              <div
+                                className="player-photo small-photo"
+                                style={{ width: 30, height: 30, fontSize: 12 }}
+                              >
+                                {row.display_name.slice(0, 1).toUpperCase()}
+                              </div>
+                            )}
+                            <div>
+                              <strong>{row.team_name || row.display_name}</strong>
+                              {row.team_name && (
+                                <span className="muted tiny" style={{ display: 'block' }}>
+                                  {row.display_name}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td>{row.played}</td>
+                        <td>{row.wins}</td>
+                        <td>{row.draws}</td>
+                        <td>{row.losses}</td>
+                        <td>{row.points_for}</td>
+                        <td>
+                          <strong style={{ color: 'var(--gold-text)' }}>
+                            {row.h2h_points} pts
+                          </strong>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* 3. TEAM OF THE WEEK & BANTER TROPHIES */}
+      {tab === 'highlights' && (
+        <div className="screen-stage" key={`hl-${highlightGwId}`}>
+          {!demoMode && scoredGameweeks.length > 0 && (
+            <div className="gw-picker-bar">
+              <select
+                className="player-price-filter"
+                value={highlightGwId}
+                onChange={e =>
+                  setHighlightGwId(e.target.value === 'latest' ? 'latest' : Number(e.target.value))
+                }
+              >
+                <option value="latest">Latest Scored Round</option>
+                {scoredGameweeks.map(g => (
+                  <option key={g.id} value={g.id}>
+                    {t('gameweekOption')} {g.number}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {highlightsLoading && <p className="muted">{t('loadingPoints')}</p>}
+
+          {!highlightsLoading && (!highlights || !highlights.has_data) && (
+            <div className="gw-empty-state">
+              <Sparkles size={26} style={{ color: 'var(--gold)', marginBottom: 6 }} />
+              <p className="muted" style={{ margin: 0 }}>
+                {t('noHighlightsYet')}
+              </p>
+            </div>
+          )}
+
+          {!highlightsLoading && highlights && highlights.has_data && (
+            <>
+              {/* DREAM 5 TEAM OF THE WEEK PITCH */}
+              <div className="totw-banner-head">
+                <div>
+                  <span className="eyebrow">GW #{highlights.gameweek_number}</span>
+                  <h4>{t('totwHeading')}</h4>
+                </div>
+                <span className="muted tiny">{t('totwSub')}</span>
+              </div>
+
+              <div className="egypt-pitch pitch-3d-stadium" style={{ marginBottom: 18 }}>
+                <div className="egypt-pitch-line" />
+                <div className="egypt-pitch-circle" />
+                <div className="egypt-pitch-grid">
+                  {(highlights.team_of_the_week ?? []).map((p, idx) => (
+                    <FutPlayerCard
+                      key={p.player_id}
+                      slotNumber={idx + 1}
+                      kitNumber={p.kit_number}
+                      name={p.display_name}
+                      photoUrl={p.photo_url}
+                      isCaptain={idx === 0}
+                      statLabel={`${p.points} ${t('ptsUnit')}`}
+                      secondaryNote={
+                        [
+                          p.goals > 0 ? `⚽${p.goals}` : '',
+                          p.assists > 0 ? `🎯${p.assists}` : '',
+                          p.mvp_count > 0 ? `👑MVP` : '',
+                        ]
+                          .filter(Boolean)
+                          .join(' · ') || undefined
+                      }
+                      onCardClick={() => onOpenPlayerProfile(p.player_id)}
+                      onOpenProfile={() => onOpenPlayerProfile(p.player_id)}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* BANTER AWARDS & TROPHIES GRID */}
+              <h4 className="sub-section-heading">
+                <Flame size={15} /> {t('banterAwardsHeading')}
+              </h4>
+
+              <div className="banter-awards-grid">
+                {highlights.awards?.gw_champion && (
+                  <div className="banter-award-card award-gold">
+                    <div className="banter-award-icon">
+                      <Crown size={20} />
+                    </div>
+                    <div>
+                      <span className="banter-award-tag">{t('awardGwChampion')}</span>
+                      <strong>
+                        {highlights.awards.gw_champion.team_name ||
+                          highlights.awards.gw_champion.display_name}
+                      </strong>
+                      <p>
+                        {highlights.awards.gw_champion.display_name} ·{' '}
+                        <b>
+                          {highlights.awards.gw_champion.points} {t('ptsUnit')}
+                        </b>
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {highlights.awards?.golden_boot && (
+                  <div
+                    className="banter-award-card clickable-row"
+                    onClick={() =>
+                      onOpenPlayerProfile(highlights.awards!.golden_boot!.player_id)
+                    }
+                  >
+                    <div className="banter-award-icon">⚽</div>
+                    <div>
+                      <span className="banter-award-tag">{t('awardGoldenBoot')}</span>
+                      <strong>{highlights.awards.golden_boot.display_name}</strong>
+                      <p>
+                        <b>{highlights.awards.golden_boot.goals}</b> {t('rule_goal')} in GW #
+                        {highlights.gameweek_number}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {highlights.awards?.captain_genius && (
+                  <div className="banter-award-card">
+                    <div className="banter-award-icon">🧠</div>
+                    <div>
+                      <span className="banter-award-tag">{t('awardCaptainGenius')}</span>
+                      <strong>{highlights.awards.captain_genius.display_name}</strong>
+                      <p>
+                        Captained <b>{highlights.awards.captain_genius.player_name}</b> for{' '}
+                        <b>
+                          +{highlights.awards.captain_genius.captain_points} {t('ptsUnit')}
+                        </b>
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {highlights.awards?.bench_pain && (
+                  <div className="banter-award-card award-banter-pain">
+                    <div className="banter-award-icon">😭</div>
+                    <div>
+                      <span className="banter-award-tag">{t('awardBenchPain')}</span>
+                      <strong>{highlights.awards.bench_pain.display_name}</strong>
+                      <p>
+                        Left <b>{highlights.awards.bench_pain.bench_points} pts</b> rotting on the
+                        bench ({highlights.awards.bench_pain.bench_names})!
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* 4. PLAYER STAT TABS (Goals, Assists, Contributions, Ratings) */}
+      {isPlayerStatTab && !demoMode && (
         <div key={tab} className="screen-stage">
           {playersLoading && <p className="muted">{t('loadingPoints')}</p>}
           {playersError && <div className="notice">{playersError}</div>}
@@ -365,7 +802,11 @@ export default function LeaderboardScreen({
                         {medalBadgeFor(index)}
                       </span>
                       {p.photo_url ? (
-                        <img className="leaderboard-photo" src={p.photo_url} alt={p.display_name} />
+                        <img
+                          className="leaderboard-photo"
+                          src={p.photo_url}
+                          alt={p.display_name}
+                        />
                       ) : (
                         <div className="player-photo small-photo">
                           {(p.display_name || '?').slice(0, 1)}
@@ -393,7 +834,7 @@ export default function LeaderboardScreen({
         </div>
       )}
 
-      {tab !== 'managers' && demoMode && (
+      {isPlayerStatTab && demoMode && (
         <div className="leaderboard-list screen-stage" key={`demo-${tab}`}>
           {demoPlayers.slice(0, 6).map((p, index) => (
             <div
@@ -408,7 +849,9 @@ export default function LeaderboardScreen({
               <div className="player-photo small-photo">{p.name.slice(0, 1)}</div>
               <div className="leaderboard-player-info">
                 <strong>
-                  {p.kit_number != null && <span className="inline-kit-chip">#{p.kit_number}</span>}
+                  {p.kit_number != null && (
+                    <span className="inline-kit-chip">#{p.kit_number}</span>
+                  )}
                   {p.name}
                 </strong>
               </div>

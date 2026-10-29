@@ -350,6 +350,14 @@ export default function PlayerProfileModal({
                   <strong>{profile.stats.red_cards}</strong>
                 </div>
                 <div className="matrix-cell">
+                  <span>👑 {t('mvpBadge')}</span>
+                  <strong>{profile.stats.mvp_awards ?? 0}</strong>
+                </div>
+                <div className="matrix-cell">
+                  <span>🎩 {t('hatTrickBadge')}</span>
+                  <strong>{profile.stats.hat_tricks ?? 0}</strong>
+                </div>
+                <div className="matrix-cell">
                   <span>😬 {t('rule_own_goal')}</span>
                   <strong>{profile.stats.own_goals}</strong>
                 </div>
@@ -373,6 +381,7 @@ export default function PlayerProfileModal({
                           GW {m.gameweek_number} · M{m.match_number}
                         </strong>
                         <span className="match-mini-tags">
+                          {m.is_mvp && <em>👑 MVP</em>}
                           {m.goals > 0 && <em>⚽ {m.goals}</em>}
                           {m.assists > 0 && <em>🎯 {m.assists}</em>}
                           {m.saves > 0 && <em>🧤 {m.saves}</em>}

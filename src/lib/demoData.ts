@@ -1,6 +1,9 @@
 import type {
+  GameweekHighlights,
+  H2HOverview,
   LeaguePlayer,
   PlayerProfileDetail,
+  PublicMatch,
   ScoringRule,
   Standing,
   SquadInspection,
@@ -8,13 +11,15 @@ import type {
 
 export const DEFAULT_SCORING_RULES: ScoringRule[] = [
   { key: 'goal', label: 'Goal', points: 5 },
-  { key: 'assist', label: 'Assist', points: 3 },
-  { key: 'save', label: 'Save', points: 1 },
   { key: 'penalty_save', label: 'Penalty save', points: 5 },
-  { key: 'penalty_missed', label: 'Penalty missed', points: -2 },
+  { key: 'hat_trick', label: 'Hat-trick (3+ goals in a match)', points: 3 },
+  { key: 'assist', label: 'Assist', points: 3 },
+  { key: 'mvp', label: 'Match MVP (Man of the Match)', points: 2 },
+  { key: 'save', label: 'Save', points: 1 },
   { key: 'yellow_card', label: 'Yellow card', points: -1 },
-  { key: 'red_card', label: 'Red card', points: -3 },
+  { key: 'penalty_missed', label: 'Penalty missed', points: -2 },
   { key: 'own_goal', label: 'Own goal', points: -2 },
+  { key: 'red_card', label: 'Red card', points: -3 },
 ];
 
 export const DEMO_PLAYERS: LeaguePlayer[] = [
@@ -159,11 +164,161 @@ export const DEMO_PLAYERS: LeaguePlayer[] = [
 ];
 
 export const DEMO_STANDINGS: Standing[] = [
-  { manager_id: 'demo-1', display_name: 'Yako', total_points: 78, last_gameweek_points: 42, gameweeks_played: 2 },
-  { manager_id: 'demo-2', display_name: 'Shady', total_points: 71, last_gameweek_points: 35, gameweeks_played: 2 },
-  { manager_id: 'demo-3', display_name: 'Moaaz', total_points: 66, last_gameweek_points: 33, gameweeks_played: 2 },
-  { manager_id: 'demo-4', display_name: 'Benas', total_points: 59, last_gameweek_points: 28, gameweeks_played: 2 },
+  {
+    manager_id: 'demo-1',
+    display_name: 'Yako',
+    team_name: 'FC Yako XI',
+    avatar_url: null,
+    total_points: 78,
+    last_gameweek_points: 42,
+    gameweeks_played: 2,
+    budget: 50.4,
+  },
+  {
+    manager_id: 'demo-2',
+    display_name: 'Shady',
+    team_name: 'Cairo Wolves',
+    avatar_url: null,
+    total_points: 71,
+    last_gameweek_points: 35,
+    gameweeks_played: 2,
+    budget: 50.2,
+  },
+  {
+    manager_id: 'demo-3',
+    display_name: 'Moaaz',
+    team_name: 'Zamalek Stars',
+    avatar_url: null,
+    total_points: 66,
+    last_gameweek_points: 33,
+    gameweeks_played: 2,
+    budget: 50.0,
+  },
+  {
+    manager_id: 'demo-4',
+    display_name: 'Benas',
+    team_name: 'El Khames FC',
+    avatar_url: null,
+    total_points: 59,
+    last_gameweek_points: 28,
+    gameweeks_played: 2,
+    budget: 50.0,
+  },
 ];
+
+export const DEMO_MATCHES: PublicMatch[] = [
+  {
+    match_id: 'demo-m2',
+    gameweek_id: 2,
+    gameweek_number: 2,
+    match_number: 2,
+    status: 'finished',
+    ended_at: '2026-10-29T20:15:00Z',
+    players: [
+      {
+        player_id: 'Karim',
+        display_name: 'Karim',
+        photo_url: null,
+        kit_number: 10,
+        goals: 3,
+        assists: 1,
+        saves: 0,
+        penalty_saves: 0,
+        penalties_missed: 0,
+        yellow_cards: 0,
+        red_cards: 0,
+        own_goals: 0,
+        rating: 9.4,
+        is_mvp: true,
+        is_hat_trick: true,
+        fantasy_points: 23,
+      },
+      {
+        player_id: 'Omar',
+        display_name: 'Omar',
+        photo_url: null,
+        kit_number: 7,
+        goals: 1,
+        assists: 2,
+        saves: 0,
+        penalty_saves: 0,
+        penalties_missed: 0,
+        yellow_cards: 0,
+        red_cards: 0,
+        own_goals: 0,
+        rating: 8.6,
+        is_mvp: false,
+        is_hat_trick: false,
+        fantasy_points: 11,
+      },
+      {
+        player_id: 'Mazen',
+        display_name: 'Mazen',
+        photo_url: null,
+        kit_number: 1,
+        goals: 0,
+        assists: 0,
+        saves: 5,
+        penalty_saves: 1,
+        penalties_missed: 0,
+        yellow_cards: 0,
+        red_cards: 0,
+        own_goals: 0,
+        rating: 8.8,
+        is_mvp: false,
+        is_hat_trick: false,
+        fantasy_points: 10,
+      },
+    ],
+  },
+];
+
+export const DEMO_HIGHLIGHTS: GameweekHighlights = {
+  has_data: true,
+  gameweek_id: 2,
+  gameweek_number: 2,
+  team_of_the_week: [
+    { player_id: 'Karim', display_name: 'Karim', photo_url: null, kit_number: 10, price: 8.5, points: 23, goals: 3, assists: 1, mvp_count: 1 },
+    { player_id: 'Omar', display_name: 'Omar', photo_url: null, kit_number: 7, price: 8.0, points: 16, goals: 2, assists: 2, mvp_count: 0 },
+    { player_id: 'Youssef', display_name: 'Youssef', photo_url: null, kit_number: 11, price: 7.5, points: 13, goals: 2, assists: 1, mvp_count: 0 },
+    { player_id: 'Mazen', display_name: 'Mazen', photo_url: null, kit_number: 1, price: 6.0, points: 10, goals: 0, assists: 0, mvp_count: 0 },
+    { player_id: 'Ziad', display_name: 'Ziad', photo_url: null, kit_number: 8, price: 7.0, points: 9, goals: 1, assists: 1, mvp_count: 0 },
+  ],
+  awards: {
+    gw_champion: { manager_id: 'demo-1', display_name: 'Yako', team_name: 'FC Yako XI', points: 42 },
+    golden_boot: { player_id: 'Karim', display_name: 'Karim', kit_number: 10, goals: 3 },
+    captain_genius: { manager_id: 'demo-1', display_name: 'Yako', team_name: 'FC Yako XI', player_name: 'Karim', captain_points: 46 },
+    bench_pain: { manager_id: 'demo-4', display_name: 'Benas', team_name: 'El Khames FC', bench_points: 14, bench_names: 'Mazen, Nour' },
+  },
+};
+
+export const DEMO_H2H: H2HOverview = {
+  gameweek_id: 2,
+  gameweek_number: 2,
+  gameweek_status: 'active',
+  fixtures: [
+    {
+      id: 1,
+      home: { manager_id: 'demo-1', display_name: 'Yako', team_name: 'FC Yako XI', points: 42 },
+      away: { manager_id: 'demo-2', display_name: 'Shady', team_name: 'Cairo Wolves', points: 35 },
+      status: 'active',
+      winner: 'home',
+    },
+    {
+      id: 2,
+      home: { manager_id: 'demo-3', display_name: 'Moaaz', team_name: 'Zamalek Stars', points: 33 },
+      away: { manager_id: 'demo-4', display_name: 'Benas', team_name: 'El Khames FC', points: 28 },
+      status: 'active',
+      winner: 'home',
+    },
+  ],
+  standings: [
+    { manager_id: 'demo-1', display_name: 'Yako', team_name: 'FC Yako XI', played: 2, wins: 2, draws: 0, losses: 0, points_for: 78, points_against: 61, h2h_points: 6 },
+    { manager_id: 'demo-2', display_name: 'Shady', team_name: 'Cairo Wolves', played: 2, wins: 1, draws: 0, losses: 1, points_for: 71, points_against: 68, h2h_points: 3 },
+    { manager_id: 'demo-3', display_name: 'Moaaz', team_name: 'Zamalek Stars', played: 2, wins: 1, draws: 0, losses: 1, points_for: 66, points_against: 64, h2h_points: 3 },
+    { manager_id: 'demo-4', display_name: 'Benas', team_name: 'El Khames FC', played: 2, wins: 0, draws: 0, losses: 2, points_for: 59, points_against: 71, h2h_points: 0 },
+  ],
+};
 
 export function buildDemoPlayerProfile(player: LeaguePlayer): PlayerProfileDetail {
   const goals = Math.max(1, Math.floor(player.points / 7));

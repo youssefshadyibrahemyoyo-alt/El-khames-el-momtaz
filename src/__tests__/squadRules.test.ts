@@ -11,10 +11,13 @@ import { fromCairoDateTimeInput, toCairoDateTimeInput } from '../lib/cairoTime';
 import type { Gameweek, LeaguePlayer, SquadRecord } from '../types/league';
 
 describe('squadRules', () => {
-  it('handles IEEE-754 decimal sums at exact £50.0m budget boundary', () => {
+  it('handles IEEE-754 decimal sums at exact £50.0m budget boundary and grown FPL budgets', () => {
     const exactFifty = 7.1 + 7.2 + 7.3 + 7.1 + 7.2 + 7.1 + 7.0; // 50.00000000000001 in JS float
     expect(isOverBudget(exactFifty)).toBe(false);
     expect(isOverBudget(50.5)).toBe(true);
+    // Grown FPL budget after owned players rise in price (+0.4m -> £50.4m cap)
+    expect(isOverBudget(50.4, 50.4)).toBe(false);
+    expect(isOverBudget(50.5, 50.4)).toBe(true);
   });
 
   it('keeps captain and vice-captain on starting five after bench swaps or removals', () => {

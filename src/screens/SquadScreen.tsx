@@ -19,6 +19,7 @@ type SquadScreenProps = {
   selected: string[];
   playerById: Map<string, LeaguePlayer>;
   selectedCost: number;
+  managerBudget?: number;
   captain: string;
   viceCaptain: string;
   activeChip: string | null;
@@ -50,6 +51,7 @@ export default function SquadScreen({
   selected,
   playerById,
   selectedCost,
+  managerBudget = SQUAD_BUDGET,
   captain,
   viceCaptain,
   activeChip,
@@ -117,12 +119,12 @@ export default function SquadScreen({
           </div>
           <span className="budget">
             <AnimatedNumber value={selectedCost} decimals={1} prefix="£" suffix="m" /> / £
-            {SQUAD_BUDGET.toFixed(1)}m
+            {managerBudget.toFixed(1)}m
           </span>
         </div>
 
         <div className="budget-track">
-          <span style={{ width: `${Math.min((selectedCost / SQUAD_BUDGET) * 100, 100)}%` }} />
+          <span style={{ width: `${Math.min((selectedCost / managerBudget) * 100, 100)}%` }} />
         </div>
 
         {!demoMode && (

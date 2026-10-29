@@ -20,6 +20,7 @@ export const translations = {
     navHome: 'Home',
     navSquad: 'My squad',
     navPlayers: 'Player market',
+    navMatches: 'Matches',
     navLeaderboard: 'Leaderboard',
     navAdmin: 'Admin panel',
     adminBadge: 'ADMIN',
@@ -105,6 +106,8 @@ export const translations = {
     rule_yellow_card: 'Yellow card',
     rule_red_card: 'Red card',
     rule_own_goal: 'Own goal',
+    rule_hat_trick: 'Hat-trick (3+ goals)',
+    rule_mvp: 'Match MVP (Man of the Match)',
 
     // Squad screen
     myFantasySquad: 'My fantasy squad',
@@ -263,6 +266,59 @@ export const translations = {
     confirmResetRoundsDesc:
       'This wipes all gameweeks, saved squads, transfer hits, and match stats back to 0 so you can start cleanly from Gameweek 1. Player profiles and member accounts are kept.',
     confirmResetBtn: 'Yes, Reset Everything to GW 1',
+
+    // Manager Account Profile & Growing Budget
+    myProfileBtn: 'My Profile',
+    myProfileTitle: 'Manager Account & Club',
+    myProfileSub: 'Upload your profile picture, customize your display name, and name your fantasy club.',
+    displayNameLabel: 'Manager Display Name',
+    fantasyTeamNameLabel: 'Fantasy Club Name',
+    fantasyTeamPlaceholder: 'e.g. FC Yako, El Malak XI…',
+    uploadAvatarBtn: 'Upload Profile Photo',
+    removeAvatarBtn: 'Remove Photo',
+    myGrowingBudgetLabel: 'My FPL Squad Budget',
+    saveProfileBtn: 'Save My Profile',
+    profileSavedNotice: 'Your manager profile has been updated!',
+
+    // Public Matches Feed & Sideline Quick-Tap
+    matchesScreenTitle: 'Thursday Match Results',
+    matchesScreenSub: 'Every 15-minute game, scorers, Match MVPs & fantasy points from the pitch.',
+    allGameweeksFilter: 'All Gameweeks',
+    noMatchesPlayedYet: 'No 15-minute matches recorded yet. Results appear here right as games are played!',
+    matchCardPrefix: '15-Min Match',
+    mvpBadge: 'Match MVP',
+    hatTrickBadge: 'Hat-Trick',
+    quickTapMode: 'Sideline Quick-Tap',
+    tableMode: 'Full Table',
+    tapPlayersWhoPlayed: '1. Tap everyone who played this 15-min match:',
+    quickTapStatsHint: '2. Tap + buttons on the sideline to log goals, assists, saves & Match MVP:',
+
+    // Head-to-Head 1v1 & Highlights / Banter
+    tabH2H: '1v1 H2H',
+    tabHighlights: 'TOTW & Banter',
+    descH2H: 'Weekly 1v1 manager rivalries (Win = 3 pts, Draw = 1 pt) alongside the main table.',
+    descHighlights: 'Dream 5 Team of the Week & weekly Thursday night awards.',
+    h2hFixturesHeading: '1v1 Rivalry Matchups',
+    h2hTableHeading: 'Head-to-Head Standings',
+    h2hNoFixturesYet: '1v1 pairings appear automatically as soon as Gameweek #1 is generated!',
+    totwHeading: 'Team of the Week · Dream V',
+    totwSub: 'The 5 highest-scoring ballers of the round',
+    banterAwardsHeading: 'Thursday Night Trophies & Banter',
+    awardGwChampion: 'King of Thursday',
+    awardGwChampionSub: 'Highest Gameweek Score',
+    awardGoldenBoot: 'Golden Boot',
+    awardGoldenBootSub: 'Top Scorer of the Night',
+    awardCaptainGenius: 'Captain Masterclass',
+    awardCaptainGeniusSub: 'Biggest Captain Haul',
+    awardBenchPain: 'Bench Pain Award',
+    awardBenchPainSub: 'Most Points Left on the Bench',
+    noHighlightsYet: 'Once matches are recorded, Team of the Week & Banter Trophies light up right here!',
+
+    // FPL Price Rises/Drops on End Gameweek
+    suggestedPriceChangesHeading: 'FPL Dynamic Price Changes',
+    applyFplPriceChangesToggle: 'Apply price rises/drops & grow owners’ squad budgets',
+    priceRisesGrowBudgetHint:
+      'Managers who own rising players automatically gain that value in their personal budget!',
   },
   ar: {
     brandEyebrow: 'فانتازي خميس الكورة',
@@ -283,6 +339,7 @@ export const translations = {
     navHome: 'الرئيسية',
     navSquad: 'تشكيلتي',
     navPlayers: 'سوق اللاعبين',
+    navMatches: 'المباريات',
     navLeaderboard: 'الترتيب',
     navAdmin: 'لوحة الأدمن',
     adminBadge: 'أدمن',
@@ -368,6 +425,8 @@ export const translations = {
     rule_yellow_card: 'بطاقة صفراء',
     rule_red_card: 'بطاقة حمراء',
     rule_own_goal: 'هدف عكسي',
+    rule_hat_trick: 'هاتريك (3 أهداف أو أكثر)',
+    rule_mvp: 'نجم المباراة (MVP)',
 
     // Squad screen
     myFantasySquad: 'تشكيلتي في الفانتازي',
@@ -526,6 +585,59 @@ export const translations = {
     confirmResetRoundsDesc:
       'سيؤدي هذا إلى مسح جميع الجولات والتشكيلات وخصومات الانتقالات وإحصائيات المباريات للبدء من الصفر من الجولة 1، مع الاحتفاظ بملفات اللاعبين وحسابات الأعضاء.',
     confirmResetBtn: 'نعم، إعادة الضبط للجولة 1',
+
+    // Manager Account Profile & Growing Budget
+    myProfileBtn: 'حسابي',
+    myProfileTitle: 'ملف المدرب والنادي',
+    myProfileSub: 'ارفع صورتك الشخصية وعدّل اسمك واسم فريقك في الفانتازي.',
+    displayNameLabel: 'اسم المدرب',
+    fantasyTeamNameLabel: 'اسم فريق الفانتازي',
+    fantasyTeamPlaceholder: 'مثال: الملكي، فريق ياكو…',
+    uploadAvatarBtn: 'رفع صورة شخصية',
+    removeAvatarBtn: 'حذف الصورة',
+    myGrowingBudgetLabel: 'ميزانية فريقي الحالية',
+    saveProfileBtn: 'حفظ الملف الشخصي',
+    profileSavedNotice: 'تم تحديث ملفك الشخصي بنجاح!',
+
+    // Public Matches Feed & Sideline Quick-Tap
+    matchesScreenTitle: 'نتائج مباريات الخميس',
+    matchesScreenSub: 'كل مباراة 15 دقيقة، الهدافون، نجم المباراة والنقاط المسجلة.',
+    allGameweeksFilter: 'كل الجولات',
+    noMatchesPlayedYet: 'لم تُسجّل مباريات بعد. ستظهر نتائج كل مباراة 15 دقيقة هنا فوراً!',
+    matchCardPrefix: 'مباراة',
+    mvpBadge: 'نجم المباراة',
+    hatTrickBadge: 'هاتريك',
+    quickTapMode: 'تسجيل سريع من الملعب',
+    tableMode: 'الجدول الكامل',
+    tapPlayersWhoPlayed: '1. اضغط لاختيار اللاعبين المشاركين في هذه المباراة:',
+    quickTapStatsHint: '2. استخدم الأزرار السريعة لتسجيل الأهداف والأسيست والتصديات ونجم اللقاء:',
+
+    // Head-to-Head 1v1 & Highlights / Banter
+    tabH2H: 'مواجهات 1 ضد 1',
+    tabHighlights: 'فريق الأسبوع والجوائز',
+    descH2H: 'مواجهات مباشرة أسبوعية بين المدربين (الفوز = 3 نقاط، التعادل = نقطة).',
+    descHighlights: 'أفضل 5 لاعبين في الجولة وجوائز وطرائف سهرة الخميس.',
+    h2hFixturesHeading: 'مواجهات الجولة (1 ضد 1)',
+    h2hTableHeading: 'ترتيب المواجهات المباشرة',
+    h2hNoFixturesYet: 'تظهر المواجهات المباشرة تلقائياً بمجرد إنشاء الجولة الأولى!',
+    totwHeading: 'تشكيلة الأسبوع المثالية · أفضل 5',
+    totwSub: 'أعلى 5 لاعبين تحقيقاً للنقاط في هذه الجولة',
+    banterAwardsHeading: 'جوائز وطرائف سهرة الخميس',
+    awardGwChampion: 'ملك الخميس',
+    awardGwChampionSub: 'أعلى نقاط في الجولة',
+    awardGoldenBoot: 'الحذاء الذهبي',
+    awardGoldenBootSub: 'هداف السهرة',
+    awardCaptainGenius: 'عبقري الكابتن',
+    awardCaptainGeniusSub: 'أعلى نقاط كابتن في الجولة',
+    awardBenchPain: 'حسرة الدكة 😭',
+    awardBenchPainSub: 'أكثر نقاط ضائعة على دكة البدلاء',
+    noHighlightsYet: 'بمجرد تسجيل المباريات، ستظهر تشكيلة الأسبوع والجوائز هنا!',
+
+    // FPL Price Rises/Drops on End Gameweek
+    suggestedPriceChangesHeading: 'تغيرات أسعار اللاعبين (نظام FPL)',
+    applyFplPriceChangesToggle: 'تطبيق تغيرات الأسعار وزيادة ميزانية ملاك اللاعبين المرتفعين',
+    priceRisesGrowBudgetHint:
+      'المدربون الذين يمتلكون لاعبين ارتفع سعرهم تزيد ميزانيتهم تلقائياً بنفس القيمة!',
   },
 } as const;
 

@@ -5,6 +5,9 @@ import type { AdminProps } from './types';
 type Member = {
   id: string;
   display_name: string;
+  team_name?: string | null;
+  avatar_url?: string | null;
+  budget?: number | null;
   role: string;
   player_approval_status: string;
 };
@@ -19,7 +22,7 @@ export default function RegistrationsAdmin({ db, onChanged }: AdminProps) {
     const [membersRes, settingsRes] = await Promise.all([
       db
         .from('profiles')
-        .select('id,display_name,role,player_approval_status')
+        .select('id,display_name,team_name,avatar_url,budget,role,player_approval_status')
         .order('created_at', { ascending: true }),
       db.from('league_settings').select('auto_approve_signups').eq('id', 1).maybeSingle(),
     ]);
@@ -158,10 +161,20 @@ export default function RegistrationsAdmin({ db, onChanged }: AdminProps) {
         <h4>Approved managers ({approved.length})</h4>
         {approved.map(m => (
           <div className="player-row" key={m.id}>
-            <div className="player-photo small-photo">{m.display_name.slice(0, 1)}</div>
+            {m.avatar_url ? (
+              <img className="leaderboard-photo" src={m.avatar_url} alt={m.display_name} />
+            ) : (
+              <div className="player-photo small-photo">{m.display_name.slice(0, 1)}</div>
+            )}
             <div className="player-info">
-              <strong>{m.display_name}</strong>
-              <span>{m.role === 'admin_player' ? 'Admin + player' : 'Player'}</span>
+              <strong>
+                {m.display_name}
+                {m.team_name ? ` · 🛡️ ${m.team_name}` : ''}
+              </strong>
+              <span>
+                {m.role === 'admin_player' ? 'Admin + player' : 'Player'} · Budget £
+                {Number(m.budget ?? 50).toFixed(1)}m
+              </span>
             </div>
             {m.role !== 'admin_player' && (
               <>

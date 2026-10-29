@@ -6,6 +6,7 @@ import {
   Moon,
   ShieldCheck,
   Sun,
+  Swords,
   Trophy,
   Users,
 } from 'lucide-react';
@@ -19,6 +20,9 @@ type SidebarProps = {
   isAdmin: boolean;
   demoMode: boolean;
   displayName?: string;
+  teamName?: string | null;
+  avatarUrl?: string | null;
+  onOpenMyProfile: () => void;
   onSignOutOrToggleDemo: () => void;
 };
 
@@ -28,6 +32,9 @@ export default function Sidebar({
   isAdmin,
   demoMode,
   displayName,
+  teamName,
+  avatarUrl,
+  onOpenMyProfile,
   onSignOutOrToggleDemo,
 }: SidebarProps) {
   const { t } = useLanguage();
@@ -37,9 +44,16 @@ export default function Sidebar({
     { id: 'overview', label: t('navHome'), icon: CalendarDays },
     { id: 'squad', label: t('navSquad'), icon: Users },
     { id: 'players', label: t('navPlayers'), icon: CircleUserRound },
+    { id: 'matches', label: t('navMatches'), icon: Swords },
     { id: 'leaderboard', label: t('navLeaderboard'), icon: Trophy },
     { id: 'admin', label: t('navAdmin'), icon: ShieldCheck, admin: true },
   ];
+
+  const shownName = demoMode
+    ? isAdmin
+      ? t('demoAdminAccount')
+      : t('demoPlayerAccount')
+    : displayName || 'Player';
 
   return (
     <aside className="sidebar">
@@ -87,17 +101,29 @@ export default function Sidebar({
         </button>
 
         <div className="account-chip">
-          <div className="avatar">{isAdmin ? 'A' : 'P'}</div>
-          <div className="account-copy">
-            <strong>
-              {demoMode
-                ? isAdmin
-                  ? t('demoAdminAccount')
-                  : t('demoPlayerAccount')
-                : displayName || 'Player'}
-            </strong>
-            <span>{isAdmin ? t('roleAdminTitle') : t('rolePlayerTitle')}</span>
-          </div>
+          <button
+            type="button"
+            className="account-profile-trigger"
+            title={t('myProfileBtn')}
+            onClick={onOpenMyProfile}
+          >
+            {avatarUrl ? (
+              <img className="manager-chip-avatar" src={avatarUrl} alt={shownName} />
+            ) : (
+              <div className="avatar">{shownName.slice(0, 1).toUpperCase()}</div>
+            )}
+            <div className="account-copy">
+              <strong>{shownName}</strong>
+              <span>
+                {teamName
+                  ? `🛡️ ${teamName}`
+                  : isAdmin
+                    ? t('roleAdminTitle')
+                    : t('rolePlayerTitle')}
+              </span>
+            </div>
+          </button>
+
           <button
             type="button"
             className="icon-btn"

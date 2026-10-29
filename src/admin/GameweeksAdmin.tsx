@@ -1,6 +1,19 @@
 import { useCallback, useEffect, useState } from 'react';
-import { AlertTriangle, CalendarPlus, CheckCircle2, Play, RotateCcw, Square, X } from 'lucide-react';
+import {
+  AlertTriangle,
+  CalendarPlus,
+  CheckCircle2,
+  Minus,
+  Play,
+  Plus,
+  RotateCcw,
+  Square,
+  TrendingDown,
+  TrendingUp,
+  X,
+} from 'lucide-react';
 import type { AdminProps } from './types';
+import type { PriceChangePreview } from '../types/league';
 import {
   CAIRO_TZ,
   formatCairoDeadline,
@@ -19,7 +32,6 @@ type ConfirmAction =
   | { kind: 'reset_all' };
 
 function suggestNextThursdayCairoInput(now: Date = new Date()): string {
-  // Find the next Thursday 19:00 in Cairo time that is at least 1 hour in the future
   const parts = new Intl.DateTimeFormat('en-CA', {
     timeZone: CAIRO_TZ,
     year: 'numeric',
@@ -69,6 +81,9 @@ export default function GameweeksAdmin({ db, onChanged }: AdminProps) {
   const [deadlines, setDeadlines] = useState<Record<number, string>>({});
   const [newDeadline, setNewDeadline] = useState<string>(() => suggestNextThursdayCairoInput());
   const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(null);
+  const [pricePreviews, setPricePreviews] = useState<PriceChangePreview[]>([]);
+  const [priceLoading, setPriceLoading] = useState(false);
+  const [applyPrices, setApplyPrices] = useState(true);
   const [msg, setMsg] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -91,6 +106,42 @@ export default function GameweeksAdmin({ db, onChanged }: AdminProps) {
   useEffect(() => {
     void load();
   }, [load]);
+
+  // Load suggested FPL price changes whenever Admin opens the End Gameweek confirmation modal
+  useEffect(() => {
+    if (!confirmAction || confirmAction.kind !== 'end') {
+      setPricePreviews([]);
+      return;
+    }
+    let cancelled = false;
+    setPriceLoading(true);
+    setApplyPrices(true);
+    db.rpc('preview_gameweek_price_changes', { p_gameweek_id: confirmAction.gw.id }).then(
+      ({ data, error }) => {
+        if (cancelled) return;
+        if (!error && Array.isArray(data)) {
+          setPricePreviews(data as PriceChangePreview[]);
+        } else {
+          setPricePreviews([]);
+        }
+        setPriceLoading(false);
+      }
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [confirmAction, db]);
+
+  const adjustSuggestedPrice = (playerId: string, step: number) => {
+    setPricePreviews(prev =>
+      prev.map(item => {
+        if (item.player_id !== playerId) return item;
+        const nextNew = Math.min(15, Math.max(4, Math.round((item.new_price + step) * 10) / 10));
+        const nextDelta = Math.round((nextNew - item.old_price) * 10) / 10;
+        return { ...item, new_price: nextNew, delta: nextDelta };
+      })
+    );
+  };
 
   async function run(label: string, fn: () => PromiseLike<Result>) {
     setBusy(true);
@@ -138,11 +189,16 @@ export default function GameweeksAdmin({ db, onChanged }: AdminProps) {
     }
 
     if (confirmAction.kind === 'end') {
+      const payload = applyPrices
+        ? pricePreviews
+            .filter(p => p.delta !== 0)
+            .map(p => ({ player_id: p.player_id, new_price: p.new_price }))
+        : [];
       await run(`End Gameweek #${confirmAction.gw.number}`, () =>
-        db
-          .from('gameweeks')
-          .update({ status: 'finished', ended_at: new Date().toISOString() })
-          .eq('id', confirmAction.gw.id)
+        db.rpc('admin_end_gameweek', {
+          p_gameweek_id: confirmAction.gw.id,
+          p_price_changes: payload,
+        })
       );
       return;
     }
@@ -156,9 +212,9 @@ export default function GameweeksAdmin({ db, onChanged }: AdminProps) {
   return (
     <div>
       <p className="muted tiny" style={{ marginBottom: 12 }}>
-        Flow: click <strong>{t('generateGwBtn')}</strong> and confirm in the popup to open transfers,{' '}
+        Flow: click <strong>{t('generateGwBtn')}</strong> and confirm in the popup to open transfers & 1v1 pairings,{' '}
         <strong>Start</strong> when Thursday matches kick off (auto-rolls over squads), record match stats, then{' '}
-        <strong>End</strong> the round.
+        <strong>End</strong> the round (with automatic FPL price rises/drops!).
       </p>
 
       {/* GENERATE NEXT GAMEWEEK CARD */}
@@ -302,11 +358,11 @@ export default function GameweeksAdmin({ db, onChanged }: AdminProps) {
         </div>
       )}
 
-      {/* RESET ROUNDS ACTION (with confirmation modal) */}
+      {/* RESET ROUNDS ACTION */}
       {rows.length > 0 && (
         <div className="gw-reset-bar">
           <span className="muted tiny">
-            Testing before kick-off? You can reset all rounds & transfer hits back to GW #1.
+            Testing before kick-off? You can reset all rounds, H2H & transfer hits back to GW #1.
           </span>
           <button
             type="button"
@@ -334,7 +390,9 @@ export default function GameweeksAdmin({ db, onChanged }: AdminProps) {
           }}
         >
           <div
-            className="modal-card modal-sheet-spring gw-confirm-modal"
+            className={`modal-card modal-sheet-spring ${
+              confirmAction.kind === 'end' ? 'gw-end-price-modal' : 'gw-confirm-modal'
+            }`}
             onClick={e => e.stopPropagation()}
           >
             <div className="sheet-grabber" aria-hidden="true" />
@@ -391,9 +449,77 @@ export default function GameweeksAdmin({ db, onChanged }: AdminProps) {
             )}
 
             {confirmAction.kind === 'end' && (
-              <p className="muted" style={{ margin: '0 0 14px', fontSize: 13 }}>
-                {t('confirmEndGwDesc')}
-              </p>
+              <>
+                <p className="muted" style={{ margin: '0 0 10px', fontSize: 13 }}>
+                  {t('confirmEndGwDesc')}
+                </p>
+
+                <div className="price-preview-box">
+                  <label className="price-toggle-check">
+                    <input
+                      type="checkbox"
+                      checked={applyPrices}
+                      onChange={e => setApplyPrices(e.target.checked)}
+                    />
+                    <span>
+                      <strong>{t('applyFplPriceChangesToggle')}</strong>
+                      <small className="muted tiny" style={{ display: 'block' }}>
+                        {t('priceRisesGrowBudgetHint')}
+                      </small>
+                    </span>
+                  </label>
+
+                  {applyPrices && (
+                    <div className="price-preview-list">
+                      {priceLoading ? (
+                        <p className="muted tiny">Calculating FPL price changes…</p>
+                      ) : (
+                        pricePreviews.map(p => (
+                          <div className="price-preview-row" key={p.player_id}>
+                            <div>
+                              <strong>{p.display_name}</strong>
+                              <span className="muted tiny">
+                                {' '}
+                                · {p.played ? `${p.gw_points} pts` : 'Did not play'} · {p.ownership_pct}% owned
+                              </span>
+                            </div>
+
+                            <div className="price-stepper-group">
+                              <span className="muted tiny">£{Number(p.old_price).toFixed(1)}m →</span>
+                              <strong>£{Number(p.new_price).toFixed(1)}m</strong>
+                              <span
+                                className={`delta-chip ${
+                                  p.delta > 0 ? 'delta-up' : p.delta < 0 ? 'delta-down' : 'delta-flat'
+                                }`}
+                              >
+                                {p.delta > 0 && <TrendingUp size={11} />}
+                                {p.delta < 0 && <TrendingDown size={11} />}
+                                {p.delta > 0 ? `+${p.delta.toFixed(1)}` : p.delta.toFixed(1)}
+                              </span>
+                              <button
+                                type="button"
+                                className="icon-btn"
+                                title="-0.1m"
+                                onClick={() => adjustSuggestedPrice(p.player_id, -0.1)}
+                              >
+                                <Minus size={12} />
+                              </button>
+                              <button
+                                type="button"
+                                className="icon-btn"
+                                title="+0.1m"
+                                onClick={() => adjustSuggestedPrice(p.player_id, 0.1)}
+                              >
+                                <Plus size={12} />
+                              </button>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
+              </>
             )}
 
             {confirmAction.kind === 'reset_all' && (
@@ -402,7 +528,7 @@ export default function GameweeksAdmin({ db, onChanged }: AdminProps) {
               </p>
             )}
 
-            <div className="gw-confirm-actions">
+            <div className="gw-confirm-actions" style={{ marginTop: 14 }}>
               <button
                 type="button"
                 className="secondary compact-btn"
@@ -418,7 +544,7 @@ export default function GameweeksAdmin({ db, onChanged }: AdminProps) {
                     ? 'primary compact-btn danger-solid-btn'
                     : 'primary compact-btn'
                 }
-                disabled={busy}
+                disabled={busy || (confirmAction.kind === 'end' && priceLoading)}
                 onClick={() => void executeConfirmedAction()}
               >
                 {busy
