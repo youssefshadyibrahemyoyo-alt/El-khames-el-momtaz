@@ -10,6 +10,7 @@ type SquadInspectorModalProps = {
   loading: boolean;
   error: string;
   inspection: SquadInspection | null;
+  onOpenPlayerProfile?: (playerId: string) => void;
   onClose: () => void;
 };
 
@@ -19,6 +20,7 @@ export default function SquadInspectorModal({
   loading,
   error,
   inspection,
+  onOpenPlayerProfile,
   onClose,
 }: SquadInspectorModalProps) {
   const { t } = useLanguage();
@@ -36,7 +38,9 @@ export default function SquadInspectorModal({
             <h3>
               {managerName} · {t('gameweekOption')} {gameweekNumber}
             </h3>
-            <p>{t('inspectorTitle')}</p>
+            <p>
+              {t('inspectorTitle')} · {t('tapForProfileHint')}
+            </p>
           </div>
           <button type="button" className="secondary compact-btn" onClick={onClose}>
             <X size={14} /> {t('closeBtn')}
@@ -103,6 +107,13 @@ export default function SquadInspectorModal({
                       isTripleCaptain={p.is_captain && inspection.chip === 'Triple Captain'}
                       isViceCaptain={!p.is_captain && p.is_vice_captain}
                       isSubbedOut={p.subbed_out}
+                      profileLabel={t('playerProfileTitle')}
+                      onCardClick={
+                        onOpenPlayerProfile ? () => onOpenPlayerProfile(p.player_id) : undefined
+                      }
+                      onOpenProfile={
+                        onOpenPlayerProfile ? () => onOpenPlayerProfile(p.player_id) : undefined
+                      }
                     />
                   ))}
                 </div>
@@ -115,7 +126,8 @@ export default function SquadInspectorModal({
                 {bench.map((p, idx) => (
                   <div
                     key={p.player_id}
-                    className={`egypt-bench-player inspector-bench-item ${p.subbed_in ? 'subbed-in-card' : ''}`}
+                    className={`egypt-bench-player inspector-bench-item ${onOpenPlayerProfile ? 'clickable-row' : ''} ${p.subbed_in ? 'subbed-in-card' : ''}`}
+                    onClick={() => onOpenPlayerProfile?.(p.player_id)}
                   >
                     <span className="egypt-sub-number">{idx + 1}</span>
                     {p.photo_url ? (

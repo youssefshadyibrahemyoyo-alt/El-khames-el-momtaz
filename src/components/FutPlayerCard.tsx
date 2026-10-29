@@ -1,7 +1,9 @@
 import React from 'react';
+import { Info } from 'lucide-react';
 
 type Props = {
   slotNumber: number;
+  kitNumber?: number | null;
   name: string;
   photoUrl?: string | null;
   statLabel: string;
@@ -12,12 +14,15 @@ type Props = {
   isSelected?: boolean;
   isJustSwapped?: boolean;
   isSubbedOut?: boolean;
+  profileLabel?: string;
   onCardClick?: () => void;
+  onOpenProfile?: () => void;
   children?: React.ReactNode;
 };
 
 export default function FutPlayerCard({
   slotNumber,
+  kitNumber,
   name,
   photoUrl,
   statLabel,
@@ -28,7 +33,9 @@ export default function FutPlayerCard({
   isSelected = false,
   isJustSwapped = false,
   isSubbedOut = false,
+  profileLabel = 'Profile',
   onCardClick,
+  onOpenProfile,
   children,
 }: Props) {
   const tierClass = isCaptain
@@ -55,15 +62,31 @@ export default function FutPlayerCard({
       <span className="fut-shimmer" aria-hidden="true" />
 
       <div className="fut-top-ribbon">
-        <span className="fut-slot-tag">#{slotNumber}</span>
-        {isCaptain && (
-          <span className="fut-armband captain-armband">
-            {isTripleCaptain ? '3×C' : 'C'}
-          </span>
-        )}
-        {!isCaptain && isViceCaptain && (
-          <span className="fut-armband vc-armband">VC</span>
-        )}
+        <span className="fut-slot-tag">
+          {kitNumber != null ? `👕 #${kitNumber}` : `#${slotNumber}`}
+        </span>
+
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+          {isCaptain && (
+            <span className="fut-armband captain-armband">
+              {isTripleCaptain ? '3×C' : 'C'}
+            </span>
+          )}
+          {!isCaptain && isViceCaptain && <span className="fut-armband vc-armband">VC</span>}
+          {onOpenProfile && (
+            <button
+              type="button"
+              className="fut-info-btn"
+              title={profileLabel}
+              onClick={e => {
+                e.stopPropagation();
+                onOpenProfile();
+              }}
+            >
+              <Info size={11} />
+            </button>
+          )}
+        </span>
       </div>
 
       <InnerTag

@@ -34,6 +34,7 @@ type SquadScreenProps = {
   onSetViceCaptain: (id: string) => void;
   onToggleChip: (chip: ChipName) => void;
   onSaveSquad: () => void;
+  onOpenPlayerProfile: (playerId: string) => void;
   onNavigate: (screen: Screen) => void;
 };
 
@@ -64,6 +65,7 @@ export default function SquadScreen({
   onSetViceCaptain,
   onToggleChip,
   onSaveSquad,
+  onOpenPlayerProfile,
   onNavigate,
 }: SquadScreenProps) {
   const { t } = useLanguage();
@@ -203,6 +205,7 @@ export default function SquadScreen({
                       <FutPlayerCard
                         key={id}
                         slotNumber={index + 1}
+                        kitNumber={p.kit_number}
                         name={p.name}
                         photoUrl={p.photo_url}
                         statLabel={`£${p.price.toFixed(1)}m · ${p.points} ${t('ptsUnit')}`}
@@ -211,6 +214,8 @@ export default function SquadScreen({
                         isViceCaptain={viceCaptain === id && captain !== id}
                         isSelected={swapStarter === id}
                         isJustSwapped={justSwapped.includes(id)}
+                        profileLabel={t('playerProfileTitle')}
+                        onOpenProfile={() => onOpenPlayerProfile(id)}
                         onCardClick={
                           matchInProgress
                             ? undefined
@@ -251,7 +256,9 @@ export default function SquadScreen({
                     );
                   })}
                 </div>
-                <p className="egypt-pitch-hint">{t('pitchHint')}</p>
+                <p className="egypt-pitch-hint">
+                  {t('pitchHint')} · ⓘ {t('tapForProfileHint')}
+                </p>
               </div>
             </div>
 
@@ -274,8 +281,9 @@ export default function SquadScreen({
 
                 return (
                   <div
-                    className={`egypt-bench-player ${justSwapped.includes(id) ? 'swap-flash-row' : ''}`}
+                    className={`egypt-bench-player clickable-row ${justSwapped.includes(id) ? 'swap-flash-row' : ''}`}
                     key={id}
+                    onClick={() => onOpenPlayerProfile(id)}
                   >
                     <span className="egypt-sub-number">{index + 1}</span>
                     {p.photo_url ? (
@@ -284,7 +292,12 @@ export default function SquadScreen({
                       <div className="player-photo">{p.name.slice(0, 1)}</div>
                     )}
                     <div className="egypt-bench-info">
-                      <strong>{p.name}</strong>
+                      <strong>
+                        {p.kit_number != null && (
+                          <span className="inline-kit-chip">#{p.kit_number}</span>
+                        )}
+                        {p.name}
+                      </strong>
                       <span>
                         £{p.price.toFixed(1)}m · {p.points} {t('ptsUnit')}
                       </span>
@@ -293,7 +306,8 @@ export default function SquadScreen({
                       type="button"
                       className={`egypt-bench-swap ${swapStarter ? 'ready-to-swap' : ''}`}
                       disabled={matchInProgress || !swapStarter}
-                      onClick={() => {
+                      onClick={e => {
+                        e.stopPropagation();
                         if (swapStarter) executeSwap(swapStarter, id);
                       }}
                     >
@@ -304,7 +318,8 @@ export default function SquadScreen({
                         type="button"
                         className="egypt-bench-swap"
                         disabled={matchInProgress}
-                        onClick={() => {
+                        onClick={e => {
+                          e.stopPropagation();
                           if (selected.length < SQUAD_SIZE) return;
                           const next = [...selected];
                           [next[5], next[6]] = [next[6], next[5]];

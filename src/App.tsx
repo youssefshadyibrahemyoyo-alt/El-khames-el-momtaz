@@ -36,6 +36,7 @@ import SquadScreen from './screens/SquadScreen';
 import PlayerMarketScreen from './screens/PlayerMarketScreen';
 import LeaderboardScreen from './screens/LeaderboardScreen';
 import AdminPanel from './admin/AdminPanel';
+import PlayerProfileModal from './components/PlayerProfileModal';
 
 export default function App() {
   const { t } = useLanguage();
@@ -97,6 +98,7 @@ export default function App() {
   const [squadError, setSquadError] = useState('');
   const [sessionMessage, setSessionMessage] = useState('');
   const [celebrateKey, setCelebrateKey] = useState(0);
+  const [profileModalPlayerId, setProfileModalPlayerId] = useState<string | null>(null);
 
   // Standings
   const [standings, setStandings] = useState<Standing[]>([]);
@@ -160,7 +162,9 @@ export default function App() {
       const [playersRes, totalsRes, rulesRes] = await Promise.all([
         supabase!
           .from('football_players')
-          .select('id,display_name,price,is_active,photo_url')
+          .select(
+            'id,display_name,price,is_active,photo_url,kit_number,nationality,favourite_team,preferred_foot,playstyle,age,bio'
+          )
           .order('display_name', { ascending: true }),
         supabase!.from('player_fantasy_totals').select('player_id,total_points,matches_played'),
         supabase!.from('scoring_rules').select('key,label,points').order('points', { ascending: false }),
@@ -404,6 +408,13 @@ export default function App() {
         matchesPlayed: tot?.matches_played ?? 0,
         photo_url: p.photo_url,
         is_active: p.is_active,
+        kit_number: p.kit_number ?? null,
+        nationality: p.nationality ?? null,
+        favourite_team: p.favourite_team ?? null,
+        preferred_foot: p.preferred_foot ?? null,
+        playstyle: p.playstyle ?? null,
+        age: p.age ?? null,
+        bio: p.bio ?? null,
       };
     });
   }, [demoMode, realPlayers, playerTotals]);
@@ -654,6 +665,7 @@ export default function App() {
                 setActiveChip(prev => (prev === chip ? null : chip))
               }
               onSaveSquad={() => void saveSquad()}
+              onOpenPlayerProfile={setProfileModalPlayerId}
               onNavigate={setScreen}
             />
           )}
@@ -666,6 +678,7 @@ export default function App() {
               selected={selected}
               selectedCost={selectedCost}
               onAddOrRemovePlayer={handleAddOrRemovePlayer}
+              onOpenPlayerProfile={setProfileModalPlayerId}
               onNavigate={setScreen}
             />
           )}
@@ -680,6 +693,7 @@ export default function App() {
               standingsError={standingsError}
               gameweeks={allGameweeks}
               demoPlayers={DEMO_PLAYERS}
+              onOpenPlayerProfile={setProfileModalPlayerId}
             />
           )}
 
@@ -705,6 +719,27 @@ export default function App() {
             </section>
           )}
         </div>
+
+        {profileModalPlayerId && (
+          <PlayerProfileModal
+            playerId={profileModalPlayerId}
+            demoMode={demoMode}
+            fallbackPlayer={playerById.get(profileModalPlayerId)}
+            isSelectedInSquad={selected.includes(profileModalPlayerId)}
+            canAddToSquad={
+              selected.length < SQUAD_SIZE &&
+              !isOverBudget(
+                selectedCost + (playerById.get(profileModalPlayerId)?.price ?? 0)
+              )
+            }
+            onToggleSquadPlayer={
+              playerById.get(profileModalPlayerId)
+                ? handleAddOrRemovePlayer
+                : undefined
+            }
+            onClose={() => setProfileModalPlayerId(null)}
+          />
+        )}
 
         <footer>
           <span>EL KHAMES EL MOMTAZ</span>

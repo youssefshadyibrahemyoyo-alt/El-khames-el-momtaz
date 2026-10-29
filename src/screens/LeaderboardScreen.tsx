@@ -24,6 +24,7 @@ type LeaderboardScreenProps = {
   standingsError: string;
   gameweeks: Gameweek[];
   demoPlayers: LeaguePlayer[];
+  onOpenPlayerProfile: (playerId: string) => void;
 };
 
 export default function LeaderboardScreen({
@@ -35,6 +36,7 @@ export default function LeaderboardScreen({
   standingsError,
   gameweeks,
   demoPlayers,
+  onOpenPlayerProfile,
 }: LeaderboardScreenProps) {
   const { t } = useLanguage();
   const [tab, setTab] = useState<LeaderboardTab>('managers');
@@ -165,16 +167,16 @@ export default function LeaderboardScreen({
 
   const descriptions: Record<LeaderboardTab, string> = {
     managers: t('descManagers'),
-    goals: t('descGoals'),
-    assists: t('descAssists'),
-    contributions: t('descContributions'),
-    ratings: t('descRatings'),
+    goals: `${t('descGoals')} · ${t('tapForProfileHint')}`,
+    assists: `${t('descAssists')} · ${t('tapForProfileHint')}`,
+    contributions: `${t('descContributions')} · ${t('tapForProfileHint')}`,
+    ratings: `${t('descRatings')} · ${t('tapForProfileHint')}`,
   };
 
   const statValue = (p: LeaderboardPlayer) => {
-    if (tab === 'goals') return p.total_goals ?? 0;
-    if (tab === 'assists') return p.total_assists ?? 0;
-    if (tab === 'contributions') return p.total_contributions ?? 0;
+    if (tab === 'goals') return p.goals ?? p.total_goals ?? 0;
+    if (tab === 'assists') return p.assists ?? p.total_assists ?? 0;
+    if (tab === 'contributions') return p.contributions ?? p.total_contributions ?? 0;
     return p.average_rating == null ? '—' : Number(p.average_rating).toFixed(2);
   };
 
@@ -354,9 +356,10 @@ export default function LeaderboardScreen({
                   .sort((a, b) => (Number(statValue(b)) || 0) - (Number(statValue(a)) || 0))
                   .map((p, index) => (
                     <div
-                      className={`leaderboard-player stagger-item ${podiumClassFor(index)}`}
+                      className={`leaderboard-player clickable-row stagger-item ${podiumClassFor(index)}`}
                       style={{ '--stagger-i': Math.min(index, 12) } as React.CSSProperties}
                       key={p.player_id}
+                      onClick={() => onOpenPlayerProfile(p.player_id)}
                     >
                       <span className={`rank ${index < 3 ? 'podium-rank' : ''}`}>
                         {medalBadgeFor(index)}
@@ -372,7 +375,7 @@ export default function LeaderboardScreen({
                         <strong>{p.display_name}</strong>
                         {tab === 'ratings' && (
                           <span>
-                            {p.matches_rated ?? 0} {t('ratingsCountSuffix')}
+                            {p.rated_matches ?? p.matches_rated ?? 0} {t('ratingsCountSuffix')}
                           </span>
                         )}
                       </div>
@@ -394,16 +397,20 @@ export default function LeaderboardScreen({
         <div className="leaderboard-list screen-stage" key={`demo-${tab}`}>
           {demoPlayers.slice(0, 6).map((p, index) => (
             <div
-              className={`leaderboard-player stagger-item ${podiumClassFor(index)}`}
+              className={`leaderboard-player clickable-row stagger-item ${podiumClassFor(index)}`}
               style={{ '--stagger-i': index } as React.CSSProperties}
               key={p.id}
+              onClick={() => onOpenPlayerProfile(p.id)}
             >
               <span className={`rank ${index < 3 ? 'podium-rank' : ''}`}>
                 {medalBadgeFor(index)}
               </span>
               <div className="player-photo small-photo">{p.name.slice(0, 1)}</div>
               <div className="leaderboard-player-info">
-                <strong>{p.name}</strong>
+                <strong>
+                  {p.kit_number != null && <span className="inline-kit-chip">#{p.kit_number}</span>}
+                  {p.name}
+                </strong>
               </div>
               <strong className="leaderboard-stat">
                 {tab === 'ratings'
@@ -424,6 +431,7 @@ export default function LeaderboardScreen({
           loading={inspectLoading}
           error={inspectError}
           inspection={inspectData}
+          onOpenPlayerProfile={playerId => onOpenPlayerProfile(playerId)}
           onClose={() => setInspectTarget(null)}
         />
       )}

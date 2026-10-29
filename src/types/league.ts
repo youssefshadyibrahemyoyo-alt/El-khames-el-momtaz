@@ -35,6 +35,13 @@ export type FootballPlayer = {
   price: number;
   is_active: boolean;
   photo_url: string | null;
+  kit_number?: number | null;
+  nationality?: string | null;
+  favourite_team?: string | null;
+  preferred_foot?: string | null;
+  playstyle?: string | null;
+  age?: number | null;
+  bio?: string | null;
 };
 
 export type PlayerFantasyTotal = {
@@ -51,6 +58,58 @@ export type LeaguePlayer = {
   matchesPlayed: number;
   photo_url: string | null;
   is_active: boolean;
+  kit_number?: number | null;
+  nationality?: string | null;
+  favourite_team?: string | null;
+  preferred_foot?: string | null;
+  playstyle?: string | null;
+  age?: number | null;
+  bio?: string | null;
+};
+
+export type PlayerRecentMatch = {
+  gameweek_number: number;
+  match_number: number;
+  goals: number;
+  assists: number;
+  saves: number;
+  yellow_cards: number;
+  red_cards: number;
+  rating: number | null;
+  fantasy_points: number;
+};
+
+export type PlayerProfileDetail = {
+  id: string;
+  display_name: string;
+  price: number;
+  photo_url: string | null;
+  is_active: boolean;
+  kit_number: number | null;
+  nationality: string | null;
+  favourite_team: string | null;
+  preferred_foot: string | null;
+  playstyle: string | null;
+  age: number | null;
+  bio: string | null;
+  ownership_pct: number;
+  stats: {
+    matches_played: number;
+    total_points: number;
+    points_per_match: number;
+    goals: number;
+    assists: number;
+    contributions: number;
+    saves: number;
+    penalty_saves: number;
+    penalties_missed: number;
+    yellow_cards: number;
+    red_cards: number;
+    own_goals: number;
+    average_rating: number | null;
+    rated_matches: number;
+  };
+  recent_matches: PlayerRecentMatch[];
 };
 
 export type Gameweek = {
@@ -78,10 +137,14 @@ export type LeaderboardPlayer = {
   player_id: string;
   display_name: string;
   photo_url: string | null;
+  goals?: number;
   total_goals?: number;
+  assists?: number;
   total_assists?: number;
+  contributions?: number;
   total_contributions?: number;
   average_rating?: number | null;
+  rated_matches?: number;
   matches_rated?: number;
 };
 

@@ -11,6 +11,7 @@ type PlayerMarketScreenProps = {
   selected: string[];
   selectedCost: number;
   onAddOrRemovePlayer: (player: LeaguePlayer) => void;
+  onOpenPlayerProfile: (playerId: string) => void;
   onNavigate: (screen: Screen) => void;
 };
 
@@ -21,6 +22,7 @@ export default function PlayerMarketScreen({
   selected,
   selectedCost,
   onAddOrRemovePlayer,
+  onOpenPlayerProfile,
   onNavigate,
 }: PlayerMarketScreenProps) {
   const { t } = useLanguage();
@@ -34,7 +36,10 @@ export default function PlayerMarketScreen({
     return players
       .filter(p => {
         const visible = p.is_active || selected.includes(p.id);
-        const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase());
+        const q = search.toLowerCase();
+        const matchesSearch =
+          p.name.toLowerCase().includes(q) ||
+          (p.favourite_team ?? '').toLowerCase().includes(q);
         const matchesPrice =
           priceFilter === 'all' ||
           (priceFilter === 'under5' && p.price < 5) ||
@@ -57,7 +62,9 @@ export default function PlayerMarketScreen({
       <div className="panel-heading">
         <div>
           <h3>{t('marketTitle')}</h3>
-          <p>{t('marketSub')}</p>
+          <p>
+            {t('marketSub')} · {t('tapForProfileHint')}
+          </p>
         </div>
         <span className="tag">
           {activeCount} {t('availableCount')}
@@ -133,12 +140,14 @@ export default function PlayerMarketScreen({
           const isSelected = selected.includes(p.id);
           const cannotAfford = !isSelected && isOverBudget(selectedCost + p.price);
           const squadFull = !isSelected && selected.length >= SQUAD_SIZE;
+          const metaExtras = [p.favourite_team, p.playstyle].filter(Boolean).join(' · ');
 
           return (
             <div
-              className={`player-row market-player-card stagger-item ${isSelected ? 'in-squad-row' : ''}`}
+              className={`player-row market-player-card clickable-row stagger-item ${isSelected ? 'in-squad-row' : ''}`}
               style={{ '--stagger-i': Math.min(idx, 12) } as React.CSSProperties}
               key={p.id}
+              onClick={() => onOpenPlayerProfile(p.id)}
             >
               {p.photo_url ? (
                 <img className="leaderboard-photo" src={p.photo_url} alt={p.name} />
@@ -147,7 +156,12 @@ export default function PlayerMarketScreen({
               )}
 
               <div className="player-info">
-                <strong>{p.name}</strong>
+                <strong>
+                  {p.kit_number != null && (
+                    <span className="inline-kit-chip">#{p.kit_number}</span>
+                  )}
+                  {p.name}
+                </strong>
                 <span>
                   {!p.is_active
                     ? t('inactiveInSquad')
@@ -155,6 +169,7 @@ export default function PlayerMarketScreen({
                       ? t('inYourSquad')
                       : t('availableToSelect')}{' '}
                   · {p.points} {t('ptsUnit')} ({p.matchesPlayed} {t('matchesShort')})
+                  {metaExtras ? ` · ${metaExtras}` : ''}
                 </span>
               </div>
 
@@ -164,7 +179,10 @@ export default function PlayerMarketScreen({
                 type="button"
                 className={isSelected ? 'secondary compact-btn' : 'primary compact-btn'}
                 disabled={squadFull || cannotAfford}
-                onClick={() => onAddOrRemovePlayer(p)}
+                onClick={e => {
+                  e.stopPropagation();
+                  onAddOrRemovePlayer(p);
+                }}
               >
                 {isSelected ? t('removePlayerBtn') : t('addPlayerBtn')}
               </button>
