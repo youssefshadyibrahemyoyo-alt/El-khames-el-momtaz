@@ -367,11 +367,11 @@ const [didNotPlay, setDidNotPlay] = useState<string[]>([]);
       const active = rows.find(w => activeStatuses.includes(statusOf(w))) ?? null;
       const upcoming = rows.filter(w => ['draft', 'open'].includes(statusOf(w)));
 
-      // Before the deadline you pick for the active gameweek; after it, for the next one.
+            // Before the deadline you pick for the active gameweek; after it, for the next open one.
       const target: Gameweek | null =
         active && !passed(active)
           ? active
-          : upcoming.find(w => !active || w.number > active.number) ?? null;
+          : upcoming.find(w => (!active || w.number > active.number) && !passed(w)) ?? null;
 
       setGameweek(active);
       setTargetGw(target);
