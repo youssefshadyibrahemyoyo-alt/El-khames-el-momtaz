@@ -112,6 +112,7 @@ export default function App() {
   const [managerTrophies, setManagerTrophies] = useState<ManagerTrophyMap>(
     demoMode ? DEMO_TROPHIES : {}
   );
+  const [playerForms, setPlayerForms] = useState<Record<string, number>>({});
 
   // Auth & profile listener
   useEffect(() => {
@@ -194,22 +195,27 @@ export default function App() {
       setPlayersLoading(true);
       setPlayersError('');
 
-      const [playersRes, totalsRes, rulesRes, trophiesRes] = await Promise.all([
+      const [playersRes, totalsRes, rulesRes, trophiesRes, formsRes] = await Promise.all([
         supabase!
           .from('football_players')
           .select(
-            'id,display_name,price,is_active,photo_url,kit_number,nationality,favourite_team,preferred_foot,playstyle,age,bio,availability_status,availability_note'
+            'id,display_name,price,last_price_change,is_active,photo_url,kit_number,nationality,favourite_team,preferred_foot,playstyle,age,bio,availability_status,availability_note'
           )
           .order('display_name', { ascending: true }),
         supabase!.from('player_fantasy_totals').select('player_id,total_points,matches_played'),
         supabase!.from('scoring_rules').select('key,label,points').order('points', { ascending: false }),
         supabase!.rpc('get_manager_trophy_cabinet'),
+        supabase!.rpc('get_player_form_map'),
       ]);
 
       if (cancelled) return;
 
       if (!trophiesRes.error && trophiesRes.data) {
         setManagerTrophies(trophiesRes.data as ManagerTrophyMap);
+      }
+
+      if (!formsRes.error && formsRes.data) {
+        setPlayerForms(formsRes.data as Record<string, number>);
       }
 
       if (playersRes.error) {
@@ -454,6 +460,8 @@ export default function App() {
         id: p.id,
         name: p.display_name,
         price: Number(p.price),
+        last_price_change: Number(p.last_price_change ?? 0),
+        form: Number(playerForms[p.id] ?? 0),
         points: tot?.total_points ?? 0,
         matchesPlayed: tot?.matches_played ?? 0,
         photo_url: p.photo_url,
@@ -469,7 +477,7 @@ export default function App() {
         availability_note: p.availability_note ?? null,
       };
     });
-  }, [demoMode, realPlayers, playerTotals]);
+  }, [demoMode, realPlayers, playerTotals, playerForms]);
 
   const playerById = useMemo(() => new Map(players.map(p => [p.id, p])), [players]);
 
@@ -689,6 +697,8 @@ export default function App() {
           {screen === 'squad' && (
             <SquadScreen
               demoMode={demoMode}
+              currentUserId={session?.user?.id}
+              allGameweeks={allGameweeks}
               managerName={profile?.display_name ?? (isAdmin ? 'Admin' : 'Manager')}
               teamName={profile?.team_name ?? null}
               gameweekNumber={targetGw?.number ?? gameweekNumber}

@@ -223,6 +223,27 @@ export default function PlayerProfileModal({
                   <strong className="profile-price-tag">
                     £{Number(profile.price).toFixed(1)}m
                   </strong>
+                  {(profile.last_price_change ?? 0) !== 0 && (
+                    <span
+                      className={`price-arrow-chip ${
+                        (profile.last_price_change ?? 0) > 0 ? 'price-arrow-up' : 'price-arrow-down'
+                      }`}
+                    >
+                      {(profile.last_price_change ?? 0) > 0
+                        ? `▲ +£${Number(profile.last_price_change).toFixed(1)}m`
+                        : `▼ £${Number(profile.last_price_change).toFixed(1)}m`}
+                    </span>
+                  )}
+                  {(profile.form ?? 0) > 0 && (
+                    <span
+                      className={`market-form-pill ${
+                        (profile.form ?? 0) >= 8 ? 'market-form-hot' : ''
+                      }`}
+                    >
+                      {(profile.form ?? 0) >= 8 ? '🔥 ' : ''}
+                      {t('hotFormBadge')} {Number(profile.form).toFixed(1)}
+                    </span>
+                  )}
                   {profile.playstyle && (
                     <span className="profile-role-pill">{profile.playstyle}</span>
                   )}

@@ -9,8 +9,10 @@ import type {
   H2HOverview,
   LeaderboardPlayer,
   LeaderboardTab,
+  LeagueMonth,
   LeaguePlayer,
   ManagerTrophyMap,
+  MonthlyStanding,
   SquadInspection,
   Standing,
 } from '../types/league';
@@ -21,6 +23,8 @@ import {
   DEMO_CUP,
   DEMO_H2H,
   DEMO_HIGHLIGHTS,
+  DEMO_MONTHLY_STANDINGS,
+  DEMO_MONTHS,
   DEMO_STANDINGS,
 } from '../lib/demoData';
 import {
@@ -60,8 +64,12 @@ export default function LeaderboardScreen({
 }: LeaderboardScreenProps) {
   const { t } = useLanguage();
   const [tab, setTab] = useState<LeaderboardTab>('managers');
-  const [selectedGwId, setSelectedGwId] = useState<'overall' | number>('overall');
+  const [selectedGwId, setSelectedGwId] = useState<'overall' | `month:${string}` | number>('overall');
   const [gwStandings, setGwStandings] = useState<GameweekStanding[]>([]);
+  const [leagueMonths, setLeagueMonths] = useState<LeagueMonth[]>(demoMode ? DEMO_MONTHS : []);
+  const [monthlyRows, setMonthlyRows] = useState<MonthlyStanding[]>(
+    demoMode ? DEMO_MONTHLY_STANDINGS : []
+  );
   const [gwLoading, setGwLoading] = useState(false);
 
   // H2H state
@@ -143,9 +151,45 @@ export default function LeaderboardScreen({
     scoredGameweeks[scoredGameweeks.length - 1] ?? gameweeks[gameweeks.length - 1] ?? null;
 
   useEffect(() => {
+    if (demoMode || !supabase) {
+      setLeagueMonths(DEMO_MONTHS);
+      return;
+    }
+    let cancelled = false;
+    supabase.rpc('list_league_months').then(({ data, error }) => {
+      if (cancelled || error || !data) return;
+      setLeagueMonths(data as LeagueMonth[]);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [demoMode, gameweeks.length]);
+
+  useEffect(() => {
     if (demoMode || !supabase || tab !== 'managers' || selectedGwId === 'overall') return;
     let cancelled = false;
     setGwLoading(true);
+
+    if (typeof selectedGwId === 'string' && selectedGwId.startsWith('month:')) {
+      const mKey = selectedGwId.slice('month:'.length);
+      supabase.rpc('monthly_standings', { p_month_key: mKey }).then(({ data, error }) => {
+        if (cancelled) return;
+        if (!error) {
+          setMonthlyRows(
+            ((data ?? []) as MonthlyStanding[]).map(r => ({
+              ...r,
+              points: Number(r.points) || 0,
+              gameweeks_played: Number(r.gameweeks_played) || 0,
+            }))
+          );
+        }
+        setGwLoading(false);
+      });
+      return () => {
+        cancelled = true;
+      };
+    }
+
     supabase.rpc('gameweek_standings', { p_gameweek_id: selectedGwId }).then(({ data, error }) => {
       if (cancelled) return;
       if (!error) {
@@ -272,9 +316,9 @@ export default function LeaderboardScreen({
     }
 
     const gwToInspect =
-      selectedGwId === 'overall'
-        ? latestScoredGw
-        : (gameweeks.find(g => g.id === selectedGwId) ?? latestScoredGw);
+      typeof selectedGwId === 'number'
+        ? (gameweeks.find(g => g.id === selectedGwId) ?? latestScoredGw)
+        : latestScoredGw;
 
     if (!gwToInspect || !supabase) return;
 
@@ -328,9 +372,9 @@ export default function LeaderboardScreen({
   const canInspectGw = (managerId: string): boolean => {
     if (demoMode) return true;
     const gw =
-      selectedGwId === 'overall'
-        ? latestScoredGw
-        : (gameweeks.find(g => g.id === selectedGwId) ?? latestScoredGw);
+      typeof selectedGwId === 'number'
+        ? (gameweeks.find(g => g.id === selectedGwId) ?? latestScoredGw)
+        : latestScoredGw;
     if (!gw) return false;
     const locked =
       ['active', 'finished'].includes(String(gw.status).toLowerCase()) ||
@@ -377,14 +421,23 @@ export default function LeaderboardScreen({
           primaryPoints: s.total_points,
           subLabel: `${s.last_gameweek_points} ${t('ptsUnit')} (${t('lastGwPts')})`,
         }))
-      : gwStandings.map(s => ({
-          manager_id: s.manager_id,
-          display_name: s.display_name,
-          team_name: s.team_name ?? null,
-          avatar_url: s.avatar_url ?? null,
-          primaryPoints: s.points,
-          subLabel: t('gwPtsLabel'),
-        }));
+      : typeof selectedGwId === 'string' && selectedGwId.startsWith('month:')
+        ? monthlyRows.map(s => ({
+            manager_id: s.manager_id,
+            display_name: s.display_name,
+            team_name: s.team_name ?? null,
+            avatar_url: s.avatar_url ?? null,
+            primaryPoints: s.points,
+            subLabel: `${s.gameweeks_played} ${t('monthlyRoundsPlayed')}`,
+          }))
+        : gwStandings.map(s => ({
+            manager_id: s.manager_id,
+            display_name: s.display_name,
+            team_name: s.team_name ?? null,
+            avatar_url: s.avatar_url ?? null,
+            primaryPoints: s.points,
+            subLabel: t('gwPtsLabel'),
+          }));
 
   const isPlayerStatTab =
     tab === 'goals' || tab === 'assists' || tab === 'contributions' || tab === 'ratings';
@@ -426,16 +479,24 @@ export default function LeaderboardScreen({
       </div>
 
       {/* 1. CLASSIC MANAGERS STANDINGS */}
-      {tab === 'managers' && !demoMode && gameweeks.length > 0 && (
+      {tab === 'managers' && (demoMode || gameweeks.length > 0 || leagueMonths.length > 0) && (
         <div className="gw-picker-bar">
           <select
             className="player-price-filter"
             value={selectedGwId}
-            onChange={e =>
-              setSelectedGwId(e.target.value === 'overall' ? 'overall' : Number(e.target.value))
-            }
+            onChange={e => {
+              const val = e.target.value;
+              if (val === 'overall') setSelectedGwId('overall');
+              else if (val.startsWith('month:')) setSelectedGwId(val as `month:${string}`);
+              else setSelectedGwId(Number(val));
+            }}
           >
             <option value="overall">{t('overallSeason')}</option>
+            {leagueMonths.map(m => (
+              <option key={m.month_key} value={`month:${m.month_key}`}>
+                📅 {t('monthlyFilterPrefix')} {m.month_label} ({m.gameweeks_count} GW)
+              </option>
+            ))}
             {gameweeks.map(g => (
               <option key={g.id} value={g.id}>
                 {t('gameweekOption')} {g.number} ({g.status})
@@ -504,6 +565,14 @@ export default function LeaderboardScreen({
                               title={t('trophyCupWins')}
                             >
                               🏆 ×{trophies[row.manager_id].cup_wins}
+                            </span>
+                          )}
+                          {(trophies[row.manager_id]?.motm_wins ?? 0) > 0 && (
+                            <span
+                              className="trophy-inline-badge trophy-inline-motm"
+                              title={t('trophyMotmWins')}
+                            >
+                              🥇 ×{trophies[row.manager_id].motm_wins}
                             </span>
                           )}
                           {(trophies[row.manager_id]?.gw_wins ?? 0) > 0 && (

@@ -51,6 +51,7 @@ export type FootballPlayer = {
   id: string;
   display_name: string;
   price: number;
+  last_price_change?: number | null;
   is_active: boolean;
   photo_url: string | null;
   kit_number?: number | null;
@@ -74,6 +75,8 @@ export type LeaguePlayer = {
   id: string;
   name: string;
   price: number;
+  last_price_change?: number;
+  form?: number;
   points: number;
   matchesPlayed: number;
   photo_url: string | null;
@@ -106,6 +109,8 @@ export type PlayerProfileDetail = {
   id: string;
   display_name: string;
   price: number;
+  last_price_change?: number;
+  form?: number;
   photo_url: string | null;
   is_active: boolean;
   kit_number: number | null;
@@ -400,7 +405,24 @@ export type CupOverview = {
 export type ManagerTrophyEntry = {
   gw_wins: number;
   cup_wins: number;
+  motm_wins?: number;
 };
 
 export type ManagerTrophyMap = Record<string, ManagerTrophyEntry>;
+
+export type LeagueMonth = {
+  month_key: string;
+  month_label: string;
+  gameweeks_count: number;
+};
+
+export type MonthlyStanding = {
+  manager_id: string;
+  display_name: string;
+  team_name?: string | null;
+  avatar_url?: string | null;
+  points: number;
+  gameweeks_played: number;
+};
+
 

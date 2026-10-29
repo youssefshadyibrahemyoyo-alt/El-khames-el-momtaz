@@ -6,17 +6,28 @@ import {
   RotateCcw,
   Share2,
   Sparkles,
+  Zap,
 } from 'lucide-react';
-import type { ChipName, Gameweek, LeaguePlayer, Screen } from '../types/league';
+import type {
+  ChipName,
+  Gameweek,
+  LeaguePlayer,
+  Screen,
+  SquadInspection,
+} from '../types/league';
 import { useLanguage } from '../i18n/LanguageContext';
 import { SQUAD_BUDGET, SQUAD_SIZE, STARTERS_COUNT } from '../lib/squadRules';
 import { shareOrDownloadSquadCard } from '../lib/shareCardCanvas';
+import { supabase } from '../lib/supabase';
+import { buildDemoInspection } from '../lib/demoData';
 import FutPlayerCard from '../components/FutPlayerCard';
 import AnimatedNumber from '../components/AnimatedNumber';
 import ConfettiBurst from '../components/ConfettiBurst';
 
 type SquadScreenProps = {
   demoMode: boolean;
+  currentUserId?: string;
+  allGameweeks?: Gameweek[];
   managerName?: string;
   teamName?: string | null;
   gameweekNumber?: number;
@@ -52,6 +63,8 @@ type SquadScreenProps = {
 
 export default function SquadScreen({
   demoMode,
+  currentUserId,
+  allGameweeks = [],
   managerName = 'Manager',
   teamName = null,
   gameweekNumber = 1,
@@ -91,6 +104,52 @@ export default function SquadScreen({
   const [didNotPlay, setDidNotPlay] = useState<string[]>([]);
   const [demoNotice, setDemoNotice] = useState('');
   const [sharingCard, setSharingCard] = useState(false);
+
+  // Pick Team vs Live GW Points Pitch Toggle
+  const scoredGws = allGameweeks.filter(g =>
+    ['active', 'finished'].includes(String(g.status).toLowerCase())
+  );
+  const [pitchMode, setPitchMode] = useState<'pick' | 'live'>('pick');
+  const [liveGwId, setLiveGwId] = useState<number | null>(null);
+  const [liveData, setLiveData] = useState<SquadInspection | null>(null);
+  const [liveLoading, setLiveLoading] = useState(false);
+
+  useEffect(() => {
+    if (scoredGws.length > 0 && (liveGwId == null || !scoredGws.some(g => g.id === liveGwId))) {
+      setLiveGwId(scoredGws[scoredGws.length - 1].id);
+    }
+  }, [scoredGws, liveGwId]);
+
+  useEffect(() => {
+    if (pitchMode !== 'live') return;
+    if (demoMode) {
+      setLiveData(buildDemoInspection(managerName));
+      return;
+    }
+    if (!supabase || !currentUserId || !liveGwId) {
+      setLiveData(null);
+      return;
+    }
+    let cancelled = false;
+    setLiveLoading(true);
+    supabase
+      .rpc('inspect_gameweek_squad', {
+        p_gameweek_id: liveGwId,
+        p_manager_id: currentUserId,
+      })
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (!error && data) {
+          setLiveData(data as SquadInspection);
+        } else {
+          setLiveData(null);
+        }
+        setLiveLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [pitchMode, demoMode, currentUserId, liveGwId, managerName]);
 
   useEffect(() => {
     if (justSwapped.length === 0) return;
@@ -161,7 +220,24 @@ export default function SquadScreen({
             <p>{t('mySquadSub')}</p>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            {selected.length === SQUAD_SIZE && (
+            <div className="squad-mode-toggle">
+              <button
+                type="button"
+                className={pitchMode === 'pick' ? 'primary compact-btn' : 'secondary compact-btn'}
+                onClick={() => setPitchMode('pick')}
+              >
+                {t('pickTeamTab')}
+              </button>
+              <button
+                type="button"
+                className={pitchMode === 'live' ? 'primary compact-btn' : 'secondary compact-btn'}
+                onClick={() => setPitchMode('live')}
+              >
+                <Zap size={13} /> {t('liveGwPointsTab')}
+              </button>
+            </div>
+
+            {pitchMode === 'pick' && selected.length === SQUAD_SIZE && (
               <button
                 type="button"
                 className="secondary compact-btn"
@@ -177,6 +253,162 @@ export default function SquadScreen({
             </span>
           </div>
         </div>
+
+        {pitchMode === 'live' ? (
+          <div className="live-gw-pitch-wrap screen-stage">
+            {!demoMode && scoredGws.length > 0 && (
+              <div className="gw-picker-bar" style={{ marginBottom: 12 }}>
+                <select
+                  className="player-price-filter"
+                  value={liveGwId ?? ''}
+                  onChange={e => setLiveGwId(Number(e.target.value))}
+                >
+                  {scoredGws.map(g => (
+                    <option key={g.id} value={g.id}>
+                      {t('gameweekOption')} #{g.number} ({g.status})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {liveLoading && <p className="muted">{t('loadingPoints')}</p>}
+
+            {!liveLoading && (!liveData || !liveData.has_squad) ? (
+              <div className="gw-empty-state">
+                <Zap size={26} style={{ color: 'var(--gold)', marginBottom: 6 }} />
+                <p className="muted" style={{ margin: 0 }}>
+                  {scoredGws.length === 0 ? t('noLiveGwYet') : t('noSquadSavedForGw')}
+                </p>
+              </div>
+            ) : (
+              liveData &&
+              liveData.has_squad && (
+                <>
+                  <div className="live-gw-score-hero">
+                    <div>
+                      <span className="eyebrow">{t('liveGwTotalLabel')}</span>
+                      <strong>
+                        <AnimatedNumber value={liveData.total_points ?? 0} decimals={0} />{' '}
+                        <small>{t('ptsUnit')}</small>
+                      </strong>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                      {liveData.chip && (
+                        <span className="gw-status-pill gw-status-active">
+                          {t('chipPlayedBadge')}: {liveData.chip}
+                        </span>
+                      )}
+                      {liveData.is_rolled_over && (
+                        <span className="gw-status-pill">{t('rolledOverBadge')}</span>
+                      )}
+                      {(liveData.points_hit ?? 0) > 0 && (
+                        <span className="fpl-flag-chip fpl-flag-chip--out">
+                          {t('transferHitBadge')}: −{liveData.points_hit} {t('ptsUnit')}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="egypt-lineup-layout">
+                    <div className="pitch-3d-stage">
+                      <div className="egypt-pitch pitch-3d-stadium">
+                        <div className="stadium-beam beam-left" aria-hidden="true" />
+                        <div className="stadium-beam beam-right" aria-hidden="true" />
+                        <div className="egypt-pitch-title">{t('pitchTitle')}</div>
+                        <div className="egypt-pitch-markings">
+                          <div className="egypt-halfway" />
+                          <div className="egypt-centre-circle" />
+                          <div className="egypt-goal-box egypt-goal-top" />
+                          <div className="egypt-goal-box egypt-goal-bottom" />
+                        </div>
+
+                        <div className="egypt-formation">
+                          {(liveData.players ?? [])
+                            .filter(pl => pl.is_starter_slot)
+                            .map((pl, idx) => (
+                              <FutPlayerCard
+                                key={pl.slot}
+                                slotNumber={idx + 1}
+                                kitNumber={playerById.get(pl.player_id)?.kit_number}
+                                name={pl.display_name}
+                                photoUrl={pl.photo_url}
+                                statLabel={`${pl.effective_points} ${t('ptsUnit')}${
+                                  pl.multiplier > 1 ? ` (${pl.multiplier}×)` : ''
+                                }`}
+                                secondaryNote={
+                                  pl.subbed_out
+                                    ? `↓ ${t('autoSubOutTag')}`
+                                    : !pl.played
+                                      ? t('didNotPlayTag')
+                                      : undefined
+                                }
+                                isCaptain={pl.is_effective_captain || pl.is_captain}
+                                isTripleCaptain={
+                                  pl.is_effective_captain && pl.multiplier === 3
+                                }
+                                isViceCaptain={pl.is_vice_captain && !pl.is_effective_captain}
+                                isSubbedOut={pl.subbed_out}
+                                profileLabel={t('playerProfileTitle')}
+                                onCardClick={() => onOpenPlayerProfile(pl.player_id)}
+                                onOpenProfile={() => onOpenPlayerProfile(pl.player_id)}
+                              />
+                            ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    <aside
+                      className={`egypt-bench ${
+                        liveData.chip === 'Bench Boost' ? 'bench-boost-glow' : ''
+                      }`}
+                    >
+                      <h3>{t('benchTitle')}</h3>
+                      {(liveData.players ?? [])
+                        .filter(pl => !pl.is_starter_slot)
+                        .map((pl, idx) => (
+                          <div
+                            key={pl.slot}
+                            className="egypt-bench-player clickable-row"
+                            onClick={() => onOpenPlayerProfile(pl.player_id)}
+                          >
+                            <span className="egypt-sub-number">{idx + 1}</span>
+                            {pl.photo_url ? (
+                              <img src={pl.photo_url} alt={pl.display_name} />
+                            ) : (
+                              <div className="player-photo">
+                                {pl.display_name.slice(0, 1)}
+                              </div>
+                            )}
+                            <div className="egypt-bench-info">
+                              <strong>
+                                {pl.display_name}
+                                {pl.subbed_in && (
+                                  <span
+                                    className="fpl-flag-chip fpl-flag-chip--available"
+                                    style={{ marginInlineStart: 5 }}
+                                  >
+                                    ↑ {t('autoSubInTag')}
+                                  </span>
+                                )}
+                              </strong>
+                              <span>
+                                {pl.played
+                                  ? `${pl.effective_points > 0 ? pl.effective_points : pl.raw_points} ${t('ptsUnit')}`
+                                  : t('didNotPlayTag')}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                    </aside>
+                  </div>
+                </>
+              )
+            )}
+          </div>
+        ) : (
+          <>
 
         {flaggedInSquad.length > 0 && (
           <div className="fpl-squad-alert-banner spring-pop">
@@ -549,6 +781,8 @@ export default function SquadScreen({
         </div>
 
         <p className="muted tiny">{demoMode ? t('demoSquadNote') : t('realSquadNote')}</p>
+          </>
+        )}
       </section>
 
       <section

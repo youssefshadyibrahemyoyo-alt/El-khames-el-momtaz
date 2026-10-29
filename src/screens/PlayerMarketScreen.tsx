@@ -30,7 +30,7 @@ export default function PlayerMarketScreen({
   const { t } = useLanguage();
   const [search, setSearch] = useState('');
   const [priceFilter, setPriceFilter] = useState('all');
-  const [sortBy, setSortBy] = useState<'price' | 'points' | 'name'>('points');
+  const [sortBy, setSortBy] = useState<'price' | 'points' | 'form' | 'name'>('points');
 
   const activeCount = useMemo(() => players.filter(p => p.is_active).length, [players]);
 
@@ -50,6 +50,7 @@ export default function PlayerMarketScreen({
         return visible && matchesSearch && matchesPrice;
       })
       .sort((a, b) => {
+        if (sortBy === 'form') return (b.form ?? 0) - (a.form ?? 0) || b.points - a.points;
         if (sortBy === 'points') return b.points - a.points || b.price - a.price;
         if (sortBy === 'price') return b.price - a.price || b.points - a.points;
         return a.name.localeCompare(b.name);
@@ -129,9 +130,10 @@ export default function PlayerMarketScreen({
         <select
           className="player-price-filter"
           value={sortBy}
-          onChange={e => setSortBy(e.target.value as 'price' | 'points' | 'name')}
+          onChange={e => setSortBy(e.target.value as 'price' | 'points' | 'form' | 'name')}
         >
           <option value="points">{t('sortByPoints')}</option>
+          <option value="form">{t('sortByForm')}</option>
           <option value="price">{t('sortByPrice')}</option>
           <option value="name">{t('sortByName')}</option>
         </select>
@@ -181,6 +183,16 @@ export default function PlayerMarketScreen({
                       🔴 {t('availOutShort')}
                     </span>
                   )}
+                  {(p.form ?? 0) > 0 && (
+                    <span
+                      className={`market-form-pill ${(p.form ?? 0) >= 8 ? 'market-form-hot' : ''}`}
+                      style={{ marginInlineStart: 6 }}
+                      title="Average fantasy points over last 3 Gameweeks"
+                    >
+                      {(p.form ?? 0) >= 8 ? '🔥 ' : ''}
+                      {t('hotFormBadge')} {Number(p.form).toFixed(1)}
+                    </span>
+                  )}
                 </strong>
                 <span>
                   {!p.is_active
@@ -194,7 +206,20 @@ export default function PlayerMarketScreen({
                 </span>
               </div>
 
-              <strong className="price">£{p.price.toFixed(1)}m</strong>
+              <div className="market-price-col">
+                <strong className="price">£{p.price.toFixed(1)}m</strong>
+                {(p.last_price_change ?? 0) !== 0 && (
+                  <span
+                    className={`price-arrow-chip ${
+                      (p.last_price_change ?? 0) > 0 ? 'price-arrow-up' : 'price-arrow-down'
+                    }`}
+                  >
+                    {(p.last_price_change ?? 0) > 0
+                      ? `▲ +${Number(p.last_price_change).toFixed(1)}`
+                      : `▼ ${Number(p.last_price_change).toFixed(1)}`}
+                  </span>
+                )}
+              </div>
 
               <button
                 type="button"

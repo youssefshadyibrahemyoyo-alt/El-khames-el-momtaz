@@ -374,6 +374,18 @@ export const translations = {
     squadReadyBannerSub: 'Your 7-man lineup is saved for the upcoming Thursday session.',
     squadIncompleteBannerTitle: 'Action Needed Before Deadline',
     squadIncompleteBannerSub: 'Pick & save your 7-man squad so you don’t miss this round’s points!',
+
+    // Live GW Pitch View, Market Price Arrows + Form, Monthly MOTM
+    pickTeamTab: 'Pick Team',
+    liveGwPointsTab: 'Live GW Points',
+    liveGwTotalLabel: 'Live GW Score',
+    noLiveGwYet:
+      'Once a Gameweek starts on Thursday, your live 3D pitch points, Captain 2×/3× & Auto-Subs light up right here!',
+    hotFormBadge: 'Form',
+    sortByForm: 'Sort: Form',
+    monthlyFilterPrefix: 'Month:',
+    trophyMotmWins: 'Manager of the Month',
+    monthlyRoundsPlayed: 'rounds played',
   },
   ar: {
     brandEyebrow: 'فانتازي خميس الكورة',
@@ -748,6 +760,18 @@ export const translations = {
     squadReadyBannerSub: 'تم حفظ الـ 7 لاعبين للجولة القادمة بنجاح.',
     squadIncompleteBannerTitle: 'مطلوب حفظ التشكيلة قبل الموعد النهائي',
     squadIncompleteBannerSub: 'اختر واحفظ 7 لاعبين حتى لا تفوتك نقاط هذه الجولة!',
+
+    // Live GW Pitch View, Market Price Arrows + Form, Monthly MOTM
+    pickTeamTab: 'ترتيب التشكيلة',
+    liveGwPointsTab: 'نقاط الجولة المباشرة',
+    liveGwTotalLabel: 'مجموع نقاط الجولة',
+    noLiveGwYet:
+      'بمجرد انطلاق الجولة يوم الخميس، ستظهر نقاطك المباشرة ومضاعفة الكابتن والتبديلات التلقائية هنا على ملعبك!',
+    hotFormBadge: 'الفورمة',
+    sortByForm: 'ترتيب: الفورمة',
+    monthlyFilterPrefix: 'شهر:',
+    trophyMotmWins: 'مدرب الشهر',
+    monthlyRoundsPlayed: 'جولات',
   },
 } as const;
 

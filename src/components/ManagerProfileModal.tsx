@@ -237,12 +237,19 @@ export default function ManagerProfileModal({
           {/* PERMANENT MANAGER TROPHY CABINET */}
           <div className="manager-trophy-cabinet">
             <span className="eyebrow">{t('trophyCabinetHeading')}</span>
-            <div className="manager-trophy-pills">
+            <div className="manager-trophy-pills manager-trophy-pills-3">
               <div className="trophy-cabinet-tile">
                 <Trophy size={16} style={{ color: 'var(--gold)' }} />
                 <div>
                   <strong>{trophies[profile.id]?.cup_wins ?? 0}</strong>
                   <span>{t('trophyCupWins')}</span>
+                </div>
+              </div>
+              <div className="trophy-cabinet-tile">
+                <span style={{ fontSize: 15 }}>🥇</span>
+                <div>
+                  <strong>{trophies[profile.id]?.motm_wins ?? 0}</strong>
+                  <span>{t('trophyMotmWins')}</span>
                 </div>
               </div>
               <div className="trophy-cabinet-tile">

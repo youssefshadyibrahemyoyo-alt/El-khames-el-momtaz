@@ -3,8 +3,10 @@ import type {
   FanPotnPoll,
   GameweekHighlights,
   H2HOverview,
+  LeagueMonth,
   LeaguePlayer,
   ManagerTrophyMap,
+  MonthlyStanding,
   PlayerProfileDetail,
   PublicMatch,
   ScoringRule,
@@ -30,6 +32,8 @@ export const DEMO_PLAYERS: LeaguePlayer[] = [
     id: 'Karim',
     name: 'Karim',
     price: 8.5,
+    last_price_change: 0.2,
+    form: 11.5,
     points: 24,
     matchesPlayed: 4,
     photo_url: null,
@@ -46,6 +50,8 @@ export const DEMO_PLAYERS: LeaguePlayer[] = [
     id: 'Omar',
     name: 'Omar',
     price: 8.0,
+    last_price_change: 0.1,
+    form: 9.2,
     points: 21,
     matchesPlayed: 4,
     photo_url: null,
@@ -62,6 +68,8 @@ export const DEMO_PLAYERS: LeaguePlayer[] = [
     id: 'Youssef',
     name: 'Youssef',
     price: 7.5,
+    last_price_change: -0.1,
+    form: 6.4,
     points: 19,
     matchesPlayed: 4,
     photo_url: null,
@@ -332,6 +340,8 @@ export function buildDemoPlayerProfile(player: LeaguePlayer): PlayerProfileDetai
     id: player.id,
     display_name: player.name,
     price: player.price,
+    last_price_change: player.last_price_change ?? 0,
+    form: player.form ?? Number((player.points / mp).toFixed(1)),
     photo_url: player.photo_url,
     is_active: player.is_active,
     kit_number: player.kit_number ?? 10,
@@ -510,7 +520,21 @@ export const DEMO_CUP: CupOverview = {
 };
 
 export const DEMO_TROPHIES: ManagerTrophyMap = {
-  'demo-1': { gw_wins: 2, cup_wins: 1 },
-  'demo-2': { gw_wins: 1, cup_wins: 0 },
+  'demo-1': { gw_wins: 2, cup_wins: 1, motm_wins: 1 },
+  'demo-2': { gw_wins: 1, cup_wins: 0, motm_wins: 0 },
 };
+
+export const DEMO_MONTHS: LeagueMonth[] = [
+  { month_key: '2026-10', month_label: 'October 2026', gameweeks_count: 2 },
+];
+
+export const DEMO_MONTHLY_STANDINGS: MonthlyStanding[] = DEMO_STANDINGS.map(s => ({
+  manager_id: s.manager_id,
+  display_name: s.display_name,
+  team_name: s.team_name ?? null,
+  avatar_url: s.avatar_url ?? null,
+  points: s.total_points,
+  gameweeks_played: s.gameweeks_played,
+}));
+
 
