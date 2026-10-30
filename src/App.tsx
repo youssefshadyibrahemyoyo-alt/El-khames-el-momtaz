@@ -41,6 +41,7 @@ import LeaderboardScreen from './screens/LeaderboardScreen';
 import AdminPanel from './admin/AdminPanel';
 import PlayerProfileModal from './components/PlayerProfileModal';
 import ManagerProfileModal from './components/ManagerProfileModal';
+import ScrollFxObserver from './components/ScrollFxObserver';
 
 export default function App() {
   const { t } = useLanguage();
@@ -113,6 +114,7 @@ export default function App() {
     demoMode ? DEMO_TROPHIES : {}
   );
   const [playerForms, setPlayerForms] = useState<Record<string, number>>({});
+  const [playerOwnership, setPlayerOwnership] = useState<Record<string, number>>({});
 
   // Auth & profile listener
   useEffect(() => {
@@ -204,7 +206,7 @@ export default function App() {
       setPlayersLoading(true);
       setPlayersError('');
 
-      const [playersRes, totalsRes, rulesRes, trophiesRes, formsRes] = await Promise.all([
+      const [playersRes, totalsRes, rulesRes, trophiesRes, formsRes, ownershipRes] = await Promise.all([
         supabase!
           .from('football_players')
           .select(
@@ -215,6 +217,7 @@ export default function App() {
         supabase!.from('scoring_rules').select('key,label,points').order('points', { ascending: false }),
         supabase!.rpc('get_manager_trophy_cabinet'),
         supabase!.rpc('get_player_form_map'),
+        supabase!.rpc('get_player_ownership_map'),
       ]);
 
       if (cancelled) return;
@@ -225,6 +228,10 @@ export default function App() {
 
       if (!formsRes.error && formsRes.data) {
         setPlayerForms(formsRes.data as Record<string, number>);
+      }
+
+      if (!ownershipRes.error && ownershipRes.data) {
+        setPlayerOwnership(ownershipRes.data as Record<string, number>);
       }
 
       if (playersRes.error) {
@@ -581,6 +588,7 @@ export default function App() {
         price: Number(p.price),
         last_price_change: Number(p.last_price_change ?? 0),
         form: Number(playerForms[p.id] ?? 0),
+        ownership_pct: Number(playerOwnership[p.id] ?? 0),
         points: tot?.total_points ?? 0,
         matchesPlayed: tot?.matches_played ?? 0,
         photo_url: p.photo_url,
@@ -596,7 +604,7 @@ export default function App() {
         availability_note: p.availability_note ?? null,
       };
     });
-  }, [demoMode, realPlayers, playerTotals, playerForms]);
+  }, [demoMode, realPlayers, playerTotals, playerForms, playerOwnership]);
 
   const playerById = useMemo(() => new Map(players.map(p => [p.id, p])), [players]);
 
@@ -750,6 +758,7 @@ export default function App() {
 
   return (
     <div className="app-shell">
+      <ScrollFxObserver screenKey={screen} />
       <Sidebar
         screen={screen}
         onSelectScreen={setScreen}
@@ -823,7 +832,6 @@ export default function App() {
               targetGw={targetGw}
               isSquadSavedForTargetGw={savedSnapshot.ids.length === SQUAD_SIZE && !hasUnsaved}
               scoringRules={scoringRules}
-              onOpenPlayerProfile={setProfileModalPlayerId}
               onNavigate={setScreen}
             />
           )}
@@ -891,7 +899,9 @@ export default function App() {
               selected={selected}
               selectedCost={selectedCost}
               managerBudget={managerBudget}
+              transferLocked={isTransfersLocked}
               onAddOrRemovePlayer={handleAddOrRemovePlayer}
+              onReplaceSelection={handleApplyLineup}
               onOpenPlayerProfile={setProfileModalPlayerId}
               onNavigate={setScreen}
             />

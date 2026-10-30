@@ -1,8 +1,11 @@
 import React, { useMemo, useState } from 'react';
+import { ArrowRight, RotateCcw, Shuffle, Users } from 'lucide-react';
 import type { LeaguePlayer, Screen } from '../types/league';
 import { useLanguage } from '../i18n/LanguageContext';
-import { isOverBudget, SQUAD_BUDGET, SQUAD_SIZE } from '../lib/squadRules';
+import { autoFillSquad, isOverBudget, SQUAD_BUDGET, SQUAD_SIZE } from '../lib/squadRules';
 import AnimatedNumber from '../components/AnimatedNumber';
+
+type MarketSort = 'price' | 'points' | 'form' | 'ownership' | 'name';
 
 type PlayerMarketScreenProps = {
   players: LeaguePlayer[];
@@ -11,7 +14,9 @@ type PlayerMarketScreenProps = {
   selected: string[];
   selectedCost: number;
   managerBudget?: number;
+  transferLocked?: boolean;
   onAddOrRemovePlayer: (player: LeaguePlayer) => void;
+  onReplaceSelection?: (nextIds: string[]) => void;
   onOpenPlayerProfile: (playerId: string) => void;
   onNavigate: (screen: Screen) => void;
 };
@@ -23,14 +28,16 @@ export default function PlayerMarketScreen({
   selected,
   selectedCost,
   managerBudget = SQUAD_BUDGET,
+  transferLocked = false,
   onAddOrRemovePlayer,
+  onReplaceSelection,
   onOpenPlayerProfile,
   onNavigate,
 }: PlayerMarketScreenProps) {
   const { t } = useLanguage();
   const [search, setSearch] = useState('');
   const [priceFilter, setPriceFilter] = useState('all');
-  const [sortBy, setSortBy] = useState<'price' | 'points' | 'form' | 'name'>('points');
+  const [sortBy, setSortBy] = useState<MarketSort>('points');
 
   const activeCount = useMemo(() => players.filter(p => p.is_active).length, [players]);
 
@@ -50,6 +57,9 @@ export default function PlayerMarketScreen({
         return visible && matchesSearch && matchesPrice;
       })
       .sort((a, b) => {
+        if (sortBy === 'ownership') {
+          return (b.ownership_pct ?? 0) - (a.ownership_pct ?? 0) || b.points - a.points;
+        }
         if (sortBy === 'form') return (b.form ?? 0) - (a.form ?? 0) || b.points - a.points;
         if (sortBy === 'points') return b.points - a.points || b.price - a.price;
         if (sortBy === 'price') return b.price - a.price || b.points - a.points;
@@ -57,9 +67,27 @@ export default function PlayerMarketScreen({
       });
   }, [players, selected, search, priceFilter, sortBy]);
 
+  function handleAutoFill() {
+    if (transferLocked || !onReplaceSelection) return;
+    const seed = selected.length >= SQUAD_SIZE ? [] : selected;
+    const filled = autoFillSquad({
+      players,
+      selected: seed,
+      budget: managerBudget,
+    });
+    onReplaceSelection(filled);
+  }
+
+  function handleClear() {
+    if (transferLocked || !onReplaceSelection || selected.length === 0) return;
+    onReplaceSelection([]);
+  }
+
+  const remainingBudget = managerBudget - selectedCost;
+
   return (
     <section
-      className="panel stagger-item"
+      className="panel market-panel-with-dock stagger-item"
       style={{ '--stagger-i': 0 } as React.CSSProperties}
     >
       <div className="panel-heading">
@@ -69,9 +97,33 @@ export default function PlayerMarketScreen({
             {t('marketSub')} · {t('tapForProfileHint')}
           </p>
         </div>
-        <span className="tag">
-          {activeCount} {t('availableCount')}
-        </span>
+        <div className="market-header-actions">
+          {!transferLocked && onReplaceSelection && (
+            <>
+              <button
+                type="button"
+                className="secondary compact-btn market-autofill-btn"
+                onClick={handleAutoFill}
+              >
+                <Shuffle size={14} />{' '}
+                {selected.length >= SQUAD_SIZE ? t('reshuffleBtn') : t('autoFillBtn')}
+              </button>
+              {selected.length > 0 && (
+                <button
+                  type="button"
+                  className="secondary compact-btn"
+                  onClick={handleClear}
+                  title={t('clearSquadBtn')}
+                >
+                  <RotateCcw size={13} /> {t('clearSquadBtn')}
+                </button>
+              )}
+            </>
+          )}
+          <span className="tag">
+            {activeCount} {t('availableCount')}
+          </span>
+        </div>
       </div>
 
       <div className="transfer-summary">
@@ -130,10 +182,11 @@ export default function PlayerMarketScreen({
         <select
           className="player-price-filter"
           value={sortBy}
-          onChange={e => setSortBy(e.target.value as 'price' | 'points' | 'form' | 'name')}
+          onChange={e => setSortBy(e.target.value as MarketSort)}
         >
           <option value="points">{t('sortByPoints')}</option>
           <option value="form">{t('sortByForm')}</option>
+          <option value="ownership">{t('sortByOwnership')}</option>
           <option value="price">{t('sortByPrice')}</option>
           <option value="name">{t('sortByName')}</option>
         </select>
@@ -193,6 +246,9 @@ export default function PlayerMarketScreen({
                       {t('hotFormBadge')} {Number(p.form).toFixed(1)}
                     </span>
                   )}
+                  <span className="ownership-pill" style={{ marginInlineStart: 6 }}>
+                    <Users size={11} /> {Math.round(Number(p.ownership_pct ?? 0))}% {t('ownedSuffix')}
+                  </span>
                 </strong>
                 <span>
                   {!p.is_active
@@ -224,7 +280,7 @@ export default function PlayerMarketScreen({
               <button
                 type="button"
                 className={isSelected ? 'secondary compact-btn' : 'primary compact-btn'}
-                disabled={squadFull || cannotAfford}
+                disabled={transferLocked || squadFull || cannotAfford}
                 onClick={e => {
                   e.stopPropagation();
                   onAddOrRemovePlayer(p);
@@ -237,16 +293,38 @@ export default function PlayerMarketScreen({
         })}
       </div>
 
-      <div className="transfer-controls">
+      {/* Sticky Bottom Squad Dock */}
+      <div className="market-sticky-dock">
+        <div className="market-dock-meta">
+          <div className="market-dock-dots" aria-hidden="true">
+            {Array.from({ length: SQUAD_SIZE }).map((_, idx) => (
+              <span
+                key={idx}
+                className={`dock-slot-dot ${idx < selected.length ? 'is-filled' : ''}`}
+              />
+            ))}
+          </div>
+          <div className="market-dock-numbers">
+            <strong>
+              {selected.length} / {SQUAD_SIZE}
+            </strong>
+            <span className={remainingBudget < 0 ? 'pts-neg' : 'positive'}>
+              £{Math.max(0, remainingBudget).toFixed(1)}m {t('dockBudgetLeft')}
+            </span>
+          </div>
+        </div>
+
         <button
           type="button"
-          className="primary"
-          disabled={selected.length !== SQUAD_SIZE || isOverBudget(selectedCost, managerBudget)}
+          className="primary compact-btn market-dock-cta"
           onClick={() => onNavigate('squad')}
         >
-          {selected.length === SQUAD_SIZE
-            ? t('pickMyTeamBtn')
-            : `${SQUAD_SIZE - selected.length} ${t('selectMorePlayers')}`}
+          <span>
+            {selected.length === SQUAD_SIZE
+              ? t('pickMyTeamBtn')
+              : `${SQUAD_SIZE - selected.length} ${t('selectMorePlayers')}`}
+          </span>
+          <ArrowRight size={14} />
         </button>
       </div>
     </section>

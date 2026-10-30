@@ -6,10 +6,9 @@ export type LeaderboardTab =
   | 'cup'
   | 'highlights'
   | 'records'
-  | 'goals'
-  | 'assists'
-  | 'contributions'
-  | 'ratings';
+  | 'player_stats';
+
+export type PlayerStatCategory = 'goals' | 'assists' | 'contributions' | 'ratings';
 
 export type AvailabilityStatus = 'available' | 'doubtful' | 'out';
 
@@ -79,6 +78,7 @@ export type LeaguePlayer = {
   price: number;
   last_price_change?: number;
   form?: number;
+  ownership_pct?: number;
   points: number;
   matchesPlayed: number;
   photo_url: string | null;
@@ -520,6 +520,13 @@ export type GameweekScout = {
   most_captained?: GameweekScoutPlayer | null;
   most_owned?: GameweekScoutPlayer | null;
   chips_armed?: { chip: string; count: number }[];
+};
+
+export type SquadReadinessSummary = {
+  total_managers: number;
+  ready_count: number;
+  missing: { manager_id: string; display_name: string; team_name?: string | null }[];
+  ready: { manager_id: string; display_name: string; team_name?: string | null }[];
 };
 
 

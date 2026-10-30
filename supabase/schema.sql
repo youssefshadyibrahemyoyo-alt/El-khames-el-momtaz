@@ -122,5 +122,7 @@ GROUP BY fp.id;
 --   - public.get_season_records()                         [All-Time Season Hall of Records]
 --   - public.get_gameweek_scout(p_gameweek_id)            [Post-deadline Most Captained %, Most Owned % & Chips Active]
 --   - public.league_standings()                           [includes rank_delta arrows vs previous scored GW]
+--   - public.get_player_ownership_map()                   [Ownership % across approved managers' latest 7-player squads]
+--   - public.admin_get_squad_readiness()                  [Admin Squad Readiness Tracker + missing-squads list]
 --   - 4 Chips supported across save_squad / save_pre_gw_lineup: Triple Captain, Wildcard, Bench Boost, Free Hit
 

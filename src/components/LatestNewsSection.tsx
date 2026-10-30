@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Activity,
   Flame,
@@ -19,12 +19,35 @@ type LatestNewsSectionProps = {
   isAdmin: boolean;
 };
 
+type UnifiedNewsItem =
+  | {
+      uid: string;
+      source: 'official';
+      id: number;
+      category: NewsCategory;
+      title: string;
+      body: string;
+      isPinned: boolean;
+      authorName: string;
+      ts: string;
+    }
+  | {
+      uid: string;
+      source: 'wire';
+      category: NewsCategory;
+      title: string;
+      body: string;
+      isPinned: false;
+      ts: string;
+    };
+
 export default function LatestNewsSection({ demoMode, isAdmin }: LatestNewsSectionProps) {
   const { t, lang } = useLanguage();
   const [feed, setFeed] = useState<LeagueNewsFeed>(
     demoMode ? DEMO_NEWS_FEED : { bulletins: [], auto_wire: [] }
   );
   const [loading, setLoading] = useState(!demoMode);
+  const [filter, setFilter] = useState<'all' | 'official' | 'wire'>('all');
   const [composerOpen, setComposerOpen] = useState(false);
   const [category, setCategory] = useState<NewsCategory>('announcement');
   const [title, setTitle] = useState('');
@@ -85,6 +108,38 @@ export default function LatestNewsSection({ demoMode, isAdmin }: LatestNewsSecti
       return '';
     }
   };
+
+  const unifiedItems = useMemo<UnifiedNewsItem[]>(() => {
+    const official: UnifiedNewsItem[] = feed.bulletins.map(b => ({
+      uid: `b-${b.id}`,
+      source: 'official',
+      id: b.id,
+      category: b.category,
+      title: b.title,
+      body: b.body,
+      isPinned: b.is_pinned,
+      authorName: b.author_name,
+      ts: b.created_at,
+    }));
+
+    const wire: UnifiedNewsItem[] = feed.auto_wire.map(w => ({
+      uid: `w-${w.key}`,
+      source: 'wire',
+      category: w.kind,
+      title: w.headline,
+      body: w.detail,
+      isPinned: false,
+      ts: w.ts,
+    }));
+
+    const merged =
+      filter === 'official' ? official : filter === 'wire' ? wire : [...official, ...wire];
+
+    return merged.sort((a, b) => {
+      if (a.isPinned !== b.isPinned) return a.isPinned ? -1 : 1;
+      return new Date(b.ts).getTime() - new Date(a.ts).getTime();
+    });
+  }, [feed, filter]);
 
   async function handlePublish(e: React.FormEvent) {
     e.preventDefault();
@@ -168,29 +223,50 @@ export default function LatestNewsSection({ demoMode, isAdmin }: LatestNewsSecti
         <div>
           <h3>
             <Newspaper
-              size={18}
-              style={{ verticalAlign: 'text-bottom', marginInlineEnd: 8, color: 'var(--gold)' }}
+              size={17}
+              style={{ verticalAlign: 'text-bottom', marginInlineEnd: 7, color: 'var(--gold)' }}
             />
             {t('newsSectionTitle')}
           </h3>
           <p>{t('newsSectionSub')}</p>
         </div>
 
-        {isAdmin && (
-          <button
-            type="button"
-            className={composerOpen ? 'secondary compact-btn' : 'primary compact-btn'}
-            onClick={() => setComposerOpen(prev => !prev)}
-          >
-            {composerOpen ? (
-              t('closeComposerBtn')
-            ) : (
-              <>
-                <Plus size={14} /> {t('postNewsBtn').replace(/^\+\s*/, '')}
-              </>
-            )}
-          </button>
-        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+          <div className="news-filter-pills">
+            {(
+              [
+                { id: 'all', label: t('newsFilterAll') },
+                { id: 'official', label: t('newsFilterOfficial') },
+                { id: 'wire', label: t('newsFilterWire') },
+              ] as const
+            ).map(f => (
+              <button
+                key={f.id}
+                type="button"
+                className={filter === f.id ? 'primary compact-btn' : 'secondary compact-btn'}
+                onClick={() => setFilter(f.id)}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+
+          {isAdmin && (
+            <button
+              type="button"
+              className={composerOpen ? 'secondary compact-btn' : 'primary compact-btn'}
+              onClick={() => setComposerOpen(prev => !prev)}
+            >
+              {composerOpen ? (
+                t('closeComposerBtn')
+              ) : (
+                <>
+                  <Plus size={14} /> {t('postNewsBtn').replace(/^\+\s*/, '')}
+                </>
+              )}
+            </button>
+          )}
+        </div>
       </div>
 
       {isAdmin && composerOpen && (
@@ -255,103 +331,73 @@ export default function LatestNewsSection({ demoMode, isAdmin }: LatestNewsSecti
         </form>
       )}
 
-      <div className="newsroom-columns">
-        {/* LEFT COLUMN: Official Clubhouse Bulletins */}
-        <div className="newsroom-col">
-          <div className="newsroom-col-header">
-            <span className="eyebrow">{t('officialBulletinsHeading')}</span>
-          </div>
+      {loading ? (
+        <p className="muted">{t('loadingPoints')}</p>
+      ) : unifiedItems.length === 0 ? (
+        <div className="news-empty-box">{t('noBulletinsYet')}</div>
+      ) : (
+        <div className="news-unified-stream">
+          {unifiedItems.map(item => {
+            const meta = categoryMeta(item.category);
+            return (
+              <article
+                key={item.uid}
+                className={`news-stream-card news-bulletin-card hover-lift-card ${
+                  item.isPinned ? 'news-bulletin-pinned' : ''
+                }`}
+              >
+                <div className="news-bulletin-top">
+                  <div className="news-badges-row">
+                    <span className={`news-cat-pill ${meta.cls}`}>
+                      {meta.icon} {meta.label}
+                    </span>
+                    {item.source === 'wire' && (
+                      <span className="news-live-wire-tag">
+                        <span className="status-dot" /> {t('newsFilterWire')}
+                      </span>
+                    )}
+                    {item.isPinned && (
+                      <span className="news-pinned-pill">
+                        <Pin size={10} /> {t('pinnedTag')}
+                      </span>
+                    )}
+                  </div>
 
-          {loading ? (
-            <p className="muted">{t('loadingPoints')}</p>
-          ) : feed.bulletins.length === 0 ? (
-            <div className="news-empty-box">{t('noBulletinsYet')}</div>
-          ) : (
-            <div className="news-bulletins-list">
-              {feed.bulletins.map(item => {
-                const meta = categoryMeta(item.category);
-                return (
-                  <article
-                    key={item.id}
-                    className={`news-bulletin-card hover-lift-card ${
-                      item.is_pinned ? 'news-bulletin-pinned' : ''
-                    }`}
-                  >
-                    <div className="news-bulletin-top">
-                      <div className="news-badges-row">
-                        <span className={`news-cat-pill ${meta.cls}`}>
-                          {meta.icon} {meta.label}
-                        </span>
-                        {item.is_pinned && (
-                          <span className="news-pinned-pill">
-                            <Pin size={11} /> {t('pinnedTag')}
-                          </span>
-                        )}
+                  <div className="news-meta-right">
+                    <span className="news-timestamp">{formatDate(item.ts)}</span>
+                    {isAdmin && item.source === 'official' && (
+                      <div className="news-admin-btns">
+                        <button
+                          type="button"
+                          className="icon-btn"
+                          title={t('pinBulletinLabel')}
+                          onClick={() => void handleTogglePin(item.id)}
+                        >
+                          <Pin size={14} color={item.isPinned ? 'var(--gold)' : 'currentColor'} />
+                        </button>
+                        <button
+                          type="button"
+                          className="icon-btn"
+                          title="Delete"
+                          onClick={() => void handleDelete(item.id)}
+                        >
+                          <Trash2 size={14} />
+                        </button>
                       </div>
-
-                      <div className="news-meta-right">
-                        <span className="news-timestamp">{formatDate(item.created_at)}</span>
-                        {isAdmin && (
-                          <div className="news-admin-btns">
-                            <button
-                              type="button"
-                              className="icon-btn"
-                              title={t('pinBulletinLabel')}
-                              onClick={() => void handleTogglePin(item.id)}
-                            >
-                              <Pin
-                                size={14}
-                                color={item.is_pinned ? 'var(--gold)' : 'currentColor'}
-                              />
-                            </button>
-                            <button
-                              type="button"
-                              className="icon-btn"
-                              title="Delete"
-                              onClick={() => void handleDelete(item.id)}
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <h4>{item.title}</h4>
-                    <p>{item.body}</p>
-                    <span className="news-author-byline">— {item.author_name}</span>
-                  </article>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* RIGHT COLUMN: Live Auto-Generated League Wire */}
-        <div className="newsroom-col">
-          <div className="newsroom-col-header">
-            <span className="eyebrow">
-              <span className="status-dot" />
-              {t('liveWireHeading')}
-            </span>
-          </div>
-
-          <div className="news-wire-list">
-            {feed.auto_wire.map(w => {
-              const meta = categoryMeta(w.kind);
-              return (
-                <div key={w.key} className="news-wire-item hover-lift-card">
-                  <div className={`news-wire-icon ${meta.cls}`}>{meta.icon}</div>
-                  <div className="news-wire-copy">
-                    <strong>{w.headline}</strong>
-                    <p>{w.detail}</p>
+                    )}
                   </div>
                 </div>
-              );
-            })}
-          </div>
+
+                <h4>{item.title}</h4>
+                <p>{item.body}</p>
+                {item.source === 'official' && (
+                  <span className="news-author-byline">— {item.authorName}</span>
+                )}
+              </article>
+            );
+          })}
         </div>
-      </div>
+      )}
     </section>
   );
 }

@@ -150,3 +150,58 @@ export function computeDemoPoints(params: {
 
   return startersTotal + benchTotal - pointsHits;
 }
+
+export function autoFillSquad(params: {
+  players: LeaguePlayer[];
+  selected: string[];
+  budget?: number;
+}): string[] {
+  const { players, selected, budget = SQUAD_BUDGET } = params;
+  const activePool = players.filter(p => p.is_active);
+  if (activePool.length < SQUAD_SIZE) return selected;
+
+  // If already full (7/7), build a fresh 7-player squad; otherwise fill remaining empty slots
+  const baseIds =
+    selected.length >= SQUAD_SIZE
+      ? []
+      : selected.filter(id => activePool.some(p => p.id === id));
+
+  const chosen = [...baseIds];
+  let currentCost = chosen.reduce((sum, id) => {
+    const pl = activePool.find(x => x.id === id);
+    return sum + (pl?.price ?? 0);
+  }, 0);
+
+  while (chosen.length < SQUAD_SIZE) {
+    const slotsRemainingAfterThis = SQUAD_SIZE - chosen.length - 1;
+    const remainingPool = activePool.filter(p => !chosen.includes(p.id));
+    if (remainingPool.length <= slotsRemainingAfterThis) break;
+
+    const sortedByCheapest = [...remainingPool].sort((a, b) => a.price - b.price);
+
+    const affordable = remainingPool.filter(candidate => {
+      const othersCheapest = sortedByCheapest
+        .filter(x => x.id !== candidate.id)
+        .slice(0, slotsRemainingAfterThis)
+        .reduce((s, x) => s + x.price, 0);
+      return !isOverBudget(currentCost + candidate.price + othersCheapest, budget);
+    });
+
+    if (affordable.length === 0) break;
+
+    // Prefer available (not 'out') and strong value/form, with variety among top candidates
+    const fitPool = affordable.filter(p => p.availability_status !== 'out');
+    const candidates = (fitPool.length > 0 ? fitPool : affordable).sort((a, b) => {
+      const scoreA = a.points * 1.2 + (a.form ?? 0) * 1.5 + a.price;
+      const scoreB = b.points * 1.2 + (b.form ?? 0) * 1.5 + b.price;
+      return scoreB - scoreA;
+    });
+
+    const topSlice = candidates.slice(0, Math.min(3, candidates.length));
+    const pick = topSlice[Math.floor(Math.random() * topSlice.length)];
+    chosen.push(pick.id);
+    currentCost += pick.price;
+  }
+
+  return chosen.length === SQUAD_SIZE ? chosen : selected;
+}

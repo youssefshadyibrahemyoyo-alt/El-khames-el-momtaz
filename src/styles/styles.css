@@ -4287,6 +4287,481 @@ html[dir='rtl'] .rival-diff-col h5 {
   }
 }
 
+/* =========================================================
+   WAVE 7: SCROLL MOTION, DECLUTTERED UI & SMART SHORTCUTS
+   ========================================================= */
+
+/* 1. Top Stadium Scroll Progress Bar */
+.scroll-progress-track {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  z-index: 1200;
+  pointer-events: none;
+  background: transparent;
+}
+
+.scroll-progress-bar {
+  width: 100%;
+  height: 100%;
+  transform-origin: 0% 50%;
+  transform: scaleX(0);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  background: linear-gradient(90deg, #1aa35c 0%, #d4af57 55%, #f4d98d 100%);
+  box-shadow: 0 0 12px rgba(212, 175, 87, 0.55);
+}
+
+[dir='rtl'] .scroll-progress-bar {
+  transform-origin: 100% 50%;
+}
+
+/* 2. Viewport Scroll-Reveal Cascade (below-the-fold cards glide in smoothly) */
+.scroll-reveal-pending {
+  opacity: 0;
+  transform: translate3d(0, 22px, 0) scale(0.985);
+}
+
+.is-inview {
+  animation: scrollCardGlideIn 0.56s cubic-bezier(0.22, 1, 0.36, 1) var(--reveal-delay, 0ms) both;
+}
+
+@keyframes scrollCardGlideIn {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 22px, 0) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+/* 3. Subtle Scroll Parallax on Hero Ball & Pitch Lines */
+.hero-parallax-ball {
+  transform: translate3d(0, calc(var(--scroll-y, 0px) * -0.14), 0)
+    rotate(calc(var(--scroll-y, 0px) * 0.16deg));
+  will-change: transform;
+}
+
+.hero-parallax-lines {
+  transform: translate3d(0, calc(var(--scroll-y, 0px) * 0.09), 0);
+  will-change: transform;
+}
+
+/* 4. Floating Back-to-Top Pill */
+.back-to-top-fab {
+  position: fixed;
+  right: 22px;
+  bottom: 24px;
+  z-index: 980;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(212, 175, 87, 0.5);
+  background: var(--panel);
+  color: var(--heading);
+  font-size: 12.5px;
+  font-weight: 800;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.32);
+  backdrop-filter: blur(10px);
+}
+
+[dir='rtl'] .back-to-top-fab {
+  right: auto;
+  left: 22px;
+}
+
+.back-to-top-fab:hover {
+  transform: translateY(-2px);
+  border-color: var(--gold);
+}
+
+/* 5. Collapsible Rules & Scoring Guide Accordion */
+.guide-accordion-panel {
+  padding: 14px 18px;
+}
+
+.guide-accordion-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 2px;
+  background: transparent;
+  border: none;
+  color: inherit;
+  text-align: start;
+  box-shadow: none;
+}
+
+.guide-accordion-trigger:hover {
+  transform: none;
+  background: transparent;
+}
+
+.guide-accordion-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.guide-accordion-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  background: rgba(212, 175, 87, 0.14);
+  border: 1px solid rgba(212, 175, 87, 0.32);
+  color: var(--gold);
+}
+
+.guide-accordion-left strong {
+  display: block;
+  font-size: 14.5px;
+  color: var(--heading);
+}
+
+.guide-accordion-left span {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.guide-accordion-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 11px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--gold-text);
+  background: rgba(212, 175, 87, 0.12);
+  border: 1px solid rgba(212, 175, 87, 0.28);
+  flex-shrink: 0;
+}
+
+.guide-chevron {
+  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.guide-chevron-open {
+  transform: rotate(180deg);
+}
+
+.guide-accordion-collapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows 0.34s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.26s ease;
+}
+
+.guide-accordion-collapse.is-open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.guide-accordion-inner {
+  overflow: hidden;
+}
+
+/* 6. Unified News Stream & Filter Pills */
+.news-filter-pills {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.news-unified-stream {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 10px;
+}
+
+.news-meta-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.news-live-wire-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #3fe28f;
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.28);
+}
+
+[data-theme='light'] .news-live-wire-tag {
+  color: #116b3b;
+}
+
+/* 7. Consolidated Leaderboard Player Stats Inner Switcher */
+.player-stat-segmented {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+  padding: 5px;
+  border-radius: 12px;
+  background: var(--panel2);
+  border: 1px solid var(--line);
+}
+
+/* 8. Player Market Ownership Pill, Auto-Fill & Sticky Bottom Squad Dock */
+.market-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.market-autofill-btn {
+  border-color: rgba(212, 175, 87, 0.42);
+  color: var(--gold-text);
+}
+
+.ownership-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.28);
+  color: #7dd3fc;
+}
+
+[data-theme='light'] .ownership-pill {
+  background: rgba(2, 132, 199, 0.1);
+  border-color: rgba(2, 132, 199, 0.25);
+  color: #0369a1;
+}
+
+.market-panel-with-dock {
+  padding-bottom: 22px;
+}
+
+.market-sticky-dock {
+  position: sticky;
+  bottom: 12px;
+  z-index: 45;
+  margin-top: 14px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  background: linear-gradient(135deg, var(--panel2), var(--panel));
+  border: 1px solid rgba(212, 175, 87, 0.45);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.34);
+  backdrop-filter: blur(12px);
+}
+
+.market-dock-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.market-dock-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.dock-slot-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: rgba(148, 163, 184, 0.26);
+  border: 1px solid var(--line);
+  transition:
+    transform 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+    background 0.22s ease;
+}
+
+.dock-slot-dot.is-filled {
+  background: var(--gold);
+  border-color: var(--gold);
+  transform: scale(1.16);
+  box-shadow: 0 0 8px rgba(212, 175, 87, 0.55);
+}
+
+.market-dock-numbers {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.market-dock-numbers strong {
+  font-size: 14px;
+  color: var(--heading);
+}
+
+.market-dock-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* 9. Admin Squad Readiness Tracker + WhatsApp Reminder */
+.admin-readiness-card {
+  margin-bottom: 14px;
+  padding: 13px 15px;
+  border-radius: 14px;
+  background: var(--panel2);
+  border: 1px solid var(--line);
+}
+
+.admin-readiness-card.readiness-pending {
+  border-color: rgba(212, 175, 87, 0.45);
+}
+
+.admin-readiness-card.readiness-complete {
+  border-color: rgba(34, 197, 94, 0.42);
+}
+
+.admin-readiness-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.admin-readiness-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.admin-readiness-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.whatsapp-remind-btn {
+  background: linear-gradient(135deg, #16a34a, #15803d);
+  border-color: rgba(34, 197, 94, 0.5);
+  color: #fff;
+}
+
+.readiness-ok-note {
+  margin: 10px 0 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #3fe28f;
+}
+
+[data-theme='light'] .readiness-ok-note {
+  color: #116b3b;
+}
+
+.readiness-missing-wrap {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.readiness-missing-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.readiness-missing-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.readiness-missing-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  background: rgba(245, 158, 11, 0.14);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  color: var(--gold-text);
+}
+
+.readiness-missing-pill small {
+  font-weight: 500;
+  opacity: 0.85;
+}
+
+@media (max-width: 640px) {
+  .back-to-top-fab {
+    right: 14px;
+    bottom: 84px;
+    padding: 8px 12px;
+  }
+
+  [dir='rtl'] .back-to-top-fab {
+    right: auto;
+    left: 14px;
+  }
+
+  .market-sticky-dock {
+    bottom: 72px;
+    padding: 9px 12px;
+  }
+
+  .news-unified-stream {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scroll-reveal-pending,
+  .is-inview {
+    opacity: 1 !important;
+    transform: none !important;
+    animation: none !important;
+  }
+
+  .hero-parallax-ball,
+  .hero-parallax-lines {
+    transform: none !important;
+  }
+}
+
+
 
 
 

@@ -1,15 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import {
+  autoFillSquad,
   calculateTransfersAndHits,
   computeDemoPoints,
   computeFreeTransfers,
   isOverBudget,
   pickTargetGameweek,
+  SQUAD_SIZE,
   syncSquadLeaders,
 } from '../lib/squadRules';
 import { fromCairoDateTimeInput, toCairoDateTimeInput } from '../lib/cairoTime';
 import { translations } from '../i18n/translations';
-import { DEMO_CUP, DEMO_FAN_POLL } from '../lib/demoData';
+import { DEMO_CUP, DEMO_FAN_POLL, DEMO_PLAYERS } from '../lib/demoData';
 import type { Gameweek, LeaguePlayer, SquadRecord } from '../types/league';
 
 describe('squadRules', () => {
@@ -156,6 +158,27 @@ describe('squadRules', () => {
       pointsHits: 0,
     });
     expect(pts).toBe(4 + 16 + 5 + 5 + 5);
+  });
+
+  it('autoFillSquad builds a valid 7-player squad within the £50.0m budget from empty or partial picks', () => {
+    const fromEmpty = autoFillSquad({ players: DEMO_PLAYERS, selected: [], budget: 50 });
+    expect(fromEmpty).toHaveLength(SQUAD_SIZE);
+    expect(new Set(fromEmpty).size).toBe(SQUAD_SIZE);
+    const emptyCost = fromEmpty.reduce(
+      (sum, id) => sum + (DEMO_PLAYERS.find(p => p.id === id)?.price ?? 0),
+      0
+    );
+    expect(isOverBudget(emptyCost, 50)).toBe(false);
+
+    const partial = ['Karim', 'Omar'];
+    const fromPartial = autoFillSquad({ players: DEMO_PLAYERS, selected: partial, budget: 50 });
+    expect(fromPartial).toHaveLength(SQUAD_SIZE);
+    expect(fromPartial.slice(0, 2)).toEqual(partial);
+    const partialCost = fromPartial.reduce(
+      (sum, id) => sum + (DEMO_PLAYERS.find(p => p.id === id)?.price ?? 0),
+      0
+    );
+    expect(isOverBudget(partialCost, 50)).toBe(false);
   });
 });
 

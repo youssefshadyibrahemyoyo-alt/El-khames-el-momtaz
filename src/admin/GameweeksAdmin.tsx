@@ -3,18 +3,21 @@ import {
   AlertTriangle,
   CalendarPlus,
   CheckCircle2,
+  ClipboardCopy,
   MessageCircle,
   Minus,
   Play,
   Plus,
+  RefreshCw,
   RotateCcw,
   Square,
   TrendingDown,
   TrendingUp,
+  Users,
   X,
 } from 'lucide-react';
 import type { AdminProps } from './types';
-import type { PriceChangePreview } from '../types/league';
+import type { PriceChangePreview, SquadReadinessSummary } from '../types/league';
 import {
   CAIRO_TZ,
   formatCairoDeadline,
@@ -88,6 +91,17 @@ export default function GameweeksAdmin({ db, onChanged }: AdminProps) {
   const [applyPrices, setApplyPrices] = useState(true);
   const [msg, setMsg] = useState('');
   const [busy, setBusy] = useState(false);
+  const [readiness, setReadiness] = useState<SquadReadinessSummary | null>(null);
+  const [readinessLoading, setReadinessLoading] = useState(false);
+
+  const loadReadiness = useCallback(async () => {
+    setReadinessLoading(true);
+    const { data, error } = await db.rpc('admin_get_squad_readiness');
+    if (!error && data) {
+      setReadiness(data as SquadReadinessSummary);
+    }
+    setReadinessLoading(false);
+  }, [db]);
 
   const load = useCallback(async () => {
     const { data, error } = await db
@@ -103,7 +117,8 @@ export default function GameweeksAdmin({ db, onChanged }: AdminProps) {
     setDeadlines(
       Object.fromEntries(list.map(g => [g.id, toCairoDateTimeInput(g.transfer_deadline)]))
     );
-  }, [db]);
+    void loadReadiness();
+  }, [db, loadReadiness]);
 
   useEffect(() => {
     void load();
@@ -211,8 +226,101 @@ export default function GameweeksAdmin({ db, onChanged }: AdminProps) {
     }
   };
 
+  const buildMissingReminderText = () => {
+    if (!readiness || readiness.missing.length === 0) return '';
+    const openOrNextGw =
+      rows.find(g => ['open', 'draft', 'upcoming'].includes(status(g))) ?? rows[0];
+    const gwLabel = openOrNextGw ? `GW #${openOrNextGw.number}` : `GW #${nextGwNumber}`;
+    const deadlineLine = openOrNextGw?.transfer_deadline
+      ? `\n⏰ Deadline: ${formatCairoDeadline(openOrNextGw.transfer_deadline, lang)} (Cairo)`
+      : '';
+    const names = readiness.missing
+      .map(m => `• ${m.display_name}${m.team_name ? ` (${m.team_name})` : ''}`)
+      .join('\n');
+
+    return `⚽ *El Khames El Momtaz — ${gwLabel} Squad Reminder!*\n\nStill waiting on ${readiness.missing.length} manager(s) to save their 7-player £50m squad:${deadlineLine}\n\n${names}\n\n👉 Pick & lock your squad now: https://elkhameselmomtaz.vercel.app/`;
+  };
+
   return (
     <div>
+      {readiness && (
+        <div
+          className={`admin-readiness-card ${
+            readiness.missing.length === 0 ? 'readiness-complete' : 'readiness-pending'
+          }`}
+        >
+          <div className="admin-readiness-top">
+            <div className="admin-readiness-title">
+              <Users size={16} />
+              <strong>{t('squadReadinessTitle')}</strong>
+              <span className="tag">
+                {readiness.ready_count} / {readiness.total_managers}
+              </span>
+            </div>
+
+            <div className="admin-readiness-actions">
+              <button
+                type="button"
+                className="secondary compact-btn"
+                disabled={readinessLoading}
+                onClick={() => void loadReadiness()}
+                title="Refresh"
+              >
+                <RefreshCw size={13} />
+              </button>
+              {readiness.missing.length > 0 && (
+                <>
+                  <button
+                    type="button"
+                    className="primary compact-btn whatsapp-remind-btn"
+                    onClick={() => {
+                      const text = buildMissingReminderText();
+                      if (text) openWhatsAppShare(text);
+                    }}
+                  >
+                    <MessageCircle size={14} /> {t('remindMissingWhatsAppBtn')}
+                  </button>
+                  <button
+                    type="button"
+                    className="secondary compact-btn"
+                    onClick={async () => {
+                      const text = buildMissingReminderText();
+                      if (!text) return;
+                      try {
+                        await navigator.clipboard.writeText(text);
+                        setMsg(t('reminderCopiedMsg'));
+                      } catch {
+                        openWhatsAppShare(text);
+                      }
+                    }}
+                  >
+                    <ClipboardCopy size={13} /> {t('copyReminderBtn')}
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+
+          {readiness.missing.length === 0 ? (
+            <p className="readiness-ok-note">
+              <CheckCircle2 size={15} /> {t('squadReadinessAllReady')}
+            </p>
+          ) : (
+            <div className="readiness-missing-wrap">
+              <span className="readiness-missing-label">{t('squadReadinessWaitingOn')}</span>
+              <div className="readiness-missing-pills">
+                {readiness.missing.map(m => (
+                  <span key={m.manager_id} className="readiness-missing-pill">
+                    {m.display_name}
+                    {m.team_name ? <small> ({m.team_name})</small> : null}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       <p className="muted tiny" style={{ marginBottom: 12 }}>
         Flow: click <strong>{t('generateGwBtn')}</strong> and confirm in the popup to open transfers & 1v1 pairings,{' '}
         <strong>Start</strong> when Thursday matches kick off (auto-rolls over squads), record match stats, then{' '}

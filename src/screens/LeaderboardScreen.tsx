@@ -13,6 +13,7 @@ import type {
   LeaguePlayer,
   ManagerTrophyMap,
   MonthlyStanding,
+  PlayerStatCategory,
   SeasonRecords,
   SquadInspection,
   Standing,
@@ -67,6 +68,7 @@ export default function LeaderboardScreen({
 }: LeaderboardScreenProps) {
   const { t } = useLanguage();
   const [tab, setTab] = useState<LeaderboardTab>('managers');
+  const [statCat, setStatCat] = useState<PlayerStatCategory>('goals');
   const [selectedGwId, setSelectedGwId] = useState<'overall' | `month:${string}` | number>('overall');
   const [gwStandings, setGwStandings] = useState<GameweekStanding[]>([]);
   const [leagueMonths, setLeagueMonths] = useState<LeagueMonth[]>(demoMode ? DEMO_MONTHS : []);
@@ -289,22 +291,14 @@ export default function LeaderboardScreen({
 
   // Load player stat leaderboards
   useEffect(() => {
-    if (
-      demoMode ||
-      !supabase ||
-      tab === 'managers' ||
-      tab === 'h2h' ||
-      tab === 'cup' ||
-      tab === 'highlights' ||
-      tab === 'records'
-    ) {
+    if (demoMode || !supabase || tab !== 'player_stats') {
       return;
     }
     let cancelled = false;
     setPlayersLoading(true);
     setPlayersError('');
 
-    const viewByTab = {
+    const viewByCat = {
       goals: 'top_scorers',
       assists: 'top_assists',
       contributions: 'goal_contributions',
@@ -312,7 +306,7 @@ export default function LeaderboardScreen({
     } as const;
 
     supabase
-      .from(viewByTab[tab])
+      .from(viewByCat[statCat])
       .select('*')
       .then(({ data, error }) => {
         if (cancelled) return;
@@ -328,7 +322,7 @@ export default function LeaderboardScreen({
     return () => {
       cancelled = true;
     };
-  }, [demoMode, tab]);
+  }, [demoMode, tab, statCat]);
 
   async function openInspector(managerId: string, managerName: string) {
     if (demoMode) {
@@ -371,20 +365,28 @@ export default function LeaderboardScreen({
     }
   }
 
-  const competitionTabs: { id: LeaderboardTab; label: string }[] = [
+  const topTabs: { id: LeaderboardTab; label: string }[] = [
     { id: 'managers', label: t('tabManagers') },
     { id: 'h2h', label: `⚔️ ${t('tabH2H')}` },
     { id: 'cup', label: `🏆 ${t('tabCup')}` },
     { id: 'highlights', label: `✨ ${t('tabHighlights')}` },
     { id: 'records', label: `🏅 ${t('tabRecords')}` },
+    { id: 'player_stats', label: `⚽ ${t('tabPlayerStats')}` },
   ];
 
-  const playerStatTabs: { id: LeaderboardTab; label: string }[] = [
+  const statSubTabs: { id: PlayerStatCategory; label: string }[] = [
     { id: 'goals', label: t('tabGoals') },
     { id: 'assists', label: t('tabAssists') },
     { id: 'contributions', label: t('tabContributions') },
     { id: 'ratings', label: t('tabRatings') },
   ];
+
+  const statCatDescriptions: Record<PlayerStatCategory, string> = {
+    goals: `${t('descGoals')} · ${t('tapForProfileHint')}`,
+    assists: `${t('descAssists')} · ${t('tapForProfileHint')}`,
+    contributions: `${t('descContributions')} · ${t('tapForProfileHint')}`,
+    ratings: `${t('descRatings')} · ${t('tapForProfileHint')}`,
+  };
 
   const descriptions: Record<LeaderboardTab, string> = {
     managers: t('descManagers'),
@@ -392,16 +394,13 @@ export default function LeaderboardScreen({
     cup: t('descCup'),
     highlights: t('descHighlights'),
     records: t('descRecords'),
-    goals: `${t('descGoals')} · ${t('tapForProfileHint')}`,
-    assists: `${t('descAssists')} · ${t('tapForProfileHint')}`,
-    contributions: `${t('descContributions')} · ${t('tapForProfileHint')}`,
-    ratings: `${t('descRatings')} · ${t('tapForProfileHint')}`,
+    player_stats: statCatDescriptions[statCat],
   };
 
   const statValue = (p: LeaderboardPlayer) => {
-    if (tab === 'goals') return p.goals ?? p.total_goals ?? 0;
-    if (tab === 'assists') return p.assists ?? p.total_assists ?? 0;
-    if (tab === 'contributions') return p.contributions ?? p.total_contributions ?? 0;
+    if (statCat === 'goals') return p.goals ?? p.total_goals ?? 0;
+    if (statCat === 'assists') return p.assists ?? p.total_assists ?? 0;
+    if (statCat === 'contributions') return p.contributions ?? p.total_contributions ?? 0;
     return p.average_rating == null ? '—' : Number(p.average_rating).toFixed(2);
   };
 
@@ -482,8 +481,7 @@ export default function LeaderboardScreen({
             rankDelta: 0,
           }));
 
-  const isPlayerStatTab =
-    tab === 'goals' || tab === 'assists' || tab === 'contributions' || tab === 'ratings';
+  const isPlayerStatTab = tab === 'player_stats';
 
   return (
     <section
@@ -511,7 +509,7 @@ export default function LeaderboardScreen({
       </div>
 
       <div className="leaderboard-tabs">
-        {[...competitionTabs, ...playerStatTabs].map(item => (
+        {topTabs.map(item => (
           <button
             key={item.id}
             type="button"
@@ -1395,8 +1393,23 @@ export default function LeaderboardScreen({
       )}
 
       {/* 4. PLAYER STAT TABS (Goals, Assists, Contributions, Ratings) */}
+      {isPlayerStatTab && (
+        <div className="player-stat-segmented">
+          {statSubTabs.map(sub => (
+            <button
+              key={sub.id}
+              type="button"
+              className={statCat === sub.id ? 'primary compact-btn' : 'secondary compact-btn'}
+              onClick={() => setStatCat(sub.id)}
+            >
+              {sub.label}
+            </button>
+          ))}
+        </div>
+      )}
+
       {isPlayerStatTab && !demoMode && (
-        <div key={tab} className="screen-stage">
+        <div key={statCat} className="screen-stage">
           {playersLoading && <p className="muted">{t('loadingPoints')}</p>}
           {playersError && <div className="notice">{playersError}</div>}
           {!playersLoading && !playersError && (
@@ -1429,7 +1442,7 @@ export default function LeaderboardScreen({
                       )}
                       <div className="leaderboard-player-info">
                         <strong>{p.display_name}</strong>
-                        {tab === 'ratings' && (
+                        {statCat === 'ratings' && (
                           <span>
                             {p.rated_matches ?? p.matches_rated ?? 0} {t('ratingsCountSuffix')}
                           </span>
@@ -1437,9 +1450,9 @@ export default function LeaderboardScreen({
                       </div>
                       <strong className="leaderboard-stat">
                         {statValue(p)}
-                        {tab === 'ratings'
+                        {statCat === 'ratings'
                           ? ''
-                          : ` ${tab === 'contributions' ? 'G+A' : tab === 'goals' ? 'G' : 'A'}`}
+                          : ` ${statCat === 'contributions' ? 'G+A' : statCat === 'goals' ? 'G' : 'A'}`}
                       </strong>
                     </div>
                   ))
@@ -1450,7 +1463,7 @@ export default function LeaderboardScreen({
       )}
 
       {isPlayerStatTab && demoMode && (
-        <div className="leaderboard-list screen-stage" key={`demo-${tab}`}>
+        <div className="leaderboard-list screen-stage" key={`demo-${statCat}`}>
           {demoPlayers.slice(0, 6).map((p, index) => (
             <div
               className={`leaderboard-player clickable-row stagger-item ${podiumClassFor(index)}`}
@@ -1471,11 +1484,11 @@ export default function LeaderboardScreen({
                 </strong>
               </div>
               <strong className="leaderboard-stat">
-                {tab === 'ratings'
+                {statCat === 'ratings'
                   ? '8.40'
-                  : tab === 'contributions'
+                  : statCat === 'contributions'
                     ? `${Math.round(p.points / 3)} G+A`
-                    : `${Math.round(p.points / 4)} ${tab === 'goals' ? 'G' : 'A'}`}
+                    : `${Math.round(p.points / 4)} ${statCat === 'goals' ? 'G' : 'A'}`}
               </strong>
             </div>
           ))}
