@@ -42,6 +42,7 @@ import AdminPanel from './admin/AdminPanel';
 import PlayerProfileModal from './components/PlayerProfileModal';
 import ManagerProfileModal from './components/ManagerProfileModal';
 import ScrollFxObserver from './components/ScrollFxObserver';
+import { useBootSplash } from './lib/useBootSplash';
 
 export default function App() {
   const { t } = useLanguage();
@@ -53,6 +54,8 @@ export default function App() {
   const [profileLoading, setProfileLoading] = useState(Boolean(supabase));
   const [screen, setScreen] = useState<Screen>('overview');
   const [reloadKey, setReloadKey] = useState(0);
+
+  useBootSplash(demoMode || !profileLoading);
 
   // League data
   const [realPlayers, setRealPlayers] = useState<FootballPlayer[]>([]);

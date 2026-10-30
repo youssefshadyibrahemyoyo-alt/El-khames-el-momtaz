@@ -5,8 +5,8 @@
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#193f2c",
-  "theme_color": "#193f2c",
+  "background_color": "#061910",
+  "theme_color": "#061910",
   "icons": [
     {
       "src": "/hagz-icon-192.png",

@@ -3,13 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#193f2c" />
+    <meta name="theme-color" content="#061910" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="El Khames El Momtaz" />
-    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" type="image/png" href="/hagz-icon-192.png" />
     <link rel="apple-touch-icon" href="/hagz-icon-192.png" />
+    <link rel="preload" as="image" href="/hagz-icon-512.png" fetchpriority="high" />
+    <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -17,8 +19,302 @@
       rel="stylesheet"
     />
     <title>El Khames El Momtaz</title>
+    <style>
+      #app-boot-splash {
+        position: fixed;
+        inset: 0;
+        z-index: 99999;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background:
+          radial-gradient(circle at 50% 42%, #0e3823 0%, #071f14 48%, #04110b 100%);
+        color: #f2f4eb;
+        overflow: hidden;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+        transition:
+          opacity 0.44s cubic-bezier(0.22, 1, 0.36, 1),
+          transform 0.44s cubic-bezier(0.22, 1, 0.36, 1),
+          filter 0.44s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+
+      #app-boot-splash[data-mode='quick'] {
+        transition-duration: 0.28s;
+      }
+
+      #app-boot-splash.is-exiting {
+        opacity: 0;
+        transform: scale(1.035);
+        filter: blur(5px);
+        pointer-events: none;
+      }
+
+      /* Subtle architectural center-circle geometry */
+      .ekm-splash-ring {
+        position: absolute;
+        width: min(440px, 84vw);
+        height: min(440px, 84vw);
+        border-radius: 50%;
+        border: 1px solid rgba(212, 175, 87, 0.075);
+        box-shadow: inset 0 0 80px rgba(212, 175, 87, 0.03);
+        pointer-events: none;
+      }
+
+      .ekm-splash-ring::after {
+        content: '';
+        position: absolute;
+        inset: 38px;
+        border-radius: 50%;
+        border: 1px dashed rgba(237, 238, 201, 0.045);
+      }
+
+      .ekm-splash-core {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 24px;
+        animation: ekmCrestRise 0.68s cubic-bezier(0.16, 1, 0.3, 1) both;
+      }
+
+      #app-boot-splash[data-mode='quick'] .ekm-splash-core {
+        animation-duration: 0.34s;
+      }
+
+      /* Ambient warm gold + emerald halo behind crest */
+      .ekm-splash-aura {
+        position: absolute;
+        top: -28px;
+        width: 210px;
+        height: 210px;
+        border-radius: 50%;
+        background: radial-gradient(
+          circle,
+          rgba(212, 175, 87, 0.24) 0%,
+          rgba(26, 163, 92, 0.16) 42%,
+          transparent 72%
+        );
+        filter: blur(18px);
+        animation: ekmAuraPulse 2.4s ease-in-out infinite alternate;
+        pointer-events: none;
+      }
+
+      /* Rounded luxury crest frame with diagonal gold shimmer sweep */
+      .ekm-splash-crest-frame {
+        position: relative;
+        width: 138px;
+        height: 138px;
+        border-radius: 32px;
+        padding: 1px;
+        background: linear-gradient(
+          140deg,
+          rgba(244, 217, 141, 0.55) 0%,
+          rgba(237, 238, 201, 0.14) 45%,
+          rgba(26, 163, 92, 0.32) 100%
+        );
+        box-shadow:
+          0 26px 60px rgba(0, 0, 0, 0.65),
+          0 0 0 1px rgba(255, 255, 255, 0.04);
+      }
+
+      .ekm-splash-crest-inner {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        border-radius: 31px;
+        overflow: hidden;
+        background: #083b1d;
+      }
+
+      .ekm-splash-crest-inner img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+
+      /* Diagonal luxury gold light-shimmer sweep */
+      .ekm-splash-crest-inner::after {
+        content: '';
+        position: absolute;
+        inset: -35%;
+        background: linear-gradient(
+          115deg,
+          transparent 34%,
+          rgba(255, 248, 218, 0.05) 43%,
+          rgba(244, 217, 141, 0.48) 50%,
+          rgba(255, 248, 218, 0.06) 57%,
+          transparent 66%
+        );
+        transform: translate3d(-95%, -10%, 0);
+        animation: ekmGoldShimmer 1.65s cubic-bezier(0.22, 1, 0.36, 1) 0.18s infinite;
+        pointer-events: none;
+      }
+
+      #app-boot-splash[data-mode='quick'] .ekm-splash-crest-inner::after {
+        animation-duration: 0.85s;
+        animation-delay: 0s;
+      }
+
+      .ekm-splash-meta {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 13px;
+      }
+
+      .ekm-splash-tagline {
+        margin: 0;
+        font-family: 'Space Grotesk', 'Cairo', system-ui, -apple-system, sans-serif;
+        font-size: 10.5px;
+        font-weight: 700;
+        letter-spacing: 0.28em;
+        text-transform: uppercase;
+        color: rgba(237, 238, 201, 0.72);
+      }
+
+      html[dir='rtl'] .ekm-splash-tagline {
+        letter-spacing: 0.04em;
+        font-size: 12px;
+      }
+
+      /* EA FC-style razor-thin gold progress bar */
+      .ekm-splash-bar-track {
+        width: 164px;
+        height: 2.5px;
+        border-radius: 999px;
+        background: rgba(237, 238, 201, 0.12);
+        overflow: hidden;
+        position: relative;
+      }
+
+      .ekm-splash-bar-fill {
+        width: 100%;
+        height: 100%;
+        border-radius: 999px;
+        transform-origin: 0% 50%;
+        transform: scaleX(0.12);
+        background: linear-gradient(90deg, #1aa35c 0%, #d4af57 62%, #fff3c4 100%);
+        box-shadow: 0 0 12px rgba(212, 175, 87, 0.75);
+        animation: ekmProgressCruise 1.75s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      }
+
+      html[dir='rtl'] .ekm-splash-bar-fill {
+        transform-origin: 100% 50%;
+      }
+
+      #app-boot-splash[data-mode='quick'] .ekm-splash-bar-fill {
+        animation-duration: 0.55s;
+      }
+
+      #app-boot-splash.is-complete .ekm-splash-bar-fill {
+        animation: none;
+        transform: scaleX(1);
+        transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+
+      @keyframes ekmCrestRise {
+        from {
+          opacity: 0;
+          transform: translate3d(0, 14px, 0) scale(0.95);
+        }
+        to {
+          opacity: 1;
+          transform: translate3d(0, 0, 0) scale(1);
+        }
+      }
+
+      @keyframes ekmGoldShimmer {
+        0% {
+          transform: translate3d(-95%, -10%, 0);
+        }
+        100% {
+          transform: translate3d(95%, 10%, 0);
+        }
+      }
+
+      @keyframes ekmAuraPulse {
+        from {
+          opacity: 0.72;
+          transform: scale(0.96);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1.06);
+        }
+      }
+
+      @keyframes ekmProgressCruise {
+        0% {
+          transform: scaleX(0.08);
+        }
+        65% {
+          transform: scaleX(0.76);
+        }
+        100% {
+          transform: scaleX(0.9);
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .ekm-splash-core,
+        .ekm-splash-aura,
+        .ekm-splash-crest-inner::after {
+          animation: none !important;
+        }
+      }
+    </style>
   </head>
   <body>
+    <div id="app-boot-splash" role="status" aria-live="polite" aria-label="Loading El Khames El Momtaz">
+      <div class="ekm-splash-ring" aria-hidden="true"></div>
+      <div class="ekm-splash-core">
+        <div class="ekm-splash-aura" aria-hidden="true"></div>
+        <div class="ekm-splash-crest-frame">
+          <div class="ekm-splash-crest-inner">
+            <img src="/hagz-icon-512.png" alt="El Khames El Momtaz" decoding="sync" />
+          </div>
+        </div>
+        <div class="ekm-splash-meta">
+          <p class="ekm-splash-tagline" id="ekm-splash-tagline">
+            THURSDAY NIGHT FANTASY &middot; CAIRO
+          </p>
+          <div class="ekm-splash-bar-track" aria-hidden="true">
+            <div class="ekm-splash-bar-fill"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script>
+      (function () {
+        var el = document.getElementById('app-boot-splash');
+        if (!el) return;
+        try {
+          var lang = localStorage.getItem('ekm_lang');
+          if (lang === 'ar') {
+            document.documentElement.lang = 'ar';
+            document.documentElement.dir = 'rtl';
+            var tag = document.getElementById('ekm-splash-tagline');
+            if (tag) tag.textContent = 'فانتازي ليلة الخميس · القاهرة';
+          }
+          var seen = sessionStorage.getItem('ekm_splash_seen') === '1';
+          el.setAttribute('data-mode', seen ? 'quick' : 'full');
+        } catch (_) {
+          el.setAttribute('data-mode', 'full');
+        }
+        // Failsafe so splash can never hang if network stalls completely
+        window.__ekmSplashSafetyTimer = window.setTimeout(function () {
+          var node = document.getElementById('app-boot-splash');
+          if (!node) return;
+          node.classList.add('is-complete', 'is-exiting');
+          window.setTimeout(function () {
+            if (node.parentNode) node.parentNode.removeChild(node);
+          }, 480);
+        }, 4200);
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

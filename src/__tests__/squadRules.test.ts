@@ -10,6 +10,7 @@ import {
   syncSquadLeaders,
 } from '../lib/squadRules';
 import { fromCairoDateTimeInput, toCairoDateTimeInput } from '../lib/cairoTime';
+import { computeSplashTimings, FULL_SPLASH_MIN_MS, QUICK_SPLASH_MIN_MS } from '../lib/useBootSplash';
 import { translations } from '../i18n/translations';
 import { DEMO_CUP, DEMO_FAN_POLL, DEMO_PLAYERS } from '../lib/demoData';
 import type { Gameweek, LeaguePlayer, SquadRecord } from '../types/league';
@@ -179,6 +180,19 @@ describe('squadRules', () => {
       0
     );
     expect(isOverBudget(partialCost, 50)).toBe(false);
+  });
+
+  it('computeSplashTimings uses full ~1.85s intro on cold launch and quick ~0.6s fade on same-session refresh', () => {
+    const coldLaunch = computeSplashTimings({ isQuickSession: false, elapsedMs: 350 });
+    expect(coldLaunch.remainingHoldMs).toBe(FULL_SPLASH_MIN_MS - 350);
+    expect(coldLaunch.exitDurationMs).toBeGreaterThan(400);
+
+    const sameSession = computeSplashTimings({ isQuickSession: true, elapsedMs: 200 });
+    expect(sameSession.remainingHoldMs).toBe(QUICK_SPLASH_MIN_MS - 200);
+    expect(sameSession.exitDurationMs).toBeLessThan(coldLaunch.exitDurationMs);
+
+    const slowNetwork = computeSplashTimings({ isQuickSession: false, elapsedMs: 2400 });
+    expect(slowNetwork.remainingHoldMs).toBe(0);
   });
 });
 
