@@ -34,6 +34,7 @@ import {
   shareOrDownloadHighlightsCard,
 } from '../lib/shareCardCanvas';
 import SquadInspectorModal from '../components/SquadInspectorModal';
+import ThursdayScoutBar from '../components/ThursdayScoutBar';
 import FutPlayerCard from '../components/FutPlayerCard';
 import AnimatedNumber from '../components/AnimatedNumber';
 
@@ -449,6 +450,7 @@ export default function LeaderboardScreen({
         avatar_url: s.avatar_url ?? null,
         primaryPoints: s.total_points,
         subLabel: `${s.last_gameweek_points} ${t('ptsUnit')} (${t('lastGwPts')})`,
+        rankDelta: s.rank_delta ?? 0,
       }))
     : selectedGwId === 'overall'
       ? standings.map(s => ({
@@ -458,6 +460,7 @@ export default function LeaderboardScreen({
           avatar_url: s.avatar_url ?? null,
           primaryPoints: s.total_points,
           subLabel: `${s.last_gameweek_points} ${t('ptsUnit')} (${t('lastGwPts')})`,
+          rankDelta: s.rank_delta ?? 0,
         }))
       : typeof selectedGwId === 'string' && selectedGwId.startsWith('month:')
         ? monthlyRows.map(s => ({
@@ -467,6 +470,7 @@ export default function LeaderboardScreen({
             avatar_url: s.avatar_url ?? null,
             primaryPoints: s.points,
             subLabel: `${s.gameweeks_played} ${t('monthlyRoundsPlayed')}`,
+            rankDelta: 0,
           }))
         : gwStandings.map(s => ({
             manager_id: s.manager_id,
@@ -475,6 +479,7 @@ export default function LeaderboardScreen({
             avatar_url: s.avatar_url ?? null,
             primaryPoints: s.points,
             subLabel: t('gwPtsLabel'),
+            rankDelta: 0,
           }));
 
   const isPlayerStatTab =
@@ -505,41 +510,28 @@ export default function LeaderboardScreen({
         <Trophy color="#b9954b" />
       </div>
 
-      <div className="leaderboard-nav-groups">
-        <div className="leaderboard-nav-group">
-          <span className="eyebrow">{t('compGroupLabel')}</span>
-          <div className="leaderboard-tabs">
-            {competitionTabs.map(item => (
-              <button
-                key={item.id}
-                type="button"
-                className={tab === item.id ? 'primary tab-pill-active' : 'secondary'}
-                onClick={() => setTab(item.id)}
-              >
-                {item.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="leaderboard-nav-group">
-          <span className="eyebrow">{t('statsGroupLabel')}</span>
-          <div className="leaderboard-tabs">
-            {playerStatTabs.map(item => (
-              <button
-                key={item.id}
-                type="button"
-                className={tab === item.id ? 'primary tab-pill-active' : 'secondary'}
-                onClick={() => setTab(item.id)}
-              >
-                {item.label}
-              </button>
-            ))}
-          </div>
-        </div>
+      <div className="leaderboard-tabs">
+        {[...competitionTabs, ...playerStatTabs].map(item => (
+          <button
+            key={item.id}
+            type="button"
+            className={tab === item.id ? 'primary tab-pill-active' : 'secondary'}
+            onClick={() => setTab(item.id)}
+          >
+            {item.label}
+          </button>
+        ))}
       </div>
 
       {/* 1. CLASSIC MANAGERS STANDINGS */}
+      {tab === 'managers' && (
+        <ThursdayScoutBar
+          demoMode={demoMode}
+          gameweekId={typeof selectedGwId === 'number' ? selectedGwId : null}
+          onOpenPlayerProfile={onOpenPlayerProfile}
+        />
+      )}
+
       {tab === 'managers' && (demoMode || gameweeks.length > 0 || leagueMonths.length > 0) && (
         <div className="gw-picker-bar">
           <select
@@ -602,9 +594,35 @@ export default function LeaderboardScreen({
                         }
                       }}
                     >
-                      <span className={`rank ${index < 3 ? 'podium-rank' : ''}`}>
-                        {medalBadgeFor(index)}
-                      </span>
+                      <div className="rank-with-delta">
+                        <span className={`rank ${index < 3 ? 'podium-rank' : ''}`}>
+                          {medalBadgeFor(index)}
+                        </span>
+                        {selectedGwId === 'overall' && (
+                          <span
+                            className={`rank-delta-pill ${
+                              row.rankDelta > 0
+                                ? 'rank-delta-up'
+                                : row.rankDelta < 0
+                                  ? 'rank-delta-down'
+                                  : 'rank-delta-same'
+                            }`}
+                            title={
+                              row.rankDelta > 0
+                                ? t('rankUpTitle')
+                                : row.rankDelta < 0
+                                  ? t('rankDownTitle')
+                                  : t('rankSameTitle')
+                            }
+                          >
+                            {row.rankDelta > 0
+                              ? `▲ ${row.rankDelta}`
+                              : row.rankDelta < 0
+                                ? `▼ ${Math.abs(row.rankDelta)}`
+                                : '•'}
+                          </span>
+                        )}
+                      </div>
 
                       {row.avatar_url ? (
                         <img

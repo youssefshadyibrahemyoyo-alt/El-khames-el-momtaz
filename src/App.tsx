@@ -559,6 +559,7 @@ export default function App() {
             ...row,
             total_points: Number(row.total_points) || 0,
             last_gameweek_points: Number(row.last_gameweek_points) || 0,
+            rank_delta: Number(row.rank_delta) || 0,
           }))
         );
       }
@@ -822,6 +823,7 @@ export default function App() {
               targetGw={targetGw}
               isSquadSavedForTargetGw={savedSnapshot.ids.length === SQUAD_SIZE && !hasUnsaved}
               scoringRules={scoringRules}
+              onOpenPlayerProfile={setProfileModalPlayerId}
               onNavigate={setScreen}
             />
           )}

@@ -38,6 +38,7 @@ export type Standing = {
   last_gameweek_points: number;
   gameweeks_played: number;
   budget?: number;
+  rank_delta?: number;
 };
 
 export type GameweekStanding = {
@@ -499,6 +500,26 @@ export type SeasonRecords = {
     avatar_url?: string | null;
     streak: number;
   } | null;
+};
+
+export type GameweekScoutPlayer = {
+  player_id: string;
+  display_name: string;
+  photo_url?: string | null;
+  kit_number?: number | null;
+  count: number;
+  pct: number;
+};
+
+export type GameweekScout = {
+  has_locked_gw: boolean;
+  gameweek_id?: number;
+  gameweek_number?: number;
+  gameweek_status?: string;
+  active_squads_count?: number;
+  most_captained?: GameweekScoutPlayer | null;
+  most_owned?: GameweekScoutPlayer | null;
+  chips_armed?: { chip: string; count: number }[];
 };
 
 

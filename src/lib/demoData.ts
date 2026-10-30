@@ -2,6 +2,7 @@ import type {
   CupOverview,
   FanPotnPoll,
   GameweekHighlights,
+  GameweekScout,
   H2HOverview,
   LeagueMonth,
   LeagueNewsFeed,
@@ -186,6 +187,7 @@ export const DEMO_STANDINGS: Standing[] = [
     last_gameweek_points: 42,
     gameweeks_played: 2,
     budget: 50.4,
+    rank_delta: 1,
   },
   {
     manager_id: 'demo-2',
@@ -196,6 +198,7 @@ export const DEMO_STANDINGS: Standing[] = [
     last_gameweek_points: 35,
     gameweeks_played: 2,
     budget: 50.2,
+    rank_delta: -1,
   },
   {
     manager_id: 'demo-3',
@@ -206,6 +209,7 @@ export const DEMO_STANDINGS: Standing[] = [
     last_gameweek_points: 33,
     gameweeks_played: 2,
     budget: 50.0,
+    rank_delta: 1,
   },
   {
     manager_id: 'demo-4',
@@ -216,6 +220,7 @@ export const DEMO_STANDINGS: Standing[] = [
     last_gameweek_points: 28,
     gameweeks_played: 2,
     budget: 50.0,
+    rank_delta: -1,
   },
 ];
 
@@ -637,6 +642,34 @@ export const DEMO_SEASON_RECORDS: SeasonRecords = {
     avatar_url: null,
     streak: 2,
   },
+};
+
+export const DEMO_GAMEWEEK_SCOUT: GameweekScout = {
+  has_locked_gw: true,
+  gameweek_id: 2,
+  gameweek_number: 2,
+  gameweek_status: 'active',
+  active_squads_count: 4,
+  most_captained: {
+    player_id: 'Karim',
+    display_name: 'Karim',
+    photo_url: null,
+    kit_number: 10,
+    count: 3,
+    pct: 75,
+  },
+  most_owned: {
+    player_id: 'Karim',
+    display_name: 'Karim',
+    photo_url: null,
+    kit_number: 10,
+    count: 4,
+    pct: 100,
+  },
+  chips_armed: [
+    { chip: 'Triple Captain', count: 1 },
+    { chip: 'Free Hit', count: 1 },
+  ],
 };
 
 

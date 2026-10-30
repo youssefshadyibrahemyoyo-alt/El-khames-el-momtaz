@@ -40,19 +40,13 @@ export default function Sidebar({
   const { t } = useLanguage();
   const { isDark, toggleTheme } = useTheme();
 
-  const navItems: {
-    id: Screen;
-    label: string;
-    icon: typeof CalendarDays;
-    group?: string;
-    admin?: boolean;
-  }[] = [
-    { id: 'overview', label: t('navHome'), icon: CalendarDays, group: t('navGroupClub') },
+  const navItems: { id: Screen; label: string; icon: typeof CalendarDays; admin?: boolean }[] = [
+    { id: 'overview', label: t('navHome'), icon: CalendarDays },
     { id: 'squad', label: t('navSquad'), icon: Users },
     { id: 'players', label: t('navPlayers'), icon: CircleUserRound },
-    { id: 'matches', label: t('navMatches'), icon: Swords, group: t('navGroupLeague') },
+    { id: 'matches', label: t('navMatches'), icon: Swords },
     { id: 'leaderboard', label: t('navLeaderboard'), icon: Trophy },
-    { id: 'admin', label: t('navAdmin'), icon: ShieldCheck, group: t('navGroupAdmin'), admin: true },
+    { id: 'admin', label: t('navAdmin'), icon: ShieldCheck, admin: true },
   ];
 
   const shownName = demoMode
@@ -81,18 +75,16 @@ export default function Sidebar({
         {navItems
           .filter(item => !item.admin || isAdmin)
           .map(item => (
-            <div className="nav-entry-wrap" key={item.id}>
-              {item.group && <span className="nav-section-label">{item.group}</span>}
-              <button
-                type="button"
-                className={`nav-item ${screen === item.id ? 'active' : ''}`}
-                onClick={() => onSelectScreen(item.id)}
-              >
-                <item.icon size={18} />
-                <span>{item.label}</span>
-                {item.admin && <span className="nav-admin">{t('adminBadge')}</span>}
-              </button>
-            </div>
+            <button
+              key={item.id}
+              type="button"
+              className={`nav-item ${screen === item.id ? 'active' : ''}`}
+              onClick={() => onSelectScreen(item.id)}
+            >
+              <item.icon size={18} />
+              <span>{item.label}</span>
+              {item.admin && <span className="nav-admin">{t('adminBadge')}</span>}
+            </button>
           ))}
       </nav>
 

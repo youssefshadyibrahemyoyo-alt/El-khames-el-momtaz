@@ -15,6 +15,7 @@ import type { TranslationKey } from '../i18n/translations';
 import AnimatedNumber from '../components/AnimatedNumber';
 import InstallAppBanner from '../components/InstallAppBanner';
 import LatestNewsSection from '../components/LatestNewsSection';
+import ThursdayScoutBar from '../components/ThursdayScoutBar';
 
 type Props = {
   isAdmin: boolean;
@@ -31,6 +32,7 @@ type Props = {
   targetGw?: Gameweek | null;
   isSquadSavedForTargetGw?: boolean;
   scoringRules: ScoringRule[];
+  onOpenPlayerProfile?: (playerId: string) => void;
   onNavigate: (s: Screen) => void;
 };
 
@@ -49,6 +51,7 @@ export default function OverviewScreen({
   targetGw = null,
   isSquadSavedForTargetGw = false,
   scoringRules,
+  onOpenPlayerProfile,
   onNavigate,
 }: Props) {
   const { t } = useLanguage();
@@ -176,6 +179,8 @@ export default function OverviewScreen({
           </small>
         </div>
       </section>
+
+      <ThursdayScoutBar demoMode={demoMode} onOpenPlayerProfile={onOpenPlayerProfile} />
 
       <LatestNewsSection demoMode={demoMode} isAdmin={isAdmin} />
 

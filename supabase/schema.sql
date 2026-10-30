@@ -120,5 +120,7 @@ GROUP BY fp.id;
 --   - public.get_league_news_feed()                       [Clubhouse Bulletins + automatic Live League Wire]
 --   - public.admin_post_news / admin_toggle_pin_news / admin_delete_news
 --   - public.get_season_records()                         [All-Time Season Hall of Records]
+--   - public.get_gameweek_scout(p_gameweek_id)            [Post-deadline Most Captained %, Most Owned % & Chips Active]
+--   - public.league_standings()                           [includes rank_delta arrows vs previous scored GW]
 --   - 4 Chips supported across save_squad / save_pre_gw_lineup: Triple Captain, Wildcard, Bench Boost, Free Hit
 
