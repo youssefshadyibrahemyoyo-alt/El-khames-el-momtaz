@@ -213,7 +213,7 @@ describe('i18n & tournament fixtures', () => {
     expect(DEMO_CUP.ties?.length).toBeGreaterThanOrEqual(3);
     expect(DEMO_FAN_POLL.has_poll).toBe(true);
     expect(DEMO_FAN_POLL.candidates?.[0]?.is_leader).toBe(true);
-    expect(DEMO_FORFEITS.active_poll?.options.length).toBeGreaterThanOrEqual(4);
+    expect(DEMO_FORFEITS.active_poll?.options.every(o => Boolean(o.proposed_by_id))).toBe(true);
     expect(DEMO_FORFEITS.history[0]?.losers.length).toBeGreaterThanOrEqual(1);
     expect(DEMO_FORFEITS.shame_leaderboard[0]?.losses_count).toBeGreaterThanOrEqual(1);
   });

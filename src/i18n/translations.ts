@@ -475,9 +475,11 @@ export const translations = {
     tabForfeits: 'Forfeits',
     descForfeits:
       'Friends vote on the weekly punishment — lowest Gameweek scorer(s) get saved on the Wall of Shame!',
-    forfeitVoteHeading: 'Weekly Forfeit Vote',
+    forfeitVoteHeading: 'Weekly Forfeit — Suggest & Vote',
     forfeitVoteSub:
-      'Vote for the punishment this Gameweek’s lowest-scoring manager(s) must perform!',
+      'Managers suggest the forfeit ideas for this Gameweek, then everyone votes on what the lowest scorer must do!',
+    forfeitNoOptionsYet:
+      'No forfeits suggested yet for this Gameweek — drop the first punishment idea above so managers can start voting!',
     forfeitNoOpenGw:
       'No open or active Gameweek right now. Once Admin opens the next round, forfeit voting starts automatically!',
     forfeitTotalVotes: 'votes cast',
@@ -977,8 +979,11 @@ export const translations = {
     tabForfeits: 'العقوبات',
     descForfeits:
       'صوّت على عقوبة الجولة — أقل مدرب تحقيقاً للنقاط في كل جولة يُسجّل رسمياً في لوحة العقوبات!',
-    forfeitVoteHeading: 'تصويت عقوبة الجولة',
-    forfeitVoteSub: 'اختَر العقوبة التي سينفذها صاحب المركز الأخير في هذه الجولة!',
+    forfeitVoteHeading: 'عقوبة الجولة — اقترح وصوّت',
+    forfeitVoteSub:
+      'المدربون يقترحون العقوبات لهذه الجولة ثم يصوّت الجميع على العقوبة التي سينفذها صاحب أقل نقاط!',
+    forfeitNoOptionsYet:
+      'لم يقترح أي مدرب عقوبة لهذه الجولة بعد — كن أول من يضيف اقتراحاً بالأعلى ليبدأ التصويت!',
     forfeitNoOpenGw:
       'لا توجد جولة مفتوحة حالياً. بمجرد فتح الجولة القادمة سيبدأ التصويت على العقوبة تلقائياً!',
     forfeitTotalVotes: 'أصوات',

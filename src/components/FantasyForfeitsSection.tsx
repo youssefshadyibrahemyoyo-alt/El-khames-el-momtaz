@@ -24,7 +24,7 @@ type Props = {
   currentUserId?: string;
 };
 
-export default function FantasyForfeitsSection({ demoMode, isAdmin }: Props) {
+export default function FantasyForfeitsSection({ demoMode, isAdmin, currentUserId }: Props) {
   const { t } = useLanguage();
   const [data, setData] = useState<ForfeitsOverview>(
     demoMode
@@ -308,78 +308,6 @@ export default function FantasyForfeitsSection({ demoMode, isAdmin }: Props) {
               </div>
             )}
 
-            <div className="forfeit-options-list">
-              {poll.options.map((opt, idx) => {
-                const isMine = poll.my_vote_option_id === opt.id;
-                const isLeading = maxPollVotes > 0 && opt.votes === maxPollVotes && idx === 0;
-
-                return (
-                  <div
-                    key={opt.id}
-                    className={`forfeit-option-row ${isMine ? 'is-voted' : ''} ${
-                      isLeading ? 'is-leading' : ''
-                    }`}
-                  >
-                    <button
-                      type="button"
-                      className="forfeit-option-btn"
-                      disabled={votingId === opt.id}
-                      onClick={() => void handleVote(opt.id)}
-                    >
-                      <span
-                        className="forfeit-option-bar"
-                        style={{ width: `${Math.max(0, Math.min(100, opt.pct))}%` }}
-                        aria-hidden="true"
-                      />
-                      <div className="forfeit-option-content">
-                        <div className="forfeit-option-text">
-                          <strong>
-                            {isLeading && (
-                              <Crown
-                                size={13}
-                                style={{
-                                  verticalAlign: 'middle',
-                                  marginInlineEnd: 6,
-                                  color: 'var(--gold)',
-                                }}
-                              />
-                            )}
-                            {opt.label}
-                          </strong>
-                          {opt.proposed_by_name && (
-                            <small className="forfeit-proposer-note">
-                              {t('forfeitSuggestedBy')} {opt.proposed_by_name}
-                            </small>
-                          )}
-                        </div>
-
-                        <div className="forfeit-option-stats">
-                          {isMine && (
-                            <span className="forfeit-my-vote-chip">
-                              <Check size={11} /> {t('forfeitYourVote')}
-                            </span>
-                          )}
-                          <strong>{opt.pct}%</strong>
-                          <small>({opt.votes})</small>
-                        </div>
-                      </div>
-                    </button>
-
-                    {isAdmin && opt.proposed_by_id && (
-                      <button
-                        type="button"
-                        className="icon-btn forfeit-del-btn"
-                        title="Remove option"
-                        onClick={() => void handleDeleteOption(opt.id)}
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-
             <form className="forfeit-suggest-form" onSubmit={e => void handlePropose(e)}>
               <input
                 type="text"
@@ -390,12 +318,91 @@ export default function FantasyForfeitsSection({ demoMode, isAdmin }: Props) {
               />
               <button
                 type="submit"
-                className="secondary compact-btn"
+                className="primary compact-btn"
                 disabled={proposing || customIdea.trim().length < 3}
               >
                 <Plus size={14} /> {t('forfeitSuggestBtn')}
               </button>
             </form>
+
+            {poll.options.length === 0 ? (
+              <div className="news-empty-box">{t('forfeitNoOptionsYet')}</div>
+            ) : (
+              <div className="forfeit-options-list">
+                {poll.options.map((opt, idx) => {
+                  const isMine = poll.my_vote_option_id === opt.id;
+                  const isLeading = maxPollVotes > 0 && opt.votes === maxPollVotes && idx === 0;
+                  const canRemove =
+                    isAdmin ||
+                    (Boolean(currentUserId) && opt.proposed_by_id === currentUserId);
+
+                  return (
+                    <div
+                      key={opt.id}
+                      className={`forfeit-option-row ${isMine ? 'is-voted' : ''} ${
+                        isLeading ? 'is-leading' : ''
+                      }`}
+                    >
+                      <button
+                        type="button"
+                        className="forfeit-option-btn"
+                        disabled={votingId === opt.id}
+                        onClick={() => void handleVote(opt.id)}
+                      >
+                        <span
+                          className="forfeit-option-bar"
+                          style={{ width: `${Math.max(0, Math.min(100, opt.pct))}%` }}
+                          aria-hidden="true"
+                        />
+                        <div className="forfeit-option-content">
+                          <div className="forfeit-option-text">
+                            <strong>
+                              {isLeading && (
+                                <Crown
+                                  size={13}
+                                  style={{
+                                    verticalAlign: 'middle',
+                                    marginInlineEnd: 6,
+                                    color: 'var(--gold)',
+                                  }}
+                                />
+                              )}
+                              {opt.label}
+                            </strong>
+                            {opt.proposed_by_name && (
+                              <small className="forfeit-proposer-note">
+                                {t('forfeitSuggestedBy')} {opt.proposed_by_name}
+                              </small>
+                            )}
+                          </div>
+
+                          <div className="forfeit-option-stats">
+                            {isMine && (
+                              <span className="forfeit-my-vote-chip">
+                                <Check size={11} /> {t('forfeitYourVote')}
+                              </span>
+                            )}
+                            <strong>{opt.pct}%</strong>
+                            <small>({opt.votes})</small>
+                          </div>
+                        </div>
+                      </button>
+
+                      {canRemove && (
+                        <button
+                          type="button"
+                          className="icon-btn forfeit-del-btn"
+                          title="Remove option"
+                          onClick={() => void handleDeleteOption(opt.id)}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </>
         )}
       </div>
