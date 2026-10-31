@@ -11,6 +11,8 @@ const REVEAL_SELECTOR = [
   '.market-player-card',
   '.leaderboard-player',
   '.record-showcase-card',
+  '.forfeit-history-card',
+  '.forfeit-shame-card',
   '.news-stream-card',
   '.match-card',
   '.h2h-fixture-card',

@@ -4761,6 +4761,442 @@ html[dir='rtl'] .rival-diff-col h5 {
   }
 }
 
+/* =========================================================
+   WAVE 8: FANTASY FORFEITS (WEEKLY VOTE & SAVED LOSERS ARCHIVE)
+   ========================================================= */
+
+.forfeits-hub {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.forfeit-poll-card {
+  padding: 16px;
+  border-radius: 16px;
+  background: var(--panel2);
+  border: 1px solid rgba(212, 175, 87, 0.34);
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+}
+
+.forfeit-poll-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.forfeit-poll-head h4 {
+  margin: 3px 0 2px;
+  font-size: 16px;
+  color: var(--heading);
+}
+
+.forfeit-danger-banner {
+  padding: 11px 13px;
+  border-radius: 13px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.forfeit-danger-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 12.5px;
+  color: #fca5a5;
+}
+
+[data-theme='light'] .forfeit-danger-title {
+  color: #b91c1c;
+}
+
+.forfeit-score-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 800;
+  background: rgba(239, 68, 68, 0.16);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #fca5a5;
+}
+
+[data-theme='light'] .forfeit-score-pill {
+  color: #b91c1c;
+}
+
+.forfeit-tie-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 800;
+  background: rgba(245, 158, 11, 0.16);
+  border: 1px solid rgba(245, 158, 11, 0.38);
+  color: var(--gold-text);
+}
+
+.forfeit-danger-clubs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.forfeit-danger-club-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 11px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+}
+
+.forfeit-danger-club-chip img,
+.forfeit-danger-club-chip .mini-avatar-fallback {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 800;
+  background: rgba(212, 175, 87, 0.18);
+  color: var(--gold-text);
+}
+
+.forfeit-danger-club-chip strong {
+  display: block;
+  font-size: 13px;
+  color: var(--heading);
+}
+
+.forfeit-danger-club-chip small {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.forfeit-options-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.forfeit-option-row {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.forfeit-option-btn {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  padding: 11px 14px;
+  border-radius: 12px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  color: var(--text);
+  text-align: start;
+  box-shadow: none;
+}
+
+.forfeit-option-row.is-voted .forfeit-option-btn {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 1px rgba(212, 175, 87, 0.28);
+}
+
+.forfeit-option-bar {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(26, 163, 92, 0.22) 0%,
+    rgba(212, 175, 87, 0.24) 100%
+  );
+  transition: width 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+}
+
+.forfeit-option-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.forfeit-option-text {
+  min-width: 0;
+}
+
+.forfeit-option-text strong {
+  display: block;
+  font-size: 13.5px;
+  line-height: 1.4;
+  color: var(--heading);
+}
+
+.forfeit-proposer-note {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.forfeit-option-stats {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  font-size: 12.5px;
+}
+
+.forfeit-my-vote-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 800;
+  background: rgba(212, 175, 87, 0.2);
+  color: var(--gold-text);
+}
+
+.forfeit-del-btn {
+  align-self: center;
+}
+
+.forfeit-suggest-form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.forfeit-suggest-form input {
+  flex: 1;
+  min-width: 210px;
+}
+
+.forfeit-shame-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(235px, 1fr));
+  gap: 10px;
+}
+
+.forfeit-shame-card {
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--panel2);
+  border: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.forfeit-shame-card.most-shamed {
+  border-color: rgba(239, 68, 68, 0.42);
+}
+
+.forfeit-shame-head,
+.forfeit-loser-identity {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.forfeit-club-stack {
+  min-width: 0;
+}
+
+.forfeit-club-stack strong {
+  display: block;
+  font-size: 14px;
+  color: var(--heading);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.forfeit-club-stack span {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.forfeit-shame-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.shame-count-badge,
+.shame-pending-badge,
+.shame-done-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 800;
+}
+
+.shame-count-badge {
+  background: rgba(239, 68, 68, 0.14);
+  border: 1px solid rgba(239, 68, 68, 0.32);
+  color: #fca5a5;
+}
+
+[data-theme='light'] .shame-count-badge {
+  color: #b91c1c;
+}
+
+.shame-pending-badge {
+  background: rgba(245, 158, 11, 0.14);
+  border: 1px solid rgba(245, 158, 11, 0.34);
+  color: var(--gold-text);
+}
+
+.shame-done-badge {
+  background: rgba(34, 197, 94, 0.14);
+  border: 1px solid rgba(34, 197, 94, 0.32);
+  color: #4ade80;
+}
+
+[data-theme='light'] .shame-done-badge {
+  color: #15803d;
+}
+
+.forfeit-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.forfeit-history-card {
+  padding: 15px;
+  border-radius: 15px;
+  background: var(--panel2);
+  border: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.forfeit-history-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.forfeit-history-badges {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.forfeit-punishment-banner {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 13px;
+  border-radius: 11px;
+  background: var(--panel);
+  border: 1px dashed rgba(212, 175, 87, 0.42);
+  font-size: 13.5px;
+  color: var(--heading);
+}
+
+.forfeit-losers-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.forfeit-loser-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+}
+
+.forfeit-loser-row.is-completed {
+  border-color: rgba(34, 197, 94, 0.35);
+}
+
+.forfeit-loser-row.is-pending {
+  border-color: rgba(245, 158, 11, 0.35);
+}
+
+.forfeit-loser-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.forfeit-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 800;
+}
+
+.forfeit-status-pill.status-done {
+  background: rgba(34, 197, 94, 0.14);
+  border: 1px solid rgba(34, 197, 94, 0.34);
+  color: #4ade80;
+}
+
+[data-theme='light'] .forfeit-status-pill.status-done {
+  color: #15803d;
+}
+
+.forfeit-status-pill.status-pending {
+  background: rgba(245, 158, 11, 0.14);
+  border: 1px solid rgba(245, 158, 11, 0.34);
+  color: var(--gold-text);
+}
+
+@media (max-width: 640px) {
+  .forfeit-option-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+}
+
+
 
 
 

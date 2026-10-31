@@ -6,6 +6,7 @@ export type LeaderboardTab =
   | 'cup'
   | 'highlights'
   | 'records'
+  | 'forfeits'
   | 'player_stats';
 
 export type PlayerStatCategory = 'goals' | 'assists' | 'contributions' | 'ratings';
@@ -528,5 +529,68 @@ export type SquadReadinessSummary = {
   missing: { manager_id: string; display_name: string; team_name?: string | null }[];
   ready: { manager_id: string; display_name: string; team_name?: string | null }[];
 };
+
+export type ForfeitOptionItem = {
+  id: number;
+  label: string;
+  proposed_by_id: string | null;
+  proposed_by_name: string | null;
+  votes: number;
+  pct: number;
+};
+
+export type ForfeitLoserEntry = {
+  manager_id: string;
+  display_name: string;
+  team_name?: string | null;
+  avatar_url?: string | null;
+  points: number;
+  completed: boolean;
+  completed_at?: string | null;
+};
+
+export type ForfeitHistoryRecord = {
+  gameweek_id: number;
+  gameweek_number: number;
+  forfeit_title: string;
+  lowest_points: number;
+  winning_votes: number;
+  finalized_at: string;
+  losers: ForfeitLoserEntry[];
+};
+
+export type ForfeitShameRow = {
+  manager_id: string;
+  display_name: string;
+  team_name?: string | null;
+  avatar_url?: string | null;
+  losses_count: number;
+  completed_count: number;
+  pending_count: number;
+};
+
+export type ForfeitsOverview = {
+  active_poll: {
+    gameweek_id: number;
+    gameweek_number: number;
+    status: string;
+    my_vote_option_id: number | null;
+    total_votes: number;
+    options: ForfeitOptionItem[];
+    live_danger_zone: {
+      lowest_points: number;
+      managers: {
+        manager_id: string;
+        display_name: string;
+        team_name?: string | null;
+        avatar_url?: string | null;
+        points: number;
+      }[];
+    } | null;
+  } | null;
+  history: ForfeitHistoryRecord[];
+  shame_leaderboard: ForfeitShameRow[];
+};
+
 
 

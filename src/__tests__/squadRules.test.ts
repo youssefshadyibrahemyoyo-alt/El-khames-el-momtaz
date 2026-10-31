@@ -12,7 +12,7 @@ import {
 import { fromCairoDateTimeInput, toCairoDateTimeInput } from '../lib/cairoTime';
 import { computeSplashTimings, FULL_SPLASH_MIN_MS, QUICK_SPLASH_MIN_MS } from '../lib/useBootSplash';
 import { translations } from '../i18n/translations';
-import { DEMO_CUP, DEMO_FAN_POLL, DEMO_PLAYERS } from '../lib/demoData';
+import { DEMO_CUP, DEMO_FAN_POLL, DEMO_FORFEITS, DEMO_PLAYERS } from '../lib/demoData';
 import type { Gameweek, LeaguePlayer, SquadRecord } from '../types/league';
 
 describe('squadRules', () => {
@@ -213,6 +213,9 @@ describe('i18n & tournament fixtures', () => {
     expect(DEMO_CUP.ties?.length).toBeGreaterThanOrEqual(3);
     expect(DEMO_FAN_POLL.has_poll).toBe(true);
     expect(DEMO_FAN_POLL.candidates?.[0]?.is_leader).toBe(true);
+    expect(DEMO_FORFEITS.active_poll?.options.length).toBeGreaterThanOrEqual(4);
+    expect(DEMO_FORFEITS.history[0]?.losers.length).toBeGreaterThanOrEqual(1);
+    expect(DEMO_FORFEITS.shame_leaderboard[0]?.losses_count).toBeGreaterThanOrEqual(1);
   });
 });
 

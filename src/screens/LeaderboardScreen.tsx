@@ -36,6 +36,7 @@ import {
 } from '../lib/shareCardCanvas';
 import SquadInspectorModal from '../components/SquadInspectorModal';
 import ThursdayScoutBar from '../components/ThursdayScoutBar';
+import FantasyForfeitsSection from '../components/FantasyForfeitsSection';
 import FutPlayerCard from '../components/FutPlayerCard';
 import AnimatedNumber from '../components/AnimatedNumber';
 
@@ -371,6 +372,7 @@ export default function LeaderboardScreen({
     { id: 'cup', label: `🏆 ${t('tabCup')}` },
     { id: 'highlights', label: `✨ ${t('tabHighlights')}` },
     { id: 'records', label: `🏅 ${t('tabRecords')}` },
+    { id: 'forfeits', label: `🎭 ${t('tabForfeits')}` },
     { id: 'player_stats', label: `⚽ ${t('tabPlayerStats')}` },
   ];
 
@@ -394,6 +396,7 @@ export default function LeaderboardScreen({
     cup: t('descCup'),
     highlights: t('descHighlights'),
     records: t('descRecords'),
+    forfeits: t('descForfeits'),
     player_stats: statCatDescriptions[statCat],
   };
 
@@ -501,7 +504,9 @@ export default function LeaderboardScreen({
                     ? t('totwHeading')
                     : tab === 'records'
                       ? t('tabRecords')
-                      : t('playerLeaderboardTitle')}
+                      : tab === 'forfeits'
+                        ? `🎭 ${t('tabForfeits')}`
+                        : t('playerLeaderboardTitle')}
           </h3>
           <p>{descriptions[tab]}</p>
         </div>
@@ -1390,6 +1395,15 @@ export default function LeaderboardScreen({
             </div>
           )}
         </div>
+      )}
+
+      {/* 3B. FANTASY FORFEITS (WEEKLY VOTE + SAVED LOSERS ARCHIVE) */}
+      {tab === 'forfeits' && (
+        <FantasyForfeitsSection
+          demoMode={demoMode}
+          isAdmin={isAdmin}
+          currentUserId={currentUserId}
+        />
       )}
 
       {/* 4. PLAYER STAT TABS (Goals, Assists, Contributions, Ratings) */}

@@ -124,5 +124,7 @@ GROUP BY fp.id;
 --   - public.league_standings()                           [includes rank_delta arrows vs previous scored GW]
 --   - public.get_player_ownership_map()                   [Ownership % across approved managers' latest 7-player squads]
 --   - public.admin_get_squad_readiness()                  [Admin Squad Readiness Tracker + missing-squads list]
+--   - public.get_forfeits_overview()                      [Weekly Forfeit Poll + Live Danger Zone + Saved GW Losers Archive & Wall of Shame]
+--   - public.cast_gameweek_forfeit_vote / propose_gameweek_forfeit_option / admin_delete_forfeit_option / admin_toggle_forfeit_completed
 --   - 4 Chips supported across save_squad / save_pre_gw_lineup: Triple Captain, Wildcard, Bench Boost, Free Hit
 

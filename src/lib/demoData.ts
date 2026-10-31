@@ -1,6 +1,7 @@
 import type {
   CupOverview,
   FanPotnPoll,
+  ForfeitsOverview,
   GameweekHighlights,
   GameweekScout,
   H2HOverview,
@@ -674,5 +675,94 @@ export const DEMO_GAMEWEEK_SCOUT: GameweekScout = {
     { chip: 'Free Hit', count: 1 },
   ],
 };
+
+export const DEMO_FORFEITS: ForfeitsOverview = {
+  active_poll: {
+    gameweek_id: 2,
+    gameweek_number: 2,
+    status: 'active',
+    my_vote_option_id: 1,
+    total_votes: 4,
+    options: [
+      {
+        id: 1,
+        label: '🥤 Buys post-match cold drinks / عصير قصب for everyone next Thursday',
+        proposed_by_id: null,
+        proposed_by_name: null,
+        votes: 2,
+        pct: 50,
+      },
+      {
+        id: 2,
+        label: '🧤 Plays Goalkeeper for the first 2 full matches next Thursday',
+        proposed_by_id: null,
+        proposed_by_name: null,
+        votes: 1,
+        pct: 25,
+      },
+      {
+        id: 3,
+        label: '📸 Posts a story calling the GW #1 winner the undisputed Thursday GOAT',
+        proposed_by_id: 'demo-2',
+        proposed_by_name: 'Omar',
+        votes: 1,
+        pct: 25,
+      },
+      {
+        id: 4,
+        label: '🏋️ Does 25 pitch-side push-ups before kickoff next Thursday',
+        proposed_by_id: null,
+        proposed_by_name: null,
+        votes: 0,
+        pct: 0,
+      },
+    ],
+    live_danger_zone: {
+      lowest_points: 18,
+      managers: [
+        {
+          manager_id: 'demo-4',
+          display_name: 'Tarek',
+          team_name: 'Maadi Wolves',
+          avatar_url: null,
+          points: 18,
+        },
+      ],
+    },
+  },
+  history: [
+    {
+      gameweek_id: 1,
+      gameweek_number: 1,
+      forfeit_title: '🥤 Buys post-match cold drinks / عصير قصب for everyone next Thursday',
+      lowest_points: 14,
+      winning_votes: 3,
+      finalized_at: '2026-10-23T21:45:00Z',
+      losers: [
+        {
+          manager_id: 'demo-4',
+          display_name: 'Tarek',
+          team_name: 'Maadi Wolves',
+          avatar_url: null,
+          points: 14,
+          completed: true,
+          completed_at: '2026-10-29T20:10:00Z',
+        },
+      ],
+    },
+  ],
+  shame_leaderboard: [
+    {
+      manager_id: 'demo-4',
+      display_name: 'Tarek',
+      team_name: 'Maadi Wolves',
+      avatar_url: null,
+      losses_count: 1,
+      completed_count: 1,
+      pending_count: 0,
+    },
+  ],
+};
+
 
 
