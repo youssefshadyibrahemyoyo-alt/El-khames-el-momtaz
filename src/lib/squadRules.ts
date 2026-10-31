@@ -205,3 +205,50 @@ export function autoFillSquad(params: {
 
   return chosen.length === SQUAD_SIZE ? chosen : selected;
 }
+
+export const CHIP_RESET_CYCLE = 5;
+
+/**
+ * Returns the 5-Gameweek chip cycle window for a given Gameweek number.
+ * e.g. GW 1..5 -> { startGw: 1, endGw: 5, nextResetGw: 6 }
+ *      GW 6..10 -> { startGw: 6, endGw: 10, nextResetGw: 11 }
+ */
+export function getChipWindow(gameweekNumber: number): {
+  startGw: number;
+  endGw: number;
+  nextResetGw: number;
+} {
+  const safeGw = Math.max(1, Math.floor(gameweekNumber || 1));
+  const startGw = Math.floor((safeGw - 1) / CHIP_RESET_CYCLE) * CHIP_RESET_CYCLE + 1;
+  const endGw = startGw + CHIP_RESET_CYCLE - 1;
+  return {
+    startGw,
+    endGw,
+    nextResetGw: endGw + 1,
+  };
+}
+
+/**
+ * Computes which chips have been used inside the target Gameweek's 5-GW reset window.
+ */
+export function getUsedChipsInWindow(params: {
+  squads: SquadRecord[];
+  numberOfGameweek: Map<number, number>;
+  targetGwNumber: number;
+  excludeGameweekId?: number | null;
+}): string[] {
+  const { squads, numberOfGameweek, targetGwNumber, excludeGameweekId = null } = params;
+  const { startGw, endGw } = getChipWindow(targetGwNumber);
+
+  const used = new Set<string>();
+  for (const s of squads) {
+    if (!s.chip) continue;
+    if (excludeGameweekId !== null && s.gameweek_id === excludeGameweekId) continue;
+    const gwNum = numberOfGameweek.get(s.gameweek_id) ?? 0;
+    if (gwNum >= startGw && gwNum <= endGw) {
+      used.add(String(s.chip));
+    }
+  }
+  return Array.from(used);
+}
+

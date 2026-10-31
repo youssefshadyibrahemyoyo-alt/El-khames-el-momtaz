@@ -20,6 +20,7 @@ import {
   calculateTransfersAndHits,
   computeDemoPoints,
   computeFreeTransfers,
+  getUsedChipsInWindow,
   hasUnsavedSquadChanges,
   isOverBudget,
   pickTargetGameweek,
@@ -307,9 +308,14 @@ export default function App() {
       );
       const nextGwNumber = rows.length > 0 ? Math.max(...rows.map(w => w.number)) + 1 : 1;
       const fallbackGw = target ?? active ?? rows[rows.length - 1] ?? null;
-      setGameweekNumber(
-        target ? target.number : !hasBlockingGw ? nextGwNumber : fallbackGw ? fallbackGw.number : 1
-      );
+      const effectiveGwNum = target
+        ? target.number
+        : !hasBlockingGw
+          ? nextGwNumber
+          : fallbackGw
+            ? fallbackGw.number
+            : 1;
+      setGameweekNumber(effectiveGwNum);
 
       const [{ data: mine, error: mineError }, { data: preSaved }] = await Promise.all([
         supabase!
@@ -371,7 +377,12 @@ export default function App() {
 
         if (cancelled) return;
 
-        setUsedChips(squads.filter(s => s.chip).map(s => String(s.chip)));
+        const usedInCurrentCycle = getUsedChipsInWindow({
+          squads,
+          numberOfGameweek: numberOf,
+          targetGwNumber: effectiveGwNum,
+        });
+        setUsedChips(usedInCurrentCycle);
         setBaselineIds(latestIds);
         setBaseFree(
           computeFreeTransfers({
@@ -389,7 +400,8 @@ export default function App() {
             String(preSaved?.captain_player_id ?? ''),
             String(preSaved?.vice_captain_player_id ?? '')
           );
-          const chipVal = preSaved?.chip ? String(preSaved.chip) : null;
+          const rawChip = preSaved?.chip ? String(preSaved.chip) : null;
+          const chipVal = rawChip && !usedInCurrentCycle.includes(rawChip) ? rawChip : null;
           setSelected(synced.selected);
           setCaptain(synced.captain);
           setViceCaptain(synced.viceCaptain);
@@ -469,7 +481,12 @@ export default function App() {
           })[0] ?? null;
 
       setUsedChips(
-        squads.filter(s => s.chip && s.gameweek_id !== target.id).map(s => String(s.chip))
+        getUsedChipsInWindow({
+          squads,
+          numberOfGameweek: numberOf,
+          targetGwNumber: target.number,
+          excludeGameweekId: target.id,
+        })
       );
 
       setBaseFree(

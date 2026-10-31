@@ -16,7 +16,7 @@ import type {
   SquadInspection,
 } from '../types/league';
 import { useLanguage } from '../i18n/LanguageContext';
-import { SQUAD_BUDGET, SQUAD_SIZE, STARTERS_COUNT } from '../lib/squadRules';
+import { getChipWindow, SQUAD_BUDGET, SQUAD_SIZE, STARTERS_COUNT } from '../lib/squadRules';
 import { shareOrDownloadSquadCard } from '../lib/shareCardCanvas';
 import { supabase } from '../lib/supabase';
 import { buildDemoInspection } from '../lib/demoData';
@@ -463,7 +463,11 @@ export default function SquadScreen({
 
         <div className="lineup-heading">
           <strong>{t('chipsHeading')}</strong>
-          <span>{t('oneChipPerGw')}</span>
+          <span>
+            {t('oneChipPerGw')} · {t('chipCycleLabel')} {getChipWindow(gameweekNumber).startGw}–
+            {getChipWindow(gameweekNumber).endGw} ({t('chipResetsAtGw')}{' '}
+            {getChipWindow(gameweekNumber).nextResetGw})
+          </span>
         </div>
 
         <div className="egypt-chip-row">

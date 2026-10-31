@@ -4,6 +4,8 @@ import {
   calculateTransfersAndHits,
   computeDemoPoints,
   computeFreeTransfers,
+  getChipWindow,
+  getUsedChipsInWindow,
   isOverBudget,
   pickTargetGameweek,
   SQUAD_SIZE,
@@ -193,6 +195,93 @@ describe('squadRules', () => {
 
     const slowNetwork = computeSplashTimings({ isQuickSession: false, elapsedMs: 2400 });
     expect(slowNetwork.remainingHoldMs).toBe(0);
+  });
+
+  it('resets all chips every 5 gameweeks (GW 1–5, GW 6–10, GW 11–15)', () => {
+    expect(getChipWindow(1)).toEqual({ startGw: 1, endGw: 5, nextResetGw: 6 });
+    expect(getChipWindow(5)).toEqual({ startGw: 1, endGw: 5, nextResetGw: 6 });
+    expect(getChipWindow(6)).toEqual({ startGw: 6, endGw: 10, nextResetGw: 11 });
+    expect(getChipWindow(10)).toEqual({ startGw: 6, endGw: 10, nextResetGw: 11 });
+    expect(getChipWindow(11)).toEqual({ startGw: 11, endGw: 15, nextResetGw: 16 });
+
+    const numberOfGameweek = new Map<number, number>([
+      [101, 2],
+      [102, 5],
+      [103, 6],
+    ]);
+    const squads: SquadRecord[] = [
+      {
+        id: 's1',
+        manager_id: 'm1',
+        gameweek_id: 101,
+        captain_player_id: 'p1',
+        vice_captain_player_id: 'p2',
+        chip: 'Triple Captain',
+        transfers_used: 0,
+        points_hit: 0,
+        free_transfers: 1,
+      },
+      {
+        id: 's2',
+        manager_id: 'm1',
+        gameweek_id: 102,
+        captain_player_id: 'p1',
+        vice_captain_player_id: 'p2',
+        chip: 'Free Hit',
+        transfers_used: 0,
+        points_hit: 0,
+        free_transfers: 1,
+      },
+      {
+        id: 's3',
+        manager_id: 'm1',
+        gameweek_id: 103,
+        captain_player_id: 'p1',
+        vice_captain_player_id: 'p2',
+        chip: 'Bench Boost',
+        transfers_used: 0,
+        points_hit: 0,
+        free_transfers: 1,
+      },
+    ];
+
+    // Inside GW 1-5 window (e.g. GW 5): Triple Captain from GW 2 is marked used
+    expect(
+      getUsedChipsInWindow({
+        squads,
+        numberOfGameweek,
+        targetGwNumber: 5,
+        excludeGameweekId: 102,
+      })
+    ).toEqual(['Triple Captain']);
+
+    // At GW 6 (start of GW 6-10 window): GW 1-5 chips completely reset!
+    expect(
+      getUsedChipsInWindow({
+        squads,
+        numberOfGameweek,
+        targetGwNumber: 6,
+        excludeGameweekId: 103,
+      })
+    ).toEqual([]);
+
+    // At GW 7 (still inside GW 6-10 window): Bench Boost used in GW 6 is tracked, GW 1-5 chips stay available
+    expect(
+      getUsedChipsInWindow({
+        squads,
+        numberOfGameweek,
+        targetGwNumber: 7,
+      })
+    ).toEqual(['Bench Boost']);
+
+    // At GW 11 (start of GW 11-15 window): resets again!
+    expect(
+      getUsedChipsInWindow({
+        squads,
+        numberOfGameweek,
+        targetGwNumber: 11,
+      })
+    ).toEqual([]);
   });
 });
 

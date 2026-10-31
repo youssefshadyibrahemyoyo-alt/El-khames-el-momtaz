@@ -504,6 +504,8 @@ export const translations = {
     forfeitMarkDoneBtn: 'Mark Done',
     forfeitUndoDoneBtn: 'Mark Pending',
     forfeitShareRoastBtn: 'Roast on WhatsApp',
+    chipCycleLabel: 'GW',
+    chipResetsAtGw: 'Resets GW',
   },
   ar: {
     brandEyebrow: 'فانتازي خميس الكورة',
@@ -1008,6 +1010,8 @@ export const translations = {
     forfeitMarkDoneBtn: 'تأكيد التنفيذ',
     forfeitUndoDoneBtn: 'إرجاع كغير منفذة',
     forfeitShareRoastBtn: 'مشاركة عبر واتساب',
+    chipCycleLabel: 'دورة ج',
+    chipResetsAtGw: 'تتجدد ج',
   },
 } as const;
 

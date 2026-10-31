@@ -126,5 +126,5 @@ GROUP BY fp.id;
 --   - public.admin_get_squad_readiness()                  [Admin Squad Readiness Tracker + missing-squads list]
 --   - public.get_forfeits_overview()                      [Weekly Forfeit Poll + Live Danger Zone + Saved GW Losers Archive & Wall of Shame]
 --   - public.cast_gameweek_forfeit_vote / propose_gameweek_forfeit_option / admin_delete_forfeit_option / admin_toggle_forfeit_completed
---   - 4 Chips supported across save_squad / save_pre_gw_lineup: Triple Captain, Wildcard, Bench Boost, Free Hit
+--   - 4 Chips supported across save_squad / save_pre_gw_lineup (auto-resetting every 5 Gameweeks: GW 1-5, GW 6-10, ...): Triple Captain, Wildcard, Bench Boost, Free Hit
 
