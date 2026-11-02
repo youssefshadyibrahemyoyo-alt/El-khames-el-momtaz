@@ -209,6 +209,29 @@ export default function SquadScreen({
     setSwapStarter(null);
   }
 
+  function handleSmartOptimizeLineup() {
+    if (isTransfersLocked || selected.length < 2) return;
+    const availWeight = (st?: string | null) =>
+      st === 'out' ? 0 : st === 'doubtful' ? 1 : 2;
+
+    const sorted = [...selected].sort((idA, idB) => {
+      const a = playerById.get(idA);
+      const b = playerById.get(idB);
+      if (!a || !b) return 0;
+      const wDiff = availWeight(b.availability_status) - availWeight(a.availability_status);
+      if (wDiff !== 0) return wDiff;
+      const formDiff = Number(b.form ?? 0) - Number(a.form ?? 0);
+      if (Math.abs(formDiff) >= 0.4) return formDiff;
+      return b.points - a.points || b.price - a.price;
+    });
+
+    onApplyLineup(sorted);
+    if (sorted[0]) onSetCaptain(sorted[0]);
+    if (sorted[1]) onSetViceCaptain(sorted[1]);
+    setJustSwapped(sorted.slice(0, STARTERS_COUNT));
+    setDemoNotice(t('smartOptimizeToast'));
+  }
+
   return (
     <>
       <ConfettiBurst triggerKey={celebrateKey} />
@@ -239,6 +262,16 @@ export default function SquadScreen({
                 <Zap size={13} /> {t('liveGwPointsTab')}
               </button>
             </div>
+
+            {pitchMode === 'pick' && !isTransfersLocked && selected.length >= STARTERS_COUNT && (
+              <button
+                type="button"
+                className="secondary compact-btn active-gold-btn"
+                onClick={handleSmartOptimizeLineup}
+              >
+                <Sparkles size={14} /> {t('smartOptimizeBtn')}
+              </button>
+            )}
 
             {pitchMode === 'pick' && selected.length === SQUAD_SIZE && (
               <button

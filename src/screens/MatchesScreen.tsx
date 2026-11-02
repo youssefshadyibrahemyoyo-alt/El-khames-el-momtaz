@@ -1,9 +1,10 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { Check, Crown, Flame, Sparkles, Star, Swords, ThumbsUp } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Check, Crown, Flame, Search, Sparkles, Star, Swords, ThumbsUp } from 'lucide-react';
 import type { FanPotnPoll, Gameweek, PublicMatch } from '../types/league';
 import { useLanguage } from '../i18n/LanguageContext';
 import { supabase } from '../lib/supabase';
 import { DEMO_FAN_POLL, DEMO_MATCHES } from '../lib/demoData';
+import AnimatedNumber from '../components/AnimatedNumber';
 
 type Props = {
   demoMode: boolean;
@@ -23,6 +24,31 @@ export default function MatchesScreen({
   const [votingPlayerId, setVotingPlayerId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [matchFilter, setMatchFilter] = useState<'all' | 'hattrick'>('all');
+  const [playerQuery, setPlayerQuery] = useState('');
+
+  const matchKpis = useMemo(() => {
+    let goals = 0;
+    let assists = 0;
+    let mvps = 0;
+    for (const m of matches) {
+      for (const p of m.players) {
+        goals += p.goals || 0;
+        assists += p.assists || 0;
+        if (p.is_mvp) mvps += 1;
+      }
+    }
+    return { count: matches.length, goals, assists, mvps };
+  }, [matches]);
+
+  const visibleMatches = useMemo(() => {
+    const q = playerQuery.trim().toLowerCase();
+    return matches.filter(m => {
+      if (matchFilter === 'hattrick' && !m.players.some(p => p.is_hat_trick)) return false;
+      if (q && !m.players.some(p => p.display_name.toLowerCase().includes(q))) return false;
+      return true;
+    });
+  }, [matches, matchFilter, playerQuery]);
 
   const loadFanPoll = useCallback(
     async (gwId: 'all' | number) => {
@@ -149,6 +175,36 @@ export default function MatchesScreen({
       {loading && <p className="muted">{t('loadingPoints')}</p>}
       {error && <div className="notice">{error}</div>}
 
+      {/* Matchday Broadcast KPI Strip */}
+      {matches.length > 0 && (
+        <div className="forfeit-hero-kpis" style={{ marginBottom: 14 }}>
+          <div className="forfeit-kpi-tile">
+            <strong>
+              <AnimatedNumber value={matchKpis.count} decimals={0} />
+            </strong>
+            <span>🏟️ {t('matchesTotalMatches')}</span>
+          </div>
+          <div className="forfeit-kpi-tile gold-kpi">
+            <strong>
+              <AnimatedNumber value={matchKpis.goals} decimals={0} />
+            </strong>
+            <span>⚽ {t('matchesTotalGoals')}</span>
+          </div>
+          <div className="forfeit-kpi-tile">
+            <strong>
+              <AnimatedNumber value={matchKpis.assists} decimals={0} />
+            </strong>
+            <span>🎯 {t('matchesTotalAssists')}</span>
+          </div>
+          <div className="forfeit-kpi-tile">
+            <strong>
+              <AnimatedNumber value={matchKpis.mvps} decimals={0} />
+            </strong>
+            <span>👑 {t('matchesMvpsCrowned')}</span>
+          </div>
+        </div>
+      )}
+
       {/* FANS' VOTE: PLAYER OF THE NIGHT POLL */}
       {fanPoll?.has_poll && (fanPoll.candidates?.length ?? 0) > 0 && (
         <div className="fan-potn-poll-card">
@@ -241,8 +297,39 @@ export default function MatchesScreen({
         </div>
       )}
 
+      {matches.length > 0 && (
+        <div className="matches-interactive-toolbar">
+          <div className="forfeit-filter-pills">
+            <button
+              type="button"
+              className={`forfeit-filter-pill ${matchFilter === 'all' ? 'active' : ''}`}
+              onClick={() => setMatchFilter('all')}
+            >
+              {t('matchesFilterAll')}
+            </button>
+            <button
+              type="button"
+              className={`forfeit-filter-pill ${matchFilter === 'hattrick' ? 'active' : ''}`}
+              onClick={() => setMatchFilter('hattrick')}
+            >
+              <Flame size={12} /> {t('matchesFilterHattricks')}
+            </button>
+          </div>
+
+          <div className="matches-player-search-wrap">
+            <Search size={14} className="muted" />
+            <input
+              type="search"
+              placeholder={t('matchesSearchPlayer')}
+              value={playerQuery}
+              onChange={e => setPlayerQuery(e.target.value)}
+            />
+          </div>
+        </div>
+      )}
+
       <div className="public-matches-feed">
-        {matches.map((m, idx) => {
+        {visibleMatches.map((m, idx) => {
           const mvpPlayer = m.players.find(p => p.is_mvp) ?? null;
           const totalGoals = m.players.reduce((acc, p) => acc + (p.goals || 0), 0);
 

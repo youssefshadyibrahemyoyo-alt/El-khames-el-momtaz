@@ -1,14 +1,21 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   AlertCircle,
   Award,
   BookOpen,
+  Calculator,
   CheckCircle2,
   ChevronDown,
+  CircleUserRound,
   Eye,
+  Minus,
+  Plus,
+  RotateCcw,
   ShieldCheck,
   Sparkles,
+  Swords,
   Trophy,
+  Users,
 } from 'lucide-react';
 import type { Gameweek, ScoringRule, Screen, Standing } from '../types/league';
 import { SQUAD_BUDGET } from '../lib/squadRules';
@@ -55,7 +62,40 @@ export default function OverviewScreen({
 }: Props) {
   const { t } = useLanguage();
   const [guideOpen, setGuideOpen] = useState(false);
+
+  // Interactive What-If Thursday Points Simulator state
+  const [simMatches, setSimMatches] = useState(1);
+  const [simGoals, setSimGoals] = useState(2);
+  const [simAssists, setSimAssists] = useState(1);
+  const [simSaves, setSimSaves] = useState(0);
+  const [simMvp, setSimMvp] = useState(1);
+  const [simYellows, setSimYellows] = useState(0);
+  const [simMultiplier, setSimMultiplier] = useState<1 | 2 | 3>(2);
+
   const remaining = Math.max(0, managerBudget - selectedCost);
+
+  const rulePointsMap = useMemo(() => {
+    const m: Record<string, number> = {};
+    for (const r of scoringRules) {
+      m[r.key] = Number(r.points) || 0;
+    }
+    return m;
+  }, [scoringRules]);
+
+  const projectedSimPoints = useMemo(() => {
+    const appPts = (rulePointsMap.appearance ?? 2) * simMatches;
+    const goalPts = (rulePointsMap.goal ?? 5) * simGoals;
+    const hatTrickBonus = simGoals >= 3 ? (rulePointsMap.hat_trick ?? 3) : 0;
+    const assistPts = (rulePointsMap.assist ?? 3) * simAssists;
+    const savePts =
+      rulePointsMap.save != null
+        ? rulePointsMap.save * simSaves
+        : Math.floor(simSaves / 3) * (rulePointsMap.saves_3 ?? 1);
+    const mvpPts = (rulePointsMap.mvp ?? 3) * simMvp;
+    const yellowPts = (rulePointsMap.yellow_card ?? -1) * simYellows;
+    const base = appPts + goalPts + hatTrickBonus + assistPts + savePts + mvpPts + yellowPts;
+    return base * simMultiplier;
+  }, [rulePointsMap, simAssists, simGoals, simMatches, simMultiplier, simMvp, simSaves, simYellows]);
 
   const labelForRule = (rule: ScoringRule) => {
     const key = `rule_${rule.key}` as TranslationKey;
@@ -181,6 +221,160 @@ export default function OverviewScreen({
       </section>
 
       <LatestNewsSection demoMode={demoMode} isAdmin={isAdmin} />
+
+      {/* Interactive Matchday Quick Hub + Live What-If Points Simulator */}
+      <section className="flagship-overview-lab" data-scroll-reveal>
+        <div className="overview-quick-tiles">
+          <button
+            type="button"
+            className="overview-action-tile hover-lift-card"
+            onClick={() => onNavigate('squad')}
+          >
+            <span className="tile-orb emerald-orb">
+              <Users size={18} />
+            </span>
+            <div>
+              <strong>{t('navSquad')}</strong>
+              <small>{t('viewSquadBtn')}</small>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            className="overview-action-tile hover-lift-card"
+            onClick={() => onNavigate('players')}
+          >
+            <span className="tile-orb gold-orb">
+              <CircleUserRound size={18} />
+            </span>
+            <div>
+              <strong>{t('navPlayers')}</strong>
+              <small>{t('marketCompareDrawerTitle')}</small>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            className="overview-action-tile hover-lift-card"
+            onClick={() => onNavigate('matches')}
+          >
+            <span className="tile-orb blue-orb">
+              <Swords size={18} />
+            </span>
+            <div>
+              <strong>{t('navMatches')}</strong>
+              <small>{t('fanPollTitle')}</small>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            className="overview-action-tile hover-lift-card"
+            onClick={() => onNavigate('leaderboard')}
+          >
+            <span className="tile-orb crimson-orb">
+              <Trophy size={18} />
+            </span>
+            <div>
+              <strong>{t('navLeaderboard')}</strong>
+              <small>{t('forfeitReelsStripTitle')}</small>
+            </div>
+          </button>
+        </div>
+
+        {/* Interactive What-If Points Simulator */}
+        <div className="panel points-sim-panel">
+          <div className="points-sim-head">
+            <div>
+              <span className="eyebrow">
+                <Calculator size={12} style={{ verticalAlign: 'middle', marginInlineEnd: 5 }} />
+                {t('simCardEyebrow')}
+              </span>
+              <h4>{t('simCardTitle')}</h4>
+              <p className="muted tiny" style={{ margin: '2px 0 0' }}>
+                {t('simCardSub')}
+              </p>
+            </div>
+
+            <div className="points-sim-scorebox">
+              <span>{t('simProjectedHaul')}</span>
+              <strong>
+                <AnimatedNumber value={projectedSimPoints} decimals={0} />{' '}
+                <small>{t('ptsUnit')}</small>
+              </strong>
+            </div>
+          </div>
+
+          <div className="points-sim-multipliers">
+            {(
+              [
+                [1, t('simMultiplierNormal')],
+                [2, `👑 ${t('simMultiplierCap')}`],
+                [3, `⚡ ${t('simMultiplierTriple')}`],
+              ] as const
+            ).map(([mult, label]) => (
+              <button
+                key={mult}
+                type="button"
+                className={`sim-mult-pill ${simMultiplier === mult ? 'active' : ''}`}
+                onClick={() => setSimMultiplier(mult)}
+              >
+                {label}
+              </button>
+            ))}
+
+            <button
+              type="button"
+              className="secondary compact-btn"
+              onClick={() => {
+                setSimMatches(1);
+                setSimGoals(0);
+                setSimAssists(0);
+                setSimSaves(0);
+                setSimMvp(0);
+                setSimYellows(0);
+                setSimMultiplier(1);
+              }}
+            >
+              <RotateCcw size={12} /> {t('simResetBtn')}
+            </button>
+          </div>
+
+          <div className="points-sim-steppers">
+            {[
+              { label: `🏟️ ${t('matchesShort')}`, val: simMatches, set: setSimMatches, max: 6 },
+              { label: `⚽ ${t('rule_goal')}`, val: simGoals, set: setSimGoals, max: 12 },
+              { label: `🎯 ${t('rule_assist')}`, val: simAssists, set: setSimAssists, max: 12 },
+              { label: `🧤 ${t('rule_save')}`, val: simSaves, set: setSimSaves, max: 25 },
+              { label: `👑 ${t('mvpBadge')}`, val: simMvp, set: setSimMvp, max: 5 },
+              { label: `🟨 ${t('rule_yellow_card')}`, val: simYellows, set: setSimYellows, max: 4 },
+            ].map(ctrl => (
+              <div key={ctrl.label} className="sim-stepper-box">
+                <span className="sim-stepper-label">{ctrl.label}</span>
+                <div className="sim-stepper-controls">
+                  <button
+                    type="button"
+                    className="sim-step-btn"
+                    onClick={() => ctrl.set(v => Math.max(0, v - 1))}
+                    aria-label="Decrease"
+                  >
+                    <Minus size={12} />
+                  </button>
+                  <strong>{ctrl.val}</strong>
+                  <button
+                    type="button"
+                    className="sim-step-btn"
+                    onClick={() => ctrl.set(v => Math.min(ctrl.max, v + 1))}
+                    aria-label="Increase"
+                  >
+                    <Plus size={12} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
       {/* Collapsible Rules & Official Scoring Accordion */}
       <section className="panel guide-accordion-panel" data-scroll-reveal>

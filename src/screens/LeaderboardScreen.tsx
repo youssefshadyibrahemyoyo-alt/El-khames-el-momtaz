@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Crown, Eye, Flame, MessageCircle, Share2, Sparkles, Swords, Trophy } from 'lucide-react';
+import { Crown, Eye, Flame, MessageCircle, Share2, Sparkles, Swords, Trophy, X } from 'lucide-react';
 import type {
   CupOverview,
   CupTie,
@@ -99,6 +99,15 @@ export default function LeaderboardScreen({
   const [cupLoading, setCupLoading] = useState(false);
   const [cupBusy, setCupBusy] = useState(false);
   const [cupMsg, setCupMsg] = useState('');
+  const [rivalIds, setRivalIds] = useState<string[]>([]);
+
+  function toggleRivalCompare(managerId: string) {
+    setRivalIds(prev => {
+      if (prev.includes(managerId)) return prev.filter(id => id !== managerId);
+      if (prev.length >= 2) return [prev[1], managerId];
+      return [...prev, managerId];
+    });
+  }
 
   const loadCup = useCallback(async () => {
     if (demoMode || !supabase) {
@@ -567,7 +576,126 @@ export default function LeaderboardScreen({
           {(standingsLoading || gwLoading) && <p className="muted">{t('loadingPoints')}</p>}
           {standingsError && <div className="notice">{standingsError}</div>}
           {!standingsLoading && !gwLoading && !standingsError && (
-            <div className="leaderboard-list">
+            <>
+              {/* 3D Championship Floodlight Podium when >= 3 managers */}
+              {managerRows.length >= 3 && (
+                <div className="champions-podium-stage">
+                  {[1, 0, 2].map(podiumIdx => {
+                    const m = managerRows[podiumIdx];
+                    if (!m) return null;
+                    const rankNum = podiumIdx + 1;
+                    const inspectable = canInspectGw(m.manager_id);
+                    const club = clubTitleOf(m.team_name, m.display_name);
+                    return (
+                      <div
+                        key={m.manager_id}
+                        className={`podium-pedestal rank-${rankNum} ${
+                          inspectable ? 'clickable-row' : ''
+                        }`}
+                        onClick={() => {
+                          if (inspectable) {
+                            void openInspector(m.manager_id, `${club} (${m.display_name})`);
+                          }
+                        }}
+                      >
+                        <div className="podium-avatar-crown">
+                          <span className="podium-medal-chip">{medalBadgeFor(podiumIdx)}</span>
+                          {m.avatar_url ? (
+                            <img src={m.avatar_url} alt={club} />
+                          ) : (
+                            <span className="podium-initial">{club.slice(0, 1).toUpperCase()}</span>
+                          )}
+                        </div>
+                        <strong className="podium-club-title">{club}</strong>
+                        <small className="muted tiny">{m.display_name}</small>
+                        <div className="podium-pts-pill">
+                          <AnimatedNumber value={m.primaryPoints} decimals={0} /> {t('ptsUnit')}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Interactive Rival Club VS Club Gap Drawer */}
+              {rivalIds.length > 0 && (
+                <div className="market-vs-drawer" style={{ marginBottom: 14 }}>
+                  <div className="market-vs-head">
+                    <strong>
+                      <Swords
+                        size={15}
+                        style={{ verticalAlign: 'middle', marginInlineEnd: 6, color: 'var(--gold)' }}
+                      />
+                      {t('rivalCompareTitle')}
+                    </strong>
+                    <button
+                      type="button"
+                      className="secondary compact-btn"
+                      onClick={() => setRivalIds([])}
+                    >
+                      <X size={13} /> {t('marketCompareClearBtn')}
+                    </button>
+                  </div>
+
+                  {(() => {
+                    const rA = managerRows.find(r => r.manager_id === rivalIds[0]);
+                    const rB = managerRows.find(r => r.manager_id === rivalIds[1]);
+                    if (!rA) return null;
+                    if (!rB) {
+                      return (
+                        <div className="market-vs-single-prompt">
+                          <strong>{clubTitleOf(rA.team_name, rA.display_name)}</strong> —{' '}
+                          <span className="muted">{t('marketComparePickSecond')}</span>
+                        </div>
+                      );
+                    }
+                    const gap = Math.abs(rA.primaryPoints - rB.primaryPoints);
+                    const sum = Math.max(1, rA.primaryPoints + rB.primaryPoints);
+                    const pctA = Math.round((rA.primaryPoints / sum) * 100);
+                    const chaser =
+                      rA.primaryPoints < rB.primaryPoints
+                        ? clubTitleOf(rA.team_name, rA.display_name)
+                        : rB.primaryPoints < rA.primaryPoints
+                          ? clubTitleOf(rB.team_name, rB.display_name)
+                          : null;
+
+                    return (
+                      <div className="rival-vs-body">
+                        <div className="market-vs-metric-nums">
+                          <strong className={rA.primaryPoints >= rB.primaryPoints ? 'vs-win-num' : ''}>
+                            {clubTitleOf(rA.team_name, rA.display_name)} ({rA.primaryPoints}{' '}
+                            {t('ptsUnit')})
+                          </strong>
+                          <span className="tag">
+                            {t('rivalPointsGap')}: {gap} {t('ptsUnit')}
+                          </span>
+                          <strong className={rB.primaryPoints >= rA.primaryPoints ? 'vs-win-num' : ''}>
+                            {clubTitleOf(rB.team_name, rB.display_name)} ({rB.primaryPoints}{' '}
+                            {t('ptsUnit')})
+                          </strong>
+                        </div>
+                        <div className="market-vs-dual-track">
+                          <span
+                            className={`vs-bar-left ${rA.primaryPoints >= rB.primaryPoints ? 'win' : ''}`}
+                            style={{ width: `${pctA}%` }}
+                          />
+                          <span
+                            className={`vs-bar-right ${rB.primaryPoints > rA.primaryPoints ? 'win' : ''}`}
+                            style={{ width: `${100 - pctA}%` }}
+                          />
+                        </div>
+                        <small className="muted tiny" style={{ textAlign: 'center' }}>
+                          {chaser
+                            ? `🔥 ${chaser}: +${gap + 1} ${t('ptsUnit')} ${t('rivalOvertakeNote')}`
+                            : `⚡ ${t('rivalTiedNote')}`}
+                        </small>
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
+
+              <div className="leaderboard-list">
               {managerRows.length === 0 ? (
                 <p className="muted">{t('noManagersYet')}</p>
               ) : (
@@ -680,6 +808,19 @@ export default function LeaderboardScreen({
                         </span>
                       </div>
 
+                      <button
+                        type="button"
+                        className={`mini-vs-chip ${
+                          rivalIds.includes(row.manager_id) ? 'active' : ''
+                        }`}
+                        onClick={e => {
+                          e.stopPropagation();
+                          toggleRivalCompare(row.manager_id);
+                        }}
+                      >
+                        ⚔️ {t('rivalCompareBtn')}
+                      </button>
+
                       {inspectable && (
                         <span className="inspect-hint">
                           <Eye size={13} /> {t('viewSquadAction')}
@@ -694,6 +835,7 @@ export default function LeaderboardScreen({
                 })
               )}
             </div>
+            </>
           )}
         </div>
       )}

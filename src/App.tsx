@@ -43,6 +43,8 @@ import AdminPanel from './admin/AdminPanel';
 import PlayerProfileModal from './components/PlayerProfileModal';
 import ManagerProfileModal from './components/ManagerProfileModal';
 import ScrollFxObserver from './components/ScrollFxObserver';
+import CommandPaletteModal from './components/CommandPaletteModal';
+import MobileBottomNav from './components/MobileBottomNav';
 import { useBootSplash } from './lib/useBootSplash';
 
 export default function App() {
@@ -109,6 +111,18 @@ export default function App() {
   const [celebrateKey, setCelebrateKey] = useState(0);
   const [profileModalPlayerId, setProfileModalPlayerId] = useState<string | null>(null);
   const [myProfileOpen, setMyProfileOpen] = useState(false);
+  const [cmdOpen, setCmdOpen] = useState(false);
+
+  useEffect(() => {
+    const onGlobalKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setCmdOpen(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', onGlobalKey);
+    return () => window.removeEventListener('keydown', onGlobalKey);
+  }, []);
 
   // Standings & Trophy Cabinet
   const [standings, setStandings] = useState<Standing[]>([]);
@@ -800,6 +814,14 @@ export default function App() {
           demoMode={demoMode}
           avatarUrl={profile?.avatar_url}
           displayName={profile?.display_name}
+          squadCount={selected.length}
+          leaderClub={
+            standings[0]
+              ? standings[0].team_name?.trim() || `${standings[0].display_name} FC`
+              : null
+          }
+          onSelectScreen={setScreen}
+          onOpenCommandPalette={() => setCmdOpen(true)}
           onOpenMyProfile={() => setMyProfileOpen(true)}
           onSignOutOrToggleDemo={handleSignOutOrToggleDemo}
         />
@@ -1035,11 +1057,28 @@ export default function App() {
           />
         )}
 
+        <CommandPaletteModal
+          isOpen={cmdOpen}
+          isAdmin={isAdmin}
+          players={players}
+          onClose={() => setCmdOpen(false)}
+          onSelectScreen={setScreen}
+          onOpenPlayerProfile={setProfileModalPlayerId}
+          onOpenMyProfile={() => setMyProfileOpen(true)}
+        />
+
         <footer>
           <span>EL KHAMES EL MOMTAZ</span>
           <span>{t('cairoTimeFooter')}</span>
         </footer>
       </main>
+
+      <MobileBottomNav
+        screen={screen}
+        isAdmin={isAdmin}
+        squadIncomplete={selected.length < SQUAD_SIZE || hasUnsaved}
+        onSelectScreen={setScreen}
+      />
     </div>
   );
 }

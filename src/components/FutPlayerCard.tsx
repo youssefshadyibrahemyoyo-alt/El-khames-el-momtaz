@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { Info } from 'lucide-react';
 import type { AvailabilityStatus } from '../types/league';
 
@@ -43,6 +43,8 @@ export default function FutPlayerCard({
   onOpenProfile,
   children,
 }: Props) {
+  const cardRef = useRef<HTMLDivElement | null>(null);
+
   const tierClass = isCaptain
     ? 'fut-gold-captain'
     : isViceCaptain
@@ -52,6 +54,7 @@ export default function FutPlayerCard({
   const cardClasses = [
     'egypt-player',
     'fut-card',
+    'fut-holo-interactive',
     tierClass,
     isSelected ? 'selected' : '',
     isJustSwapped ? 'swap-flash' : '',
@@ -60,11 +63,40 @@ export default function FutPlayerCard({
     .filter(Boolean)
     .join(' ');
 
+  function handlePointerMove(e: React.PointerEvent<HTMLDivElement>) {
+    const el = cardRef.current;
+    if (!el || e.pointerType === 'touch') return;
+    const rect = el.getBoundingClientRect();
+    const px = (e.clientX - rect.left) / Math.max(1, rect.width);
+    const py = (e.clientY - rect.top) / Math.max(1, rect.height);
+    const rotY = (px - 0.5) * 16; // -8deg to +8deg
+    const rotX = (0.5 - py) * 16;
+    el.style.setProperty('--tilt-x', `${rotX.toFixed(2)}deg`);
+    el.style.setProperty('--tilt-y', `${rotY.toFixed(2)}deg`);
+    el.style.setProperty('--glare-x', `${(px * 100).toFixed(1)}%`);
+    el.style.setProperty('--glare-y', `${(py * 100).toFixed(1)}%`);
+    el.style.setProperty('--glare-opacity', '1');
+  }
+
+  function handlePointerLeave() {
+    const el = cardRef.current;
+    if (!el) return;
+    el.style.setProperty('--tilt-x', '0deg');
+    el.style.setProperty('--tilt-y', '0deg');
+    el.style.setProperty('--glare-opacity', '0');
+  }
+
   const InnerTag = onCardClick ? 'button' : 'div';
 
   return (
-    <div className={cardClasses}>
+    <div
+      ref={cardRef}
+      className={cardClasses}
+      onPointerMove={handlePointerMove}
+      onPointerLeave={handlePointerLeave}
+    >
       <span className="fut-shimmer" aria-hidden="true" />
+      <span className="fut-holo-glare" aria-hidden="true" />
 
       <div className="fut-top-ribbon">
         <span className="fut-slot-tag">

@@ -1,5 +1,16 @@
 import { useEffect, useState } from 'react';
-import { Clock3, Globe, LogOut, Moon, Sun, Timer, UserCog } from 'lucide-react';
+import {
+  Clock3,
+  Globe,
+  LogOut,
+  Moon,
+  Search,
+  Sun,
+  Timer,
+  Trophy,
+  UserCog,
+  Users,
+} from 'lucide-react';
 import type { Gameweek, Screen } from '../types/league';
 import { useLanguage } from '../i18n/LanguageContext';
 import { useTheme } from '../theme/ThemeContext';
@@ -8,6 +19,7 @@ import {
   formatCountdownShort,
   getDeadlineCountdown,
 } from '../lib/cairoTime';
+import { SQUAD_SIZE } from '../lib/squadRules';
 
 type Props = {
   screen: Screen;
@@ -17,6 +29,10 @@ type Props = {
   demoMode: boolean;
   avatarUrl?: string | null;
   displayName?: string;
+  squadCount?: number;
+  leaderClub?: string | null;
+  onSelectScreen?: (next: Screen) => void;
+  onOpenCommandPalette?: () => void;
   onOpenMyProfile: () => void;
   onSignOutOrToggleDemo: () => void;
 };
@@ -29,6 +45,10 @@ export default function Topbar({
   demoMode,
   avatarUrl,
   displayName,
+  squadCount = 0,
+  leaderClub = null,
+  onSelectScreen,
+  onOpenCommandPalette,
   onOpenMyProfile,
   onSignOutOrToggleDemo,
 }: Props) {
@@ -58,87 +78,143 @@ export default function Topbar({
   );
 
   return (
-    <header className="topbar">
-      <div>
-        <span className="eyebrow">
-          {t('sessionGwPrefix')} {gameweekNumber}
-        </span>
-        <h2>{titleByScreen[screen]}</h2>
-      </div>
-
-      <div className="top-actions">
-        <div className="deadline">
-          <Clock3 size={14} />
-          {deadlineIso
-            ? `${t('transfersClose')}: ${formatCairoDeadline(deadlineIso, lang)}`
-            : t('noDeadlineSet')}
+    <div className="topbar-broadcast-wrap">
+      <header className="topbar">
+        <div>
+          <span className="eyebrow">
+            {t('sessionGwPrefix')} {gameweekNumber}
+          </span>
+          <h2>{titleByScreen[screen]}</h2>
         </div>
 
-        {countdown && !countdown.expired && (
-          <div
-            className={`countdown-pill ${isUrgent ? 'urgent-pulse' : ''}`}
-            title={t('transfersClose')}
-          >
-            <Timer size={14} />
-            <strong>{countdownStr}</strong>
-          </div>
-        )}
-
-        <button
-          type="button"
-          className="secondary compact-btn topbar-profile-btn"
-          onClick={onOpenMyProfile}
-          title={t('myProfileBtn')}
-        >
-          {avatarUrl ? (
-            <img className="topbar-mini-avatar" src={avatarUrl} alt={displayName || 'Me'} />
-          ) : (
-            <UserCog size={14} />
+        <div className="top-actions">
+          {onOpenCommandPalette && (
+            <button
+              type="button"
+              className="secondary compact-btn spotlight-trigger-btn"
+              onClick={onOpenCommandPalette}
+              title="⌘K / Ctrl+K"
+            >
+              <Search size={14} />
+              <span>{t('quickJumpBtn')}</span>
+              <kbd className="spotlight-kbd">⌘K</kbd>
+            </button>
           )}
-          <span>{t('myProfileBtn')}</span>
-        </button>
 
-        <button
-          type="button"
-          className="floodlight-toggle-btn compact-btn"
-          onClick={toggleTheme}
-          title={isDark ? t('daylightMode') : t('floodlightMode')}
-        >
-          <span className="theme-icon-wrap" key={isDark ? 'sun' : 'moon'}>
-            {isDark ? <Sun size={14} /> : <Moon size={14} />}
+          <div className="deadline">
+            <Clock3 size={14} />
+            {deadlineIso
+              ? `${t('transfersClose')}: ${formatCairoDeadline(deadlineIso, lang)}`
+              : t('noDeadlineSet')}
+          </div>
+
+          {countdown && !countdown.expired && (
+            <div
+              className={`countdown-pill ${isUrgent ? 'urgent-pulse' : ''}`}
+              title={t('transfersClose')}
+            >
+              <Timer size={14} />
+              <strong>{countdownStr}</strong>
+            </div>
+          )}
+
+          <button
+            type="button"
+            className="secondary compact-btn topbar-profile-btn"
+            onClick={onOpenMyProfile}
+            title={t('myProfileBtn')}
+          >
+            {avatarUrl ? (
+              <img className="topbar-mini-avatar" src={avatarUrl} alt={displayName || 'Me'} />
+            ) : (
+              <UserCog size={14} />
+            )}
+            <span>{t('myProfileBtn')}</span>
+          </button>
+
+          <button
+            type="button"
+            className="floodlight-toggle-btn compact-btn"
+            onClick={toggleTheme}
+            title={isDark ? t('daylightMode') : t('floodlightMode')}
+          >
+            <span className="theme-icon-wrap" key={isDark ? 'sun' : 'moon'}>
+              {isDark ? <Sun size={14} /> : <Moon size={14} />}
+            </span>
+            <span>{isDark ? t('daylightMode') : t('floodlightMode')}</span>
+          </button>
+
+          <button
+            type="button"
+            className="secondary compact-btn lang-btn"
+            onClick={toggleLang}
+            title="Switch language / تغيير اللغة"
+          >
+            <Globe size={14} />
+            {t('langSwitchLabel')}
+          </button>
+
+          {demoMode ? (
+            <button
+              type="button"
+              className="secondary compact-btn"
+              onClick={onSignOutOrToggleDemo}
+            >
+              {isAdmin ? t('demoAdminAccount') : t('demoPlayerAccount')}
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="secondary compact-btn"
+              onClick={onSignOutOrToggleDemo}
+            >
+              <LogOut size={13} />
+              {t('signOut')}
+            </button>
+          )}
+        </div>
+      </header>
+
+      {/* Interactive Live Broadcast Matchday Pulse Ribbon */}
+      {onSelectScreen && (
+        <div className="matchday-pulse-ribbon">
+          <span className="pulse-live-tag">
+            <span className="live-pulse-dot" /> {t('tickerLiveLabel')}
           </span>
-          <span>{isDark ? t('daylightMode') : t('floodlightMode')}</span>
-        </button>
 
-        <button
-          type="button"
-          className="secondary compact-btn lang-btn"
-          onClick={toggleLang}
-          title="Switch language / تغيير اللغة"
-        >
-          <Globe size={14} />
-          {t('langSwitchLabel')}
-        </button>
+          <div className="pulse-items-scroll">
+            <button
+              type="button"
+              className="pulse-interactive-chip"
+              onClick={() => onSelectScreen('squad')}
+            >
+              <Users size={12} /> {t('tickerSquadProgress')}:{' '}
+              <strong>
+                {squadCount}/{SQUAD_SIZE}
+              </strong>
+            </button>
 
-        {demoMode ? (
-          <button
-            type="button"
-            className="secondary compact-btn"
-            onClick={onSignOutOrToggleDemo}
-          >
-            {isAdmin ? t('demoAdminAccount') : t('demoPlayerAccount')}
-          </button>
-        ) : (
-          <button
-            type="button"
-            className="secondary compact-btn"
-            onClick={onSignOutOrToggleDemo}
-          >
-            <LogOut size={13} />
-            {t('signOut')}
-          </button>
-        )}
-      </div>
-    </header>
+            {leaderClub && (
+              <button
+                type="button"
+                className="pulse-interactive-chip"
+                onClick={() => onSelectScreen('leaderboard')}
+              >
+                <Trophy size={12} style={{ color: 'var(--gold)' }} /> {t('tickerLeaderLabel')}:{' '}
+                <strong>{leaderClub}</strong>
+              </button>
+            )}
+
+            <button
+              type="button"
+              className="pulse-interactive-chip"
+              onClick={() => onSelectScreen('leaderboard')}
+            >
+              🎬 <strong>{t('tabForfeits')}</strong> · {t('forfeitWatchCinemaBtn')}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
