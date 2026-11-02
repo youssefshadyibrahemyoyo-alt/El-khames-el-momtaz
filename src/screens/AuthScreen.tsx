@@ -124,7 +124,9 @@ export default function AuthScreen() {
       </div>
 
       <div className="brand stagger-item" style={{ '--stagger-i': 0 } as React.CSSProperties}>
-        <div className="brand-mark">⚽</div>
+        <div className="brand-mark brand-mark--logo brand-mark--auth">
+          <img src="/logo.svg" alt="الخميس الممتاز" className="brand-logo-img" />
+        </div>
         <div>
           <span className="eyebrow">{t('brandEyebrow')}</span>
           <h1>

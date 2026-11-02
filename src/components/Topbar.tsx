@@ -80,11 +80,21 @@ export default function Topbar({
   return (
     <div className="topbar-broadcast-wrap">
       <header className="topbar">
-        <div>
-          <span className="eyebrow">
-            {t('sessionGwPrefix')} {gameweekNumber}
-          </span>
-          <h2>{titleByScreen[screen]}</h2>
+        <div className="topbar-title-group">
+          <button
+            type="button"
+            className="topbar-brand-badge"
+            onClick={() => onSelectScreen?.('overview')}
+            aria-label="الخميس الممتاز"
+          >
+            <img src="/logo.svg" alt="الخميس الممتاز" className="brand-logo-img" />
+          </button>
+          <div>
+            <span className="eyebrow">
+              {t('sessionGwPrefix')} {gameweekNumber}
+            </span>
+            <h2>{titleByScreen[screen]}</h2>
+          </div>
         </div>
 
         <div className="top-actions">

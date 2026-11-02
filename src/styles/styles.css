@@ -195,14 +195,70 @@ h1 em,
   display: grid;
   place-items: center;
   flex-shrink: 0;
-  width: 40px;
-  height: 40px;
-  border-radius: 11px;
-  background: linear-gradient(135deg, #19442e, #2a6e4b);
-  border: 1px solid rgba(230, 202, 125, 0.35);
-  box-shadow: 0 4px 12px rgba(25, 68, 46, 0.25);
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #114a2f, #062215);
+  border: 1px solid rgba(223, 182, 87, 0.42);
+  box-shadow:
+    0 6px 16px rgba(6, 34, 21, 0.36),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05);
   color: #f0d48c;
   font-size: 21px;
+  overflow: hidden;
+}
+
+.brand-mark--logo {
+  padding: 0;
+}
+
+.brand-mark--auth {
+  width: 58px;
+  height: 58px;
+  border-radius: 15px;
+  box-shadow:
+    0 12px 28px rgba(6, 34, 21, 0.48),
+    0 0 0 1px rgba(223, 182, 87, 0.25);
+}
+
+.brand-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.topbar-title-group {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+}
+
+.topbar-brand-badge {
+  display: none;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 11px;
+  overflow: hidden;
+  border: 1px solid rgba(223, 182, 87, 0.42);
+  background: #0b3521;
+  box-shadow: 0 5px 14px rgba(6, 34, 21, 0.34);
+  cursor: pointer;
+}
+
+@media (max-width: 780px) {
+  .topbar-brand-badge {
+    display: block;
+  }
+}
+
+.pwa-install-icon--logo {
+  padding: 0 !important;
+  overflow: hidden;
+  border: 1px solid rgba(223, 182, 87, 0.38);
 }
 
 .brand h1 {

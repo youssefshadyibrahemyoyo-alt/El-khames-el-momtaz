@@ -51,6 +51,37 @@ async function deliverCanvasPng(canvas: HTMLCanvasElement, filename: string, sha
   window.setTimeout(() => URL.revokeObjectURL(url), 1500);
 }
 
+async function loadBrandLogoImage(): Promise<HTMLImageElement | null> {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = '/hagz-icon-512.png';
+  });
+}
+
+function paintBrandBadgeOnCanvas(
+  ctx: CanvasRenderingContext2D,
+  W: number,
+  logoImg: HTMLImageElement | null
+) {
+  if (!logoImg) return;
+  const size = 92;
+  const x = W - 64 - size;
+  const y = 58;
+  ctx.save();
+  drawRoundRect(ctx, x, y, size, size, 20);
+  ctx.clip();
+  ctx.drawImage(logoImg, x, y, size, size);
+  ctx.restore();
+
+  ctx.strokeStyle = 'rgba(236, 205, 120, 0.52)';
+  ctx.lineWidth = 2.5;
+  drawRoundRect(ctx, x, y, size, size, 20);
+  ctx.stroke();
+}
+
 function paintStadiumBackdrop(
   ctx: CanvasRenderingContext2D,
   W: number,
@@ -88,11 +119,11 @@ function paintStadiumBackdrop(
 
   // Brand pill
   ctx.fillStyle = 'rgba(236, 205, 120, 0.16)';
-  drawRoundRect(ctx, 64, 62, 340, 44, 22);
+  drawRoundRect(ctx, 64, 62, 360, 44, 22);
   ctx.fill();
   ctx.fillStyle = '#f3da8a';
   ctx.font = '700 20px system-ui, -apple-system, sans-serif';
-  ctx.fillText(`⚽ EL KHAMES EL MOMTAZ · ${badgeText}`, 84, 91);
+  ctx.fillText(`الخميس الممتاز · ${badgeText}`, 84, 91);
 
   // Headline
   ctx.fillStyle = '#ffffff';
@@ -134,7 +165,9 @@ export async function shareOrDownloadSquadCard(params: {
     .filter(Boolean)
     .join('  ·  ');
 
+  const logoImg = await loadBrandLogoImage();
   paintStadiumBackdrop(ctx, W, H, `GW #${params.gameweekNumber}`, clubTitle, sub);
+  paintBrandBadgeOnCanvas(ctx, W, logoImg);
 
   // 3D Pitch container
   const px = 64;
@@ -282,6 +315,7 @@ export async function shareOrDownloadHighlightsCard(
   if (!ctx) return;
 
   const gwNum = highlights.gameweek_number ?? 1;
+  const logoImg = await loadBrandLogoImage();
   paintStadiumBackdrop(
     ctx,
     W,
@@ -290,6 +324,7 @@ export async function shareOrDownloadHighlightsCard(
     `Gameweek #${gwNum} Team of the Week`,
     'Dream V Ballers & Thursday Night Trophies'
   );
+  paintBrandBadgeOnCanvas(ctx, W, logoImg);
 
   // TOTW 5 rows
   const totw = highlights.team_of_the_week ?? [];

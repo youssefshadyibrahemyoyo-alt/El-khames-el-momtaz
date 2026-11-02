@@ -58,7 +58,9 @@ export default function Sidebar({
   return (
     <aside className="sidebar">
       <div className="brand compact">
-        <span className="brand-mark">⚽</span>
+        <span className="brand-mark brand-mark--logo">
+          <img src="/logo.svg" alt="الخميس الممتاز" className="brand-logo-img" />
+        </span>
         <div>
           <div className="eyebrow">{t('brandEyebrow')}</div>
           <h2>

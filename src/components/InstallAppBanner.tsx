@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Download, Smartphone, X } from 'lucide-react';
+import { Download, X } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
 
 interface BeforeInstallPromptEvent extends Event {
@@ -68,8 +68,8 @@ export default function InstallAppBanner() {
   return (
     <div className="pwa-install-banner stagger-item">
       <div className="pwa-install-left">
-        <div className="pwa-install-icon">
-          <Smartphone size={18} />
+        <div className="pwa-install-icon pwa-install-icon--logo">
+          <img src="/logo.svg" alt="الخميس الممتاز" className="brand-logo-img" />
         </div>
         <div>
           <strong>{t('pwaInstallTitle')}</strong>
