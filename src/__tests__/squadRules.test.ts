@@ -306,8 +306,14 @@ describe('i18n & tournament fixtures', () => {
     expect(DEMO_FORFEITS.history[0]?.losers.length).toBeGreaterThanOrEqual(1);
     expect(Array.isArray(DEMO_FORFEITS.recorded_clips)).toBe(true);
     expect((DEMO_FORFEITS.managers?.length ?? 0)).toBeGreaterThanOrEqual(4);
+    expect(DEMO_FORFEITS.social_by_target?.['gw:1:demo-4']?.counts.laugh).toBeGreaterThanOrEqual(1);
+    expect(DEMO_FORFEITS.social_by_target?.['gw:1:demo-4']?.comments.length).toBeGreaterThanOrEqual(1);
     expect(translations.en.forfeitRecordOrUploadBtn).toBeTruthy();
     expect(translations.ar.forfeitRecordOrUploadBtn).toBeTruthy();
+    expect(translations.en.forfeitWatchCinemaBtn).toBeTruthy();
+    expect(translations.ar.forfeitWatchCinemaBtn).toBeTruthy();
+    expect(translations.en.forfeitWheelToggleBtn).toBeTruthy();
+    expect(translations.ar.forfeitWheelToggleBtn).toBeTruthy();
     expect(DEMO_FORFEITS.shame_leaderboard[0]?.losses_count).toBeGreaterThanOrEqual(1);
   });
 });

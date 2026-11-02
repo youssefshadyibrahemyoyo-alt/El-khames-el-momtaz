@@ -2,9 +2,11 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Camera,
   Check,
+  Clock,
   Mic,
   RefreshCw,
   Square,
+  Tv,
   Upload,
   Video,
   X,
@@ -39,7 +41,8 @@ export type ForfeitMediaSubmission = {
   gameweekNumber?: number | null;
 };
 
-type CaptureTab = 'upload' | 'camera' | 'audio';
+type CaptureTab = 'camera' | 'upload' | 'audio';
+type OverlayTheme = 'broadcast' | 'var' | 'apology' | 'clean';
 
 type Props = {
   target: ForfeitModalTarget;
@@ -58,7 +61,7 @@ function pickSupportedMime(candidates: string[]): string {
     try {
       if (MediaRecorder.isTypeSupported(c)) return c;
     } catch {
-      // ignore unsupported query
+      // ignore
     }
   }
   return '';
@@ -81,6 +84,11 @@ export default function ForfeitMediaRecorderModal({
   const { t } = useLanguage();
 
   const [tab, setTab] = useState<CaptureTab>('upload');
+  const [overlayTheme, setOverlayTheme] = useState<OverlayTheme>('broadcast');
+  const [useCountdown, setUseCountdown] = useState(false);
+  const [countdownNum, setCountdownNum] = useState<number | null>(null);
+  const [dragOver, setDragOver] = useState(false);
+
   const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment');
   const [streamActive, setStreamActive] = useState(false);
   const [recording, setRecording] = useState(false);
@@ -93,7 +101,6 @@ export default function ForfeitMediaRecorderModal({
   const [capturedType, setCapturedType] = useState<ForfeitMediaType>('video');
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-  // Metadata fields
   const defaultMgr =
     (currentUserId && managers.find(m => m.manager_id === currentUserId)?.manager_id) ||
     managers[0]?.manager_id ||
@@ -105,20 +112,142 @@ export default function ForfeitMediaRecorderModal({
     target.kind === 'gw_loser' ? target.forfeitTitle : target.defaultForfeitTitle || ''
   );
   const [gwNumberInput, setGwNumberInput] = useState<string>(
-    target.kind === 'new' && target.defaultGwNumber ? String(target.defaultGwNumber) : ''
+    target.kind === 'gw_loser'
+      ? String(target.gameweekNumber)
+      : target.defaultGwNumber
+      ? String(target.defaultGwNumber)
+      : ''
   );
   const [caption, setCaption] = useState<string>(
     target.kind === 'gw_loser' ? target.initialCaption || '' : ''
   );
 
   const liveVideoRef = useRef<HTMLVideoElement | null>(null);
+  const broadcastCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const rafCompositorRef = useRef<number | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<BlobPart[]>([]);
   const timerRef = useRef<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+  // Resolve current club & manager text for live broadcast lower-thirds
+  const activeManagerObj = managers.find(m => m.manager_id === selectedManagerId);
+  const bannerClub =
+    target.kind === 'gw_loser'
+      ? target.teamName || `${target.managerName} FC`
+      : activeManagerObj?.team_name || `${activeManagerObj?.display_name || 'Thursday'} FC`;
+  const bannerMgr =
+    target.kind === 'gw_loser'
+      ? target.managerName
+      : activeManagerObj?.display_name || 'Manager';
+  const bannerPunishment =
+    (target.kind === 'gw_loser' ? target.forfeitTitle : forfeitTitle) ||
+    'Official Thursday Pitch Forfeit';
+  const bannerGw = gwNumberInput ? `GW #${gwNumberInput}` : 'THURSDAY LIVE';
+
+  // Keep refs updated so 30fps canvas loop reads latest overlay strings without restarting stream
+  const overlayInfoRef = useRef({
+    theme: overlayTheme,
+    club: bannerClub,
+    mgr: bannerMgr,
+    punishment: bannerPunishment,
+    gw: bannerGw,
+    facingMode,
+  });
+  overlayInfoRef.current = {
+    theme: overlayTheme,
+    club: bannerClub,
+    mgr: bannerMgr,
+    punishment: bannerPunishment,
+    gw: bannerGw,
+    facingMode,
+  };
+
+  const stopCompositor = useCallback(() => {
+    if (rafCompositorRef.current) {
+      cancelAnimationFrame(rafCompositorRef.current);
+      rafCompositorRef.current = null;
+    }
+  }, []);
+
+  const drawBroadcastFrame = useCallback(() => {
+    const video = liveVideoRef.current;
+    const canvas = broadcastCanvasRef.current;
+    if (!video || !canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const vw = video.videoWidth || 1280;
+    const vh = video.videoHeight || 720;
+    const cw = 960;
+    const ch = Math.max(540, Math.round((vh / vw) * cw));
+    if (canvas.width !== cw || canvas.height !== ch) {
+      canvas.width = cw;
+      canvas.height = ch;
+    }
+
+    const info = overlayInfoRef.current;
+
+    ctx.save();
+    if (info.facingMode === 'user') {
+      ctx.translate(cw, 0);
+      ctx.scale(-1, 1);
+    }
+    ctx.drawImage(video, 0, 0, cw, ch);
+    ctx.restore();
+
+    if (info.theme !== 'clean') {
+      const accent =
+        info.theme === 'var' ? '#ef4444' : info.theme === 'apology' ? '#f59e0b' : '#d4af57';
+      const badgeLabel =
+        info.theme === 'var'
+          ? '🚨 VAR SHAME CHECK'
+          : info.theme === 'apology'
+          ? '🤡 OFFICIAL APOLOGY'
+          : '📺 EL KHAMES EL MOMTAZ';
+
+      // Top-left TV Bug
+      ctx.fillStyle = 'rgba(7, 18, 13, 0.84)';
+      ctx.fillRect(22, 20, 290, 38);
+      ctx.fillStyle = accent;
+      ctx.fillRect(22, 20, 6, 38);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '800 14px system-ui, -apple-system, sans-serif';
+      ctx.fillText(`${badgeLabel} · ${info.gw}`, 38, 44);
+
+      // Bottom Broadcast Lower-Third
+      const barH = 88;
+      const barY = ch - barH - 18;
+      ctx.fillStyle = 'rgba(7, 18, 13, 0.88)';
+      ctx.fillRect(22, barY, cw - 44, barH);
+      ctx.strokeStyle = accent;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(22, barY, cw - 44, barH);
+
+      // Accent left pillar
+      ctx.fillStyle = accent;
+      ctx.fillRect(22, barY, 10, barH);
+
+      ctx.fillStyle = accent;
+      ctx.font = '900 19px system-ui, -apple-system, sans-serif';
+      ctx.fillText(`${info.club} (${info.mgr})`, 46, barY + 32);
+
+      ctx.fillStyle = '#f8fafc';
+      ctx.font = '600 15px system-ui, -apple-system, sans-serif';
+      const maxChars = 64;
+      const pun =
+        info.punishment.length > maxChars
+          ? `${info.punishment.slice(0, maxChars - 1)}…`
+          : info.punishment;
+      ctx.fillText(`⚖️ ${pun}`, 46, barY + 64);
+    }
+
+    rafCompositorRef.current = requestAnimationFrame(drawBroadcastFrame);
+  }, []);
+
   const stopLiveStream = useCallback(() => {
+    stopCompositor();
     if (timerRef.current) {
       window.clearInterval(timerRef.current);
       timerRef.current = null;
@@ -140,7 +269,8 @@ export default function ForfeitMediaRecorderModal({
     }
     setStreamActive(false);
     setRecording(false);
-  }, []);
+    setCountdownNum(null);
+  }, [stopCompositor]);
 
   useEffect(() => {
     return () => {
@@ -184,12 +314,14 @@ export default function ForfeitMediaRecorderModal({
         requestAnimationFrame(() => {
           if (liveVideoRef.current) {
             liveVideoRef.current.srcObject = stream;
-            void liveVideoRef.current.play().catch(() => {});
+            void liveVideoRef.current.play().then(() => {
+              stopCompositor();
+              rafCompositorRef.current = requestAnimationFrame(drawBroadcastFrame);
+            }).catch(() => {});
           }
         });
       } catch {
         try {
-          // Fallback without audio constraint if mic is unavailable
           const videoOnlyStream = await navigator.mediaDevices.getUserMedia({
             video: true,
             audio: false,
@@ -199,7 +331,10 @@ export default function ForfeitMediaRecorderModal({
           requestAnimationFrame(() => {
             if (liveVideoRef.current) {
               liveVideoRef.current.srcObject = videoOnlyStream;
-              void liveVideoRef.current.play().catch(() => {});
+              void liveVideoRef.current.play().then(() => {
+                stopCompositor();
+                rafCompositorRef.current = requestAnimationFrame(drawBroadcastFrame);
+              }).catch(() => {});
             }
           });
         } catch {
@@ -207,15 +342,50 @@ export default function ForfeitMediaRecorderModal({
         }
       }
     },
-    [clearCapturedMedia, stopLiveStream, t]
+    [clearCapturedMedia, drawBroadcastFrame, stopCompositor, stopLiveStream, t]
   );
+
+  async function runOptionalCountdown(): Promise<void> {
+    if (!useCountdown) return;
+    for (const n of [3, 2, 1]) {
+      setCountdownNum(n);
+      await new Promise(res => window.setTimeout(res, 850));
+    }
+    setCountdownNum(null);
+  }
+
+  async function handleSnapBroadcastPhoto() {
+    if (!mediaStreamRef.current) {
+      await openCameraPreview(facingMode);
+    }
+    if (!mediaStreamRef.current) return;
+    await runOptionalCountdown();
+
+    const canvas = broadcastCanvasRef.current;
+    if (!canvas) return;
+    canvas.toBlob(
+      blob => {
+        if (!blob) return;
+        stopLiveStream();
+        const url = URL.createObjectURL(blob);
+        setCapturedBlob(blob);
+        setCapturedName('forfeit-broadcast-photo.jpg');
+        setCapturedType('image');
+        setPreviewUrl(url);
+      },
+      'image/jpeg',
+      0.93
+    );
+  }
 
   async function startVideoRecording() {
     if (!mediaStreamRef.current) {
       await openCameraPreview(facingMode);
     }
-    const stream = mediaStreamRef.current;
-    if (!stream) return;
+    const rawStream = mediaStreamRef.current;
+    if (!rawStream) return;
+
+    await runOptionalCountdown();
 
     chunksRef.current = [];
     const preferredMime = pickSupportedMime([
@@ -225,10 +395,32 @@ export default function ForfeitMediaRecorderModal({
       'video/webm',
     ]);
 
+    // Record composited broadcast canvas stream + mic audio when supported!
+    let recordTargetStream: MediaStream = rawStream;
+    const canvas = broadcastCanvasRef.current;
+    if (
+      overlayTheme !== 'clean' &&
+      canvas &&
+      typeof canvas.captureStream === 'function'
+    ) {
+      try {
+        const canvasStream = canvas.captureStream(30);
+        const combined = new MediaStream([
+          ...canvasStream.getVideoTracks(),
+          ...rawStream.getAudioTracks(),
+        ]);
+        if (combined.getVideoTracks().length > 0) {
+          recordTargetStream = combined;
+        }
+      } catch {
+        recordTargetStream = rawStream;
+      }
+    }
+
     try {
       const recorder = preferredMime
-        ? new MediaRecorder(stream, { mimeType: preferredMime })
-        : new MediaRecorder(stream);
+        ? new MediaRecorder(recordTargetStream, { mimeType: preferredMime })
+        : new MediaRecorder(recordTargetStream);
 
       recorder.ondataavailable = ev => {
         if (ev.data && ev.data.size > 0) {
@@ -370,11 +562,8 @@ export default function ForfeitMediaRecorderModal({
     }
   }
 
-  function handleFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  function ingestSelectedFile(file: File) {
     setLocalError('');
-
     if (file.size > 50 * 1024 * 1024) {
       setLocalError('Max file size is 50 MB.');
       return;
@@ -395,6 +584,11 @@ export default function ForfeitMediaRecorderModal({
     setCapturedName(file.name);
     setCapturedType(mediaType);
     setPreviewUrl(url);
+  }
+
+  function handleFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) ingestSelectedFile(file);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -444,12 +638,13 @@ export default function ForfeitMediaRecorderModal({
         }
       }}
     >
-      <div
-        className="forfeit-recorder-modal"
-        onClick={e => e.stopPropagation()}
-      >
+      <div className="forfeit-recorder-modal" onClick={e => e.stopPropagation()}>
         <div className="forfeit-recorder-header">
           <div>
+            <span className="eyebrow">
+              <Tv size={12} style={{ verticalAlign: 'middle', marginInlineEnd: 5 }} />
+              {t('forfeitHeroTagline')}
+            </span>
             <h4>
               {target.kind === 'gw_loser'
                 ? `${t('forfeitModalTitleGw')} #${target.gameweekNumber}`
@@ -475,7 +670,11 @@ export default function ForfeitMediaRecorderModal({
           </button>
         </div>
 
-        {localError && <div className="notice" style={{ marginBottom: 10 }}>{localError}</div>}
+        {localError && (
+          <div className="notice" style={{ marginBottom: 10 }}>
+            {localError}
+          </div>
+        )}
 
         <form onSubmit={e => void handleSubmit(e)} className="forfeit-recorder-form">
           {target.kind === 'new' && (
@@ -523,7 +722,7 @@ export default function ForfeitMediaRecorderModal({
             </div>
           )}
 
-          {/* Mode Tabs: Upload File | Record Video | Record Voice */}
+          {/* Mode Tabs */}
           <div className="forfeit-capture-tabs" role="tablist">
             <button
               type="button"
@@ -553,6 +752,42 @@ export default function ForfeitMediaRecorderModal({
               <Mic size={14} /> {t('forfeitModeAudioBtn')}
             </button>
           </div>
+
+          {/* Live Broadcast Frame Picker when Camera is selected */}
+          {tab === 'camera' && !previewUrl && (
+            <div className="forfeit-overlay-picker">
+              <span className="muted tiny">{t('forfeitOverlayLabel')}:</span>
+              <div className="forfeit-overlay-chips">
+                {(
+                  [
+                    ['broadcast', `📺 ${t('forfeitOverlayBroadcast')}`],
+                    ['var', `🚨 ${t('forfeitOverlayVar')}`],
+                    ['apology', `🤡 ${t('forfeitOverlayApology')}`],
+                    ['clean', t('forfeitOverlayClean')],
+                  ] as const
+                ).map(([key, label]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    disabled={recording}
+                    className={`forfeit-overlay-chip ${overlayTheme === key ? 'active' : ''}`}
+                    onClick={() => setOverlayTheme(key)}
+                  >
+                    {label}
+                  </button>
+                ))}
+
+                <button
+                  type="button"
+                  disabled={recording}
+                  className={`forfeit-overlay-chip ${useCountdown ? 'active' : ''}`}
+                  onClick={() => setUseCountdown(v => !v)}
+                >
+                  <Clock size={11} /> {t('forfeitTimerToggleBtn')}
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Capture / Preview Stage */}
           <div className="forfeit-capture-stage">
@@ -593,7 +828,20 @@ export default function ForfeitMediaRecorderModal({
                 </button>
               </div>
             ) : tab === 'upload' ? (
-              <label className="forfeit-dropzone">
+              <label
+                className={`forfeit-dropzone ${dragOver ? 'is-dragover' : ''}`}
+                onDragOver={e => {
+                  e.preventDefault();
+                  setDragOver(true);
+                }}
+                onDragLeave={() => setDragOver(false)}
+                onDrop={e => {
+                  e.preventDefault();
+                  setDragOver(false);
+                  const f = e.dataTransfer.files?.[0];
+                  if (f) ingestSelectedFile(f);
+                }}
+              >
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -610,13 +858,25 @@ export default function ForfeitMediaRecorderModal({
             ) : tab === 'camera' ? (
               <div className="forfeit-camera-box">
                 <div className="forfeit-viewfinder-wrap">
+                  {/* Hidden raw video source feeding the live Broadcast Canvas */}
                   <video
                     ref={liveVideoRef}
                     muted
                     playsInline
                     autoPlay
+                    style={{ position: 'absolute', width: 1, height: 1, opacity: 0, pointerEvents: 'none' }}
+                  />
+                  <canvas
+                    ref={broadcastCanvasRef}
                     className="forfeit-live-video"
                   />
+
+                  {countdownNum !== null && (
+                    <div className="forfeit-countdown-overlay">
+                      <span>{countdownNum}</span>
+                    </div>
+                  )}
+
                   {recording && (
                     <span className="forfeit-rec-indicator">
                       <span className="rec-dot" /> REC {formatDuration(recordSeconds)}
@@ -646,13 +906,27 @@ export default function ForfeitMediaRecorderModal({
                   )}
 
                   {!recording ? (
-                    <button
-                      type="button"
-                      className="primary compact-btn forfeit-rec-start-btn"
-                      onClick={() => void startVideoRecording()}
-                    >
-                      <Video size={14} /> {t('forfeitStartRecBtn')}
-                    </button>
+                    <>
+                      <button
+                        type="button"
+                        className="primary compact-btn forfeit-rec-start-btn"
+                        disabled={countdownNum !== null}
+                        onClick={() => void startVideoRecording()}
+                      >
+                        <Video size={14} /> {t('forfeitStartRecBtn')}
+                      </button>
+
+                      {streamActive && (
+                        <button
+                          type="button"
+                          className="secondary compact-btn"
+                          disabled={countdownNum !== null}
+                          onClick={() => void handleSnapBroadcastPhoto()}
+                        >
+                          <Camera size={14} /> {t('forfeitSnapPhotoBtn')}
+                        </button>
+                      )}
+                    </>
                   ) : (
                     <button
                       type="button"

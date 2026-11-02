@@ -756,6 +756,31 @@ export const DEMO_FORFEITS: ForfeitsOverview = {
       pending_count: 0,
     },
   ],
+  social_by_target: {
+    'gw:1:demo-4': {
+      counts: {
+        laugh: 4,
+        skull: 3,
+        fire: 2,
+        clown: 2,
+        salute: 1,
+        var_valid: 3,
+        var_redo: 1,
+      },
+      my_reactions: ['laugh', 'var_valid'],
+      comments: [
+        {
+          id: 1,
+          user_id: 'demo-1',
+          display_name: 'Yako',
+          team_name: 'Yako Royals',
+          avatar_url: null,
+          body: 'Best cold cane juice in Maadi — VAR officially approves 😂🥤',
+          created_at: '2026-10-29T20:25:00Z',
+        },
+      ],
+    },
+  },
 };
 
 

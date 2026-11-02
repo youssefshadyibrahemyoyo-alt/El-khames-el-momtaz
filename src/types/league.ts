@@ -600,6 +600,31 @@ export type ForfeitShameRow = {
   pending_count: number;
 };
 
+export type ForfeitReactionKey =
+  | 'laugh'
+  | 'skull'
+  | 'fire'
+  | 'clown'
+  | 'salute'
+  | 'var_valid'
+  | 'var_redo';
+
+export type ForfeitCommentItem = {
+  id: number;
+  user_id: string;
+  display_name: string;
+  team_name?: string | null;
+  avatar_url?: string | null;
+  body: string;
+  created_at: string;
+};
+
+export type ForfeitSocialEntry = {
+  counts: Record<ForfeitReactionKey, number>;
+  my_reactions: ForfeitReactionKey[];
+  comments: ForfeitCommentItem[];
+};
+
 export type ForfeitsOverview = {
   active_poll: {
     gameweek_id: number;
@@ -623,6 +648,7 @@ export type ForfeitsOverview = {
   recorded_clips?: RecordedForfeitClip[];
   managers?: ForfeitManagerOption[];
   shame_leaderboard: ForfeitShameRow[];
+  social_by_target?: Record<string, ForfeitSocialEntry>;
 };
 
 
