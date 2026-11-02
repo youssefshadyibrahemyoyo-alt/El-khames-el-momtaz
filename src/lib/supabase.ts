@@ -17,6 +17,7 @@ export const supabase: SupabaseClient | null = isSupabaseConfigured
 
 export const PLAYER_PHOTOS_BUCKET = 'player-photos';
 export const MANAGER_AVATARS_BUCKET = 'manager-avatars';
+export const FORFEIT_MEDIA_BUCKET = 'forfeit-media';
 
 /**
  * Automatically trims solid black phone-screenshot letterbox bars (top/bottom)
@@ -180,4 +181,72 @@ export async function uploadManagerAvatar(
 
   const { data } = db.storage.from(MANAGER_AVATARS_BUCKET).getPublicUrl(filePath);
   return data.publicUrl;
+}
+
+export async function uploadForfeitMedia(
+  db: SupabaseClient,
+  folderKey: string,
+  fileOrBlob: File | Blob,
+  fileNameHint?: string
+): Promise<{ publicUrl: string; mediaType: 'video' | 'image' | 'audio' }> {
+  if (fileOrBlob.size > 50 * 1024 * 1024) {
+    throw new Error('Forfeit media must be under 50 MB.');
+  }
+
+  const rawMime = (fileOrBlob.type || '').split(';')[0].trim().toLowerCase();
+  const hintExt = (
+    (fileNameHint || (fileOrBlob instanceof File ? fileOrBlob.name : '')).split('.').pop() || ''
+  )
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '');
+
+  // If it's an image File, reuse preparePlayerPhotoFile so phone screenshots/photos stay crisp & fast
+  if (rawMime.startsWith('image/') && fileOrBlob instanceof File) {
+    const prepared = await preparePlayerPhotoFile(fileOrBlob);
+    const filePath = `${folderKey}/${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${prepared.ext}`;
+    const { error: uploadError } = await db.storage
+      .from(FORFEIT_MEDIA_BUCKET)
+      .upload(filePath, prepared.blob, { upsert: true, contentType: prepared.mime });
+    if (uploadError) throw new Error(uploadError.message);
+    const { data } = db.storage.from(FORFEIT_MEDIA_BUCKET).getPublicUrl(filePath);
+    return { publicUrl: data.publicUrl, mediaType: 'image' };
+  }
+
+  let cleanMime = rawMime;
+  let ext = hintExt;
+  let mediaType: 'video' | 'image' | 'audio' = 'video';
+
+  if (cleanMime.startsWith('audio/') || ['mp3', 'm4a', 'ogg', 'wav'].includes(ext)) {
+    mediaType = 'audio';
+    if (!cleanMime) cleanMime = ext === 'mp3' ? 'audio/mpeg' : ext === 'm4a' ? 'audio/mp4' : 'audio/webm';
+    if (!ext) ext = cleanMime.includes('mp4') ? 'm4a' : cleanMime.includes('mpeg') ? 'mp3' : 'webm';
+  } else if (cleanMime.startsWith('image/') || ['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(ext)) {
+    mediaType = 'image';
+    if (!cleanMime) cleanMime = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
+    if (!ext) ext = cleanMime.includes('png') ? 'png' : cleanMime.includes('webp') ? 'webp' : 'jpg';
+  } else {
+    mediaType = 'video';
+    if (cleanMime === 'video/x-matroska') cleanMime = 'video/webm';
+    if (!cleanMime || !cleanMime.startsWith('video/')) {
+      cleanMime = ext === 'mov' ? 'video/quicktime' : ext === 'webm' ? 'video/webm' : 'video/mp4';
+    }
+    if (!ext) {
+      ext = cleanMime.includes('webm') ? 'webm' : cleanMime.includes('quicktime') ? 'mov' : 'mp4';
+    }
+  }
+
+  const normalizedBlob = new Blob([fileOrBlob], { type: cleanMime });
+  const safeFolder = folderKey.replace(/[^a-zA-Z0-9_-]/g, '') || 'forfeits';
+  const filePath = `${safeFolder}/${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${ext}`;
+
+  const { error: uploadError } = await db.storage
+    .from(FORFEIT_MEDIA_BUCKET)
+    .upload(filePath, normalizedBlob, { upsert: true, contentType: cleanMime });
+
+  if (uploadError) {
+    throw new Error(uploadError.message);
+  }
+
+  const { data } = db.storage.from(FORFEIT_MEDIA_BUCKET).getPublicUrl(filePath);
+  return { publicUrl: data.publicUrl, mediaType };
 }

@@ -731,9 +731,19 @@ export const DEMO_FORFEITS: ForfeitsOverview = {
           points: 14,
           completed: true,
           completed_at: '2026-10-29T20:10:00Z',
+          proof_url: null,
+          proof_media_type: null,
+          proof_caption: null,
         },
       ],
     },
+  ],
+  recorded_clips: [],
+  managers: [
+    { manager_id: 'demo-1', display_name: 'Yako', team_name: 'Yako Royals', avatar_url: null },
+    { manager_id: 'demo-2', display_name: 'Omar', team_name: 'Zamalek Stars', avatar_url: null },
+    { manager_id: 'demo-3', display_name: 'Karim', team_name: 'Cairo XI', avatar_url: null },
+    { manager_id: 'demo-4', display_name: 'Tarek', team_name: 'Maadi Wolves', avatar_url: null },
   ],
   shame_leaderboard: [
     {

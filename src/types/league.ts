@@ -539,6 +539,15 @@ export type ForfeitOptionItem = {
   pct: number;
 };
 
+export type ForfeitMediaType = 'video' | 'image' | 'audio';
+
+export type ForfeitManagerOption = {
+  manager_id: string;
+  display_name: string;
+  team_name?: string | null;
+  avatar_url?: string | null;
+};
+
 export type ForfeitLoserEntry = {
   manager_id: string;
   display_name: string;
@@ -547,6 +556,28 @@ export type ForfeitLoserEntry = {
   points: number;
   completed: boolean;
   completed_at?: string | null;
+  proof_url?: string | null;
+  proof_media_type?: ForfeitMediaType | null;
+  proof_caption?: string | null;
+  proof_uploaded_by_id?: string | null;
+  proof_uploaded_by_name?: string | null;
+  proof_uploaded_at?: string | null;
+};
+
+export type RecordedForfeitClip = {
+  id: number;
+  gameweek_number?: number | null;
+  manager_id: string;
+  display_name: string;
+  team_name?: string | null;
+  avatar_url?: string | null;
+  forfeit_title: string;
+  proof_url: string;
+  proof_media_type: ForfeitMediaType;
+  proof_caption?: string | null;
+  uploaded_by_id?: string | null;
+  uploaded_by_name?: string | null;
+  created_at: string;
 };
 
 export type ForfeitHistoryRecord = {
@@ -589,6 +620,8 @@ export type ForfeitsOverview = {
     } | null;
   } | null;
   history: ForfeitHistoryRecord[];
+  recorded_clips?: RecordedForfeitClip[];
+  managers?: ForfeitManagerOption[];
   shame_leaderboard: ForfeitShameRow[];
 };
 

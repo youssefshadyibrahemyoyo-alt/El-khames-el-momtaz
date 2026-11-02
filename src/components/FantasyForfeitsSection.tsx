@@ -1,22 +1,34 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   AlertTriangle,
+  Camera,
   Check,
   CheckCircle2,
   Clock,
   Crown,
+  Film,
   Flame,
   MessageCircle,
+  Mic,
   Plus,
   Skull,
   Trash2,
   Vote,
 } from 'lucide-react';
-import type { ForfeitHistoryRecord, ForfeitsOverview } from '../types/league';
+import type {
+  ForfeitHistoryRecord,
+  ForfeitMediaType,
+  ForfeitsOverview,
+  RecordedForfeitClip,
+} from '../types/league';
 import { useLanguage } from '../i18n/LanguageContext';
-import { supabase } from '../lib/supabase';
+import { supabase, uploadForfeitMedia } from '../lib/supabase';
 import { DEMO_FORFEITS } from '../lib/demoData';
 import { openWhatsAppShare } from '../lib/shareCardCanvas';
+import ForfeitMediaRecorderModal, {
+  type ForfeitMediaSubmission,
+  type ForfeitModalTarget,
+} from './ForfeitMediaRecorderModal';
 
 type Props = {
   demoMode: boolean;
@@ -29,7 +41,7 @@ export default function FantasyForfeitsSection({ demoMode, isAdmin, currentUserI
   const [data, setData] = useState<ForfeitsOverview>(
     demoMode
       ? DEMO_FORFEITS
-      : { active_poll: null, history: [], shame_leaderboard: [] }
+      : { active_poll: null, history: [], recorded_clips: [], managers: [], shame_leaderboard: [] }
   );
   const [loading, setLoading] = useState(!demoMode);
   const [errorMsg, setErrorMsg] = useState('');
@@ -38,12 +50,16 @@ export default function FantasyForfeitsSection({ demoMode, isAdmin, currentUserI
   const [proposing, setProposing] = useState(false);
   const [togglingKey, setTogglingKey] = useState<string | null>(null);
 
+  // Record / Upload modal state
+  const [modalTarget, setModalTarget] = useState<ForfeitModalTarget | null>(null);
+  const [savingMedia, setSavingMedia] = useState(false);
+
   const clubTitleOf = (teamName?: string | null, displayName?: string | null) =>
     teamName?.trim() || `${displayName || 'Manager'} FC`;
 
   const loadForfeits = useCallback(async () => {
     if (demoMode || !supabase) {
-      setData(DEMO_FORFEITS);
+      setData(prev => (prev.history.length || (prev.recorded_clips?.length ?? 0) ? prev : DEMO_FORFEITS));
       setLoading(false);
       return;
     }
@@ -221,6 +237,167 @@ export default function FantasyForfeitsSection({ demoMode, isAdmin, currentUserI
     await loadForfeits();
   }
 
+  async function handleSaveMedia(payload: ForfeitMediaSubmission) {
+    if (!modalTarget) return;
+    setSavingMedia(true);
+    setErrorMsg('');
+
+    try {
+      if (demoMode || !supabase) {
+        const localUrl = URL.createObjectURL(payload.blob);
+        if (modalTarget.kind === 'gw_loser') {
+          setData(prev => ({
+            ...prev,
+            history: prev.history.map(h =>
+              h.gameweek_id !== modalTarget.gameweekId
+                ? h
+                : {
+                    ...h,
+                    losers: h.losers.map(l =>
+                      l.manager_id !== modalTarget.managerId
+                        ? l
+                        : {
+                            ...l,
+                            completed: true,
+                            completed_at: new Date().toISOString(),
+                            proof_url: localUrl,
+                            proof_media_type: payload.mediaType,
+                            proof_caption: payload.caption || null,
+                            proof_uploaded_by_name: 'You',
+                            proof_uploaded_at: new Date().toISOString(),
+                          }
+                    ),
+                  }
+            ),
+          }));
+        } else {
+          const mgr =
+            (data.managers || []).find(m => m.manager_id === payload.managerId) || {
+              manager_id: payload.managerId || 'demo-1',
+              display_name: 'Manager',
+              team_name: 'Thursday FC',
+              avatar_url: null,
+            };
+          const newClip: RecordedForfeitClip = {
+            id: Date.now(),
+            gameweek_number: payload.gameweekNumber ?? null,
+            manager_id: mgr.manager_id,
+            display_name: mgr.display_name,
+            team_name: mgr.team_name,
+            avatar_url: mgr.avatar_url,
+            forfeit_title: payload.forfeitTitle || 'Thursday Forfeit',
+            proof_url: localUrl,
+            proof_media_type: payload.mediaType,
+            proof_caption: payload.caption || null,
+            uploaded_by_name: 'You',
+            created_at: new Date().toISOString(),
+          };
+          setData(prev => ({
+            ...prev,
+            recorded_clips: [newClip, ...(prev.recorded_clips || [])],
+          }));
+        }
+        setModalTarget(null);
+        return;
+      }
+
+      const folderKey =
+        modalTarget.kind === 'gw_loser'
+          ? `gw-${modalTarget.gameweekNumber}-${modalTarget.managerId}`
+          : `vault-${payload.managerId || currentUserId || 'league'}`;
+
+      const uploaded = await uploadForfeitMedia(
+        supabase,
+        folderKey,
+        payload.blob,
+        payload.fileNameHint
+      );
+
+      if (modalTarget.kind === 'gw_loser') {
+        const { error } = await supabase.rpc('save_gw_forfeit_proof', {
+          p_gameweek_id: modalTarget.gameweekId,
+          p_manager_id: modalTarget.managerId,
+          p_proof_url: uploaded.publicUrl,
+          p_media_type: uploaded.mediaType,
+          p_caption: payload.caption || null,
+        });
+        if (error) throw new Error(error.message);
+      } else {
+        const { error } = await supabase.rpc('add_recorded_forfeit_to_history', {
+          p_manager_id: payload.managerId,
+          p_forfeit_title: payload.forfeitTitle,
+          p_proof_url: uploaded.publicUrl,
+          p_media_type: uploaded.mediaType,
+          p_caption: payload.caption || null,
+          p_gameweek_number: payload.gameweekNumber ?? null,
+        });
+        if (error) throw new Error(error.message);
+      }
+
+      setModalTarget(null);
+      await loadForfeits();
+    } finally {
+      setSavingMedia(false);
+    }
+  }
+
+  async function handleClearGwProof(gwId: number, managerId: string) {
+    setErrorMsg('');
+    if (demoMode || !supabase) {
+      setData(prev => ({
+        ...prev,
+        history: prev.history.map(h =>
+          h.gameweek_id !== gwId
+            ? h
+            : {
+                ...h,
+                losers: h.losers.map(l =>
+                  l.manager_id !== managerId
+                    ? l
+                    : {
+                        ...l,
+                        proof_url: null,
+                        proof_media_type: null,
+                        proof_caption: null,
+                      }
+                ),
+              }
+        ),
+      }));
+      return;
+    }
+
+    const { error } = await supabase.rpc('clear_gw_forfeit_proof', {
+      p_gameweek_id: gwId,
+      p_manager_id: managerId,
+    });
+    if (error) {
+      setErrorMsg(error.message);
+      return;
+    }
+    await loadForfeits();
+  }
+
+  async function handleDeleteRecordedClip(entryId: number) {
+    setErrorMsg('');
+    if (demoMode || !supabase) {
+      setData(prev => ({
+        ...prev,
+        recorded_clips: (prev.recorded_clips || []).filter(c => c.id !== entryId),
+      }));
+      return;
+    }
+
+    const { error } = await supabase.rpc('delete_recorded_forfeit_entry', {
+      p_entry_id: entryId,
+    });
+    if (error) {
+      setErrorMsg(error.message);
+      return;
+    }
+    await loadForfeits();
+  }
+
   function handleShareWhatsAppRoast(record: ForfeitHistoryRecord) {
     const loserNames = record.losers
       .map(
@@ -231,14 +408,99 @@ export default function FantasyForfeitsSection({ demoMode, isAdmin, currentUserI
       )
       .join('\n');
 
+    const proofLinks = record.losers
+      .filter(l => Boolean(l.proof_url) && !String(l.proof_url).startsWith('blob:'))
+      .map(l => `🎬 ${l.display_name}: ${l.proof_url}`)
+      .join('\n');
+
     const text =
       `🎭 *El Khames El Momtaz — GW #${record.gameweek_number} Official Forfeit!*\n\n` +
       `📉 ${t('forfeitLowestScoreLabel')}: *${record.lowest_points} ${t('ptsUnit')}*\n` +
       `${loserNames}\n\n` +
-      `⚖️ *Punishment:* ${record.forfeit_title}\n\n` +
-      `👉 Wall of Shame: https://elkhameselmomtaz.vercel.app/`;
+      `⚖️ *Punishment:* ${record.forfeit_title}\n` +
+      (proofLinks ? `\n${proofLinks}\n` : '') +
+      `\n👉 Wall of Shame: https://elkhameselmomtaz.vercel.app/`;
 
     openWhatsAppShare(text);
+  }
+
+  function handleShareClipWhatsApp(clip: RecordedForfeitClip) {
+    const gwLine = clip.gameweek_number ? ` (GW #${clip.gameweek_number})` : '';
+    const linkPart =
+      clip.proof_url && !clip.proof_url.startsWith('blob:') ? `\n🎬 Proof: ${clip.proof_url}\n` : '';
+    const captionPart = clip.proof_caption ? `\n💬 "${clip.proof_caption}"\n` : '';
+    const text =
+      `🎥 *El Khames El Momtaz — Recorded Forfeit${gwLine}!*\n\n` +
+      `👤 *${clubTitleOf(clip.team_name, clip.display_name)}* (${clip.display_name})\n` +
+      `⚖️ *Forfeit:* ${clip.forfeit_title}` +
+      captionPart +
+      linkPart +
+      `\n👉 https://elkhameselmomtaz.vercel.app/`;
+
+    openWhatsAppShare(text);
+  }
+
+  function renderSavedProofMedia(
+    url: string,
+    mediaType?: ForfeitMediaType | null,
+    caption?: string | null,
+    uploadedByName?: string | null,
+    onRemove?: (() => void) | null
+  ) {
+    const resolvedType: ForfeitMediaType =
+      mediaType === 'image' || mediaType === 'audio' ? mediaType : 'video';
+
+    return (
+      <div className="forfeit-proof-card">
+        <div className="forfeit-proof-media-frame">
+          {resolvedType === 'video' && (
+            <video
+              src={url}
+              controls
+              playsInline
+              preload="metadata"
+              className="forfeit-media-player"
+            />
+          )}
+          {resolvedType === 'image' && (
+            <a href={url} target="_blank" rel="noreferrer" className="forfeit-proof-img-link">
+              <img src={url} alt="Saved forfeit proof" className="forfeit-media-image" />
+            </a>
+          )}
+          {resolvedType === 'audio' && (
+            <div className="forfeit-audio-preview">
+              <Mic size={20} />
+              <audio src={url} controls preload="metadata" className="forfeit-audio-el" />
+            </div>
+          )}
+        </div>
+
+        {(caption || uploadedByName || onRemove) && (
+          <div className="forfeit-proof-meta-bar">
+            <div className="forfeit-proof-caption-wrap">
+              {caption && <p className="forfeit-proof-caption">“{caption}”</p>}
+              {uploadedByName && (
+                <small className="muted tiny">
+                  <Film size={11} style={{ verticalAlign: 'middle', marginInlineEnd: 4 }} />
+                  {t('forfeitUploadedByLabel')}: {uploadedByName}
+                </small>
+              )}
+            </div>
+
+            {onRemove && (
+              <button
+                type="button"
+                className="icon-btn forfeit-del-btn"
+                title={t('forfeitRemoveProofBtn')}
+                onClick={onRemove}
+              >
+                <Trash2 size={13} />
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    );
   }
 
   if (loading) {
@@ -249,6 +511,9 @@ export default function FantasyForfeitsSection({ demoMode, isAdmin, currentUserI
   const maxPollVotes = poll
     ? poll.options.reduce((mx, o) => Math.max(mx, o.votes), 0)
     : 0;
+  const recordedClips = data.recorded_clips || [];
+  const availableManagers = data.managers || [];
+  const hasAnyArchiveItems = data.history.length > 0 || recordedClips.length > 0;
 
   return (
     <div className="forfeits-hub screen-stage">
@@ -278,7 +543,6 @@ export default function FantasyForfeitsSection({ demoMode, isAdmin, currentUserI
           </p>
         ) : (
           <>
-            {/* Live Danger Zone when Thursday GW is Active */}
             {poll.live_danger_zone && poll.live_danger_zone.managers.length > 0 && (
               <div className="forfeit-danger-banner">
                 <div className="forfeit-danger-title">
@@ -468,21 +732,126 @@ export default function FantasyForfeitsSection({ demoMode, isAdmin, currentUserI
         </div>
       )}
 
-      {/* 3. PERMANENT GAMEWEEK-BY-GAMEWEEK SAVED ARCHIVE */}
+      {/* 3. PERMANENT GAMEWEEK-BY-GAMEWEEK SAVED ARCHIVE + RECORDED CLIPS */}
       <div className="forfeit-archive-section" data-scroll-reveal>
-        <div className="lineup-heading" style={{ marginTop: 0 }}>
+        <div className="lineup-heading forfeit-archive-header" style={{ marginTop: 0 }}>
           <div>
             <strong>{t('forfeitArchiveTitle')}</strong>
             <p className="muted tiny" style={{ margin: '2px 0 0' }}>
               {t('forfeitArchiveSub')}
             </p>
           </div>
+
+          <button
+            type="button"
+            className="primary compact-btn forfeit-record-cta"
+            onClick={() =>
+              setModalTarget({
+                kind: 'new',
+                defaultGwNumber: poll?.gameweek_number ?? null,
+                defaultForfeitTitle: poll?.options[0]?.label ?? '',
+              })
+            }
+          >
+            <Camera size={14} /> {t('forfeitRecordOrUploadBtn')}
+          </button>
         </div>
 
-        {data.history.length === 0 ? (
+        {!hasAnyArchiveItems ? (
           <div className="news-empty-box">{t('forfeitNoHistoryYet')}</div>
         ) : (
           <div className="forfeit-history-list">
+            {/* Standalone / Direct Recorded Forfeit Clips */}
+            {recordedClips.map(clip => {
+              const canDeleteClip =
+                demoMode ||
+                isAdmin ||
+                (Boolean(currentUserId) &&
+                  (clip.uploaded_by_id === currentUserId || clip.manager_id === currentUserId));
+
+              return (
+                <article
+                  key={`clip-${clip.id}`}
+                  className="forfeit-history-card forfeit-recorded-clip-card hover-lift-card"
+                >
+                  <div className="forfeit-history-top">
+                    <div className="forfeit-history-badges">
+                      {clip.gameweek_number && (
+                        <span className="tag">GW #{clip.gameweek_number}</span>
+                      )}
+                      <span className="forfeit-status-pill status-done">
+                        <Film size={12} /> {t('forfeitDirectClipBadge')}
+                      </span>
+                    </div>
+
+                    <div className="forfeit-loser-actions">
+                      <button
+                        type="button"
+                        className="secondary compact-btn"
+                        onClick={() => handleShareClipWhatsApp(clip)}
+                      >
+                        <MessageCircle size={13} /> {t('forfeitShareRoastBtn')}
+                      </button>
+
+                      {canDeleteClip && (
+                        <button
+                          type="button"
+                          className="icon-btn forfeit-del-btn"
+                          title={t('forfeitDeleteEntryBtn')}
+                          onClick={() => void handleDeleteRecordedClip(clip.id)}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="forfeit-punishment-banner">
+                    <span>🎬</span>
+                    <strong>{clip.forfeit_title}</strong>
+                  </div>
+
+                  <div className="forfeit-loser-block is-completed">
+                    <div className="forfeit-loser-row is-completed">
+                      <div className="forfeit-loser-identity">
+                        {clip.avatar_url ? (
+                          <img
+                            className="leaderboard-photo"
+                            src={clip.avatar_url}
+                            alt={clip.display_name}
+                          />
+                        ) : (
+                          <div className="player-photo small-photo">
+                            {(clip.display_name || '?').slice(0, 1)}
+                          </div>
+                        )}
+                        <div className="forfeit-club-stack">
+                          <strong>{clubTitleOf(clip.team_name, clip.display_name)}</strong>
+                          <span>
+                            {clip.display_name} ·{' '}
+                            {new Date(clip.created_at).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
+
+                      <span className="forfeit-status-pill status-done">
+                        <CheckCircle2 size={12} /> {t('forfeitSavedProofBadge')}
+                      </span>
+                    </div>
+
+                    {renderSavedProofMedia(
+                      clip.proof_url,
+                      clip.proof_media_type,
+                      clip.proof_caption,
+                      clip.uploaded_by_name,
+                      null
+                    )}
+                  </div>
+                </article>
+              );
+            })}
+
+            {/* Official Gameweek-by-Gameweek Saved Forfeits */}
             {data.history.map(item => (
               <article key={item.gameweek_id} className="forfeit-history-card hover-lift-card">
                 <div className="forfeit-history-top">
@@ -515,58 +884,97 @@ export default function FantasyForfeitsSection({ demoMode, isAdmin, currentUserI
                 <div className="forfeit-losers-grid">
                   {item.losers.map(loser => {
                     const key = `${item.gameweek_id}:${loser.manager_id}`;
+                    const hasProof = Boolean(loser.proof_url);
+                    const canClearProof =
+                      hasProof &&
+                      (demoMode ||
+                        isAdmin ||
+                        (Boolean(currentUserId) &&
+                          (loser.manager_id === currentUserId ||
+                            loser.proof_uploaded_by_id === currentUserId)));
+
                     return (
-                      <div
-                        key={loser.manager_id}
-                        className={`forfeit-loser-row ${
-                          loser.completed ? 'is-completed' : 'is-pending'
-                        }`}
-                      >
-                        <div className="forfeit-loser-identity">
-                          {loser.avatar_url ? (
-                            <img
-                              className="leaderboard-photo"
-                              src={loser.avatar_url}
-                              alt={loser.display_name}
-                            />
-                          ) : (
-                            <div className="player-photo small-photo">
-                              {(loser.display_name || '?').slice(0, 1)}
+                      <div key={loser.manager_id} className="forfeit-loser-block">
+                        <div
+                          className={`forfeit-loser-row ${
+                            loser.completed ? 'is-completed' : 'is-pending'
+                          }`}
+                        >
+                          <div className="forfeit-loser-identity">
+                            {loser.avatar_url ? (
+                              <img
+                                className="leaderboard-photo"
+                                src={loser.avatar_url}
+                                alt={loser.display_name}
+                              />
+                            ) : (
+                              <div className="player-photo small-photo">
+                                {(loser.display_name || '?').slice(0, 1)}
+                              </div>
+                            )}
+                            <div className="forfeit-club-stack">
+                              <strong>{clubTitleOf(loser.team_name, loser.display_name)}</strong>
+                              <span>
+                                {loser.display_name} · {loser.points} {t('ptsUnit')}
+                              </span>
                             </div>
-                          )}
-                          <div className="forfeit-club-stack">
-                            <strong>{clubTitleOf(loser.team_name, loser.display_name)}</strong>
-                            <span>
-                              {loser.display_name} · {loser.points} {t('ptsUnit')}
+                          </div>
+
+                          <div className="forfeit-loser-actions">
+                            <span
+                              className={`forfeit-status-pill ${
+                                loser.completed ? 'status-done' : 'status-pending'
+                              }`}
+                            >
+                              {loser.completed ? <CheckCircle2 size={12} /> : <Clock size={12} />}
+                              {loser.completed ? t('forfeitStatusDone') : t('forfeitStatusPending')}
                             </span>
+
+                            <button
+                              type="button"
+                              className={hasProof ? 'secondary compact-btn' : 'primary compact-btn'}
+                              onClick={() =>
+                                setModalTarget({
+                                  kind: 'gw_loser',
+                                  gameweekId: item.gameweek_id,
+                                  gameweekNumber: item.gameweek_number,
+                                  forfeitTitle: item.forfeit_title,
+                                  managerId: loser.manager_id,
+                                  managerName: loser.display_name,
+                                  teamName: loser.team_name,
+                                  initialCaption: loser.proof_caption,
+                                })
+                              }
+                            >
+                              <Camera size={13} />{' '}
+                              {hasProof ? t('forfeitReplaceProofBtn') : t('forfeitAttachProofBtn')}
+                            </button>
+
+                            {isAdmin && (
+                              <button
+                                type="button"
+                                className="secondary compact-btn"
+                                disabled={togglingKey === key}
+                                onClick={() =>
+                                  void handleToggleCompleted(item.gameweek_id, loser.manager_id)
+                                }
+                              >
+                                {loser.completed ? t('forfeitUndoDoneBtn') : t('forfeitMarkDoneBtn')}
+                              </button>
+                            )}
                           </div>
                         </div>
 
-                        <div className="forfeit-loser-actions">
-                          <span
-                            className={`forfeit-status-pill ${
-                              loser.completed ? 'status-done' : 'status-pending'
-                            }`}
-                          >
-                            {loser.completed ? <CheckCircle2 size={12} /> : <Clock size={12} />}
-                            {loser.completed ? t('forfeitStatusDone') : t('forfeitStatusPending')}
-                          </span>
-
-                          {isAdmin && (
-                            <button
-                              type="button"
-                              className={
-                                loser.completed ? 'secondary compact-btn' : 'primary compact-btn'
-                              }
-                              disabled={togglingKey === key}
-                              onClick={() =>
-                                void handleToggleCompleted(item.gameweek_id, loser.manager_id)
-                              }
-                            >
-                              {loser.completed ? t('forfeitUndoDoneBtn') : t('forfeitMarkDoneBtn')}
-                            </button>
+                        {loser.proof_url &&
+                          renderSavedProofMedia(
+                            loser.proof_url,
+                            loser.proof_media_type,
+                            loser.proof_caption,
+                            loser.proof_uploaded_by_name,
+                            canClearProof
+                              ? () => void handleClearGwProof(item.gameweek_id, loser.manager_id)
+                              : null
                           )}
-                        </div>
                       </div>
                     );
                   })}
@@ -576,6 +984,17 @@ export default function FantasyForfeitsSection({ demoMode, isAdmin, currentUserI
           </div>
         )}
       </div>
+
+      {modalTarget && (
+        <ForfeitMediaRecorderModal
+          target={modalTarget}
+          managers={availableManagers}
+          currentUserId={currentUserId}
+          saving={savingMedia}
+          onClose={() => setModalTarget(null)}
+          onSubmit={handleSaveMedia}
+        />
+      )}
     </div>
   );
 }
