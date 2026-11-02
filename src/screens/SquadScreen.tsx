@@ -240,7 +240,20 @@ export default function SquadScreen({
         className="panel egypt-squad-panel stagger-item"
         style={{ '--stagger-i': 0 } as React.CSSProperties}
       >
-        <div className="panel-heading">
+        <div className="squad-flagship-hero">
+          <div className="squad-hero-copy">
+            <span className="squad-hero-kicker">{t('gameweekOption')} {String(targetGw?.number ?? gameweekNumber).padStart(2, '0')} <span> / </span> {t('myFantasySquad')}</span>
+            <h2>{teamName || t('myFantasySquad')}</h2>
+            <p>{t('mySquadSub')}</p>
+          </div>
+          <div className="squad-hero-stats">
+            <div><span>{t('myFantasySquad')}</span><strong>{selected.length}<small> / {SQUAD_SIZE}</small></strong></div>
+            <div><span>{t('freeTransfersLabel')}</span><strong>{freeTransfers}</strong></div>
+            <div><span>{t('pointsHitLabel')}</span><strong>−{pointsHits}</strong></div>
+          </div>
+          <div className="squad-hero-orbit" aria-hidden="true" />
+        </div>
+        <div className="panel-heading squad-workspace-heading">
           <div>
             <h3>{t('myFantasySquad')}</h3>
             <p>{t('mySquadSub')}</p>

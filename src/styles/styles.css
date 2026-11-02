@@ -8074,3 +8074,63 @@ html[data-reduce-motion='true'] *::after {
 
 
 
+
+/* Flagship design system — a calmer, more editorial matchday workspace. */
+.panel { border-radius: 20px; box-shadow: 0 8px 32px rgba(13, 48, 29, .055); }
+.sidebar { border-inline-end: 1px solid var(--line); }
+.topbar { border-radius: 18px; }
+button:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible {
+  outline: 3px solid var(--gold); outline-offset: 3px;
+}
+.egypt-squad-panel { padding: clamp(16px, 2.5vw, 28px); overflow: hidden; }
+.squad-flagship-hero {
+  position: relative; overflow: hidden; isolation: isolate;
+  display: flex; justify-content: space-between; align-items: end; gap: 24px;
+  min-height: 190px; padding: clamp(22px, 3vw, 38px); margin-bottom: 26px;
+  border: 1px solid rgba(203, 230, 205, .16); border-radius: 18px;
+  background: radial-gradient(circle at 85% 15%, rgba(95, 172, 112, .25), transparent 37%), linear-gradient(125deg, #102e20, #0b4930 68%, #123c28);
+  color: #f5faf4;
+}
+.squad-hero-copy, .squad-hero-stats { position: relative; z-index: 1; }
+.squad-hero-kicker { color: #d9ca91; font-size: 10px; font-weight: 800; letter-spacing: .15em; text-transform: uppercase; }
+.squad-hero-kicker span { padding-inline: 7px; opacity: .5; }
+.squad-hero-copy h2 { color: #fff; font-size: clamp(27px, 3.3vw, 44px); letter-spacing: -.045em; line-height: 1.08; margin: 15px 0 8px; overflow-wrap: anywhere; }
+.squad-hero-copy p { margin: 0; color: #b9d0bf; font-size: 13px; max-width: 400px; line-height: 1.6; }
+.squad-hero-stats { display: flex; flex-shrink: 0; gap: 0; padding: 16px 5px; border: 1px solid rgba(255,255,255,.13); border-radius: 15px; background: rgba(3, 29, 17, .32); backdrop-filter: blur(10px); }
+.squad-hero-stats > div { min-width: 88px; padding: 0 15px; border-inline-end: 1px solid rgba(255,255,255,.14); }
+.squad-hero-stats > div:last-child { border: 0; }
+.squad-hero-stats span { display: block; color: #aac5b0; font-size: 10px; font-weight: 700; margin-bottom: 7px; }
+.squad-hero-stats strong { color: #fff; font-size: 23px; line-height: 1; }
+.squad-hero-stats small { color: #a6c3ad; font-size: 12px; }
+.squad-hero-orbit { position: absolute; z-index: 0; width: 310px; height: 310px; border: 1px solid rgba(226, 236, 216, .11); border-radius: 50%; inset-inline-end: 26%; top: -175px; box-shadow: 0 0 0 35px rgba(226,236,216,.025), 0 0 0 70px rgba(226,236,216,.025); pointer-events: none; }
+.squad-workspace-heading { gap: 16px; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
+.squad-workspace-heading h3 { font-size: 20px; letter-spacing: -.025em; }
+.squad-mode-toggle { display: inline-flex; gap: 4px; padding: 4px; border-radius: 12px; background: var(--panel2); border: 1px solid var(--line); }
+.squad-mode-toggle button { border-radius: 8px; }
+.egypt-squad-panel .budget { padding: 9px 13px; border: 1px solid var(--line); background: var(--panel2); border-radius: 10px; white-space: nowrap; }
+.egypt-squad-panel .lineup-heading { margin-top: 24px; margin-bottom: 12px; }
+.egypt-squad-panel .lineup-heading strong { font-size: 15px; }
+.egypt-squad-panel .egypt-chip { min-height: 84px; padding: 15px; border-radius: 14px; background: var(--panel2); }
+.egypt-squad-panel .egypt-chip.active { background: var(--gold-light); }
+.egypt-squad-panel .egypt-chip strong { font-size: 12px; }
+.egypt-squad-panel .egypt-lineup-layout { gap: 18px; margin-top: 22px; }
+.egypt-squad-panel .pitch-3d-stage { border-radius: 20px; overflow: hidden; }
+.egypt-squad-panel .pitch-3d-stadium { border-radius: 20px; box-shadow: inset 0 0 0 1px rgba(231, 246, 229, .18), 0 12px 30px rgba(9, 47, 25, .14); }
+.egypt-squad-panel .egypt-bench { border-radius: 18px; padding: 20px; background: var(--panel2); }
+.egypt-squad-panel .egypt-bench h3 { font-size: 17px; }
+.egypt-squad-panel .egypt-bench-player { margin-top: 9px; padding: 12px 8px; border-radius: 11px; background: var(--panel); border: 1px solid var(--line); }
+.egypt-squad-panel .egypt-bench-note { border-radius: 10px; padding: 12px; }
+.egypt-squad-panel .transfer-controls { padding-top: 20px; margin-top: 18px; border-top: 1px solid var(--line); }
+.egypt-squad-panel .save-squad-cta { min-height: 48px; border-radius: 12px; }
+.squad-transfer-panel { padding: 24px; }
+.squad-transfer-panel .transfer-summary > div { border-radius: 14px; }
+@media (max-width: 760px) {
+  .squad-flagship-hero { display: block; min-height: 0; }
+  .squad-hero-stats { margin-top: 22px; width: fit-content; max-width: 100%; }
+  .squad-hero-stats > div { min-width: 0; padding-inline: 12px; }
+  .squad-hero-stats span { font-size: 9px; }
+  .squad-hero-stats strong { font-size: 20px; }
+  .squad-workspace-heading { align-items: flex-start; }
+  .egypt-squad-panel .egypt-chip { min-height: 72px; padding: 10px; }
+  .egypt-squad-panel .egypt-bench { padding: 16px; }
+}
