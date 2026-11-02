@@ -1,4 +1,11 @@
-export type Screen = 'overview' | 'squad' | 'players' | 'matches' | 'leaderboard' | 'admin';
+export type Screen =
+  | 'overview'
+  | 'squad'
+  | 'players'
+  | 'matches'
+  | 'leaderboard'
+  | 'settings'
+  | 'admin';
 
 export type LeaderboardTab =
   | 'managers'

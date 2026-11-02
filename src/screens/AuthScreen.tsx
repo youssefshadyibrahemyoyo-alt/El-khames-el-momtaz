@@ -3,10 +3,12 @@ import { Globe, KeyRound, Moon, Sun, UserPlus, LogIn } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useLanguage } from '../i18n/LanguageContext';
 import { useTheme } from '../theme/ThemeContext';
+import { useAppSettings } from '../settings/AppSettingsContext';
 
 export default function AuthScreen() {
   const { lang, toggleLang, t } = useLanguage();
   const { isDark, toggleTheme } = useTheme();
+  const { activeIconMeta } = useAppSettings();
   const [mode, setMode] = useState<'signin' | 'signup' | 'forgot'>('signin');
   const [displayName, setDisplayName] = useState('');
   const [teamName, setTeamName] = useState('');
@@ -125,7 +127,11 @@ export default function AuthScreen() {
 
       <div className="brand stagger-item" style={{ '--stagger-i': 0 } as React.CSSProperties}>
         <div className="brand-mark brand-mark--logo brand-mark--auth">
-          <img src="/logo.svg" alt="الخميس الممتاز" className="brand-logo-img" />
+          <img
+            src={activeIconMeta.svgPath}
+            alt={activeIconMeta.homeLabel}
+            className="brand-logo-img"
+          />
         </div>
         <div>
           <span className="eyebrow">{t('brandEyebrow')}</span>

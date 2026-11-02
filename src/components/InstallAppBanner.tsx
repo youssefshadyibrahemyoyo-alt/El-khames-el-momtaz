@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Download, X } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
+import { useAppSettings } from '../settings/AppSettingsContext';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -11,6 +12,7 @@ const DISMISS_KEY = 'elkhames_pwa_banner_dismissed_v1';
 
 export default function InstallAppBanner() {
   const { t } = useLanguage();
+  const { activeIconMeta } = useAppSettings();
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isIosSafari, setIsIosSafari] = useState(false);
   const [dismissed, setDismissed] = useState(() => {
@@ -69,7 +71,11 @@ export default function InstallAppBanner() {
     <div className="pwa-install-banner stagger-item">
       <div className="pwa-install-left">
         <div className="pwa-install-icon pwa-install-icon--logo">
-          <img src="/logo.svg" alt="الخميس الممتاز" className="brand-logo-img" />
+          <img
+            src={activeIconMeta.svgPath}
+            alt={activeIconMeta.homeLabel}
+            className="brand-logo-img"
+          />
         </div>
         <div>
           <strong>{t('pwaInstallTitle')}</strong>

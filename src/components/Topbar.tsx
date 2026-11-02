@@ -5,6 +5,7 @@ import {
   LogOut,
   Moon,
   Search,
+  Settings,
   Sun,
   Timer,
   Trophy,
@@ -14,6 +15,7 @@ import {
 import type { Gameweek, Screen } from '../types/league';
 import { useLanguage } from '../i18n/LanguageContext';
 import { useTheme } from '../theme/ThemeContext';
+import { useAppSettings } from '../settings/AppSettingsContext';
 import {
   formatCairoDeadline,
   formatCountdownShort,
@@ -54,6 +56,7 @@ export default function Topbar({
 }: Props) {
   const { lang, toggleLang, t } = useLanguage();
   const { isDark, toggleTheme } = useTheme();
+  const { activeIconMeta, prefs } = useAppSettings();
   const [nowMs, setNowMs] = useState(() => Date.now());
 
   useEffect(() => {
@@ -67,6 +70,7 @@ export default function Topbar({
     players: t('navPlayers'),
     matches: t('navMatches'),
     leaderboard: t('navLeaderboard'),
+    settings: t('navSettings'),
     admin: t('navAdmin'),
   };
 
@@ -74,7 +78,11 @@ export default function Topbar({
   const countdown = getDeadlineCountdown(deadlineIso, nowMs);
   const countdownStr = formatCountdownShort(countdown, lang);
   const isUrgent = Boolean(
-    countdown && !countdown.expired && countdown.days === 0 && countdown.hours < 3
+    prefs.deadlineAlerts &&
+      countdown &&
+      !countdown.expired &&
+      countdown.days === 0 &&
+      countdown.hours < 3
   );
 
   return (
@@ -85,9 +93,13 @@ export default function Topbar({
             type="button"
             className="topbar-brand-badge"
             onClick={() => onSelectScreen?.('overview')}
-            aria-label="الخميس الممتاز"
+            aria-label={activeIconMeta.homeLabel}
           >
-            <img src="/logo.svg" alt="الخميس الممتاز" className="brand-logo-img" />
+            <img
+              src={activeIconMeta.svgPath}
+              alt={activeIconMeta.homeLabel}
+              className="brand-logo-img"
+            />
           </button>
           <div>
             <span className="eyebrow">
@@ -141,6 +153,18 @@ export default function Topbar({
             )}
             <span>{t('myProfileBtn')}</span>
           </button>
+
+          {onSelectScreen && (
+            <button
+              type="button"
+              className={`secondary compact-btn ${screen === 'settings' ? 'active-topbar-pill' : ''}`}
+              onClick={() => onSelectScreen('settings')}
+              title={t('navSettings')}
+            >
+              <Settings size={14} />
+              <span>{t('navSettings')}</span>
+            </button>
+          )}
 
           <button
             type="button"

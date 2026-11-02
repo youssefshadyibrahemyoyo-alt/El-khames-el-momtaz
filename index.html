@@ -275,7 +275,12 @@
         <div class="ekm-splash-aura" aria-hidden="true"></div>
         <div class="ekm-splash-crest-frame">
           <div class="ekm-splash-crest-inner">
-            <img src="/logo.svg" alt="الخميس الممتاز — El Khames El Momtaz" decoding="sync" />
+            <img
+              id="ekm-splash-crest-img"
+              src="/icons/ar-green.svg"
+              alt="الخميس الممتاز — El Khames El Momtaz"
+              decoding="sync"
+            />
           </div>
         </div>
         <div class="ekm-splash-meta">
@@ -293,6 +298,21 @@
         var el = document.getElementById('app-boot-splash');
         if (!el) return;
         try {
+          var validIcons = {
+            'ar-green': 1, 'ar-white': 1, 'ar-silver': 1, 'ar-black': 1,
+            'en-green': 1, 'en-white': 1, 'en-silver': 1, 'en-black': 1
+          };
+          var savedIcon = localStorage.getItem('ekm_app_icon');
+          var iconId = savedIcon && validIcons[savedIcon] ? savedIcon : 'ar-green';
+          var crestImg = document.getElementById('ekm-splash-crest-img');
+          if (crestImg) crestImg.setAttribute('src', '/icons/' + iconId + '.svg');
+          var fav = document.querySelector('link[rel="icon"]');
+          if (fav) fav.setAttribute('href', '/icons/' + iconId + '.svg');
+          var appleFav = document.querySelector('link[rel="apple-touch-icon"]');
+          if (appleFav) appleFav.setAttribute('href', '/icons/' + iconId + '-180.png');
+          var man = document.querySelector('link[rel="manifest"]');
+          if (man) man.setAttribute('href', '/manifests/manifest-' + iconId + '.webmanifest');
+
           var lang = localStorage.getItem('ekm_lang');
           if (lang === 'ar') {
             document.documentElement.lang = 'ar';
@@ -300,8 +320,9 @@
             var tag = document.getElementById('ekm-splash-tagline');
             if (tag) tag.textContent = 'فانتازي ليلة الخميس · القاهرة';
           }
+          var fast = localStorage.getItem('ekm_splash_fast') === '1';
           var seen = sessionStorage.getItem('ekm_splash_seen') === '1';
-          el.setAttribute('data-mode', seen ? 'quick' : 'full');
+          el.setAttribute('data-mode', fast || seen ? 'quick' : 'full');
         } catch (_) {
           el.setAttribute('data-mode', 'full');
         }

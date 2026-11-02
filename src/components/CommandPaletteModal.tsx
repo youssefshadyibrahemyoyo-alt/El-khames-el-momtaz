@@ -5,6 +5,7 @@ import {
   Globe,
   Moon,
   Search,
+  Settings,
   ShieldCheck,
   Sun,
   Swords,
@@ -62,6 +63,7 @@ export default function CommandPaletteModal({
       { id: 'players', label: t('navPlayers'), icon: CircleUserRound },
       { id: 'matches', label: t('navMatches'), icon: Swords },
       { id: 'leaderboard', label: t('navLeaderboard'), icon: Trophy },
+      { id: 'settings', label: t('navSettings'), icon: Settings },
     ];
     if (isAdmin) {
       base.push({ id: 'admin', label: t('navAdmin'), icon: ShieldCheck });

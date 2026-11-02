@@ -5,6 +5,7 @@ export type ThemeMode = 'light' | 'dark';
 type ThemeContextValue = {
   theme: ThemeMode;
   isDark: boolean;
+  setTheme: (next: ThemeMode) => void;
   toggleTheme: () => void;
 };
 
@@ -43,7 +44,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const toggleTheme = () => setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
 
   return (
-    <ThemeContext.Provider value={{ theme, isDark: theme === 'dark', toggleTheme }}>
+    <ThemeContext.Provider value={{ theme, isDark: theme === 'dark', setTheme, toggleTheme }}>
       {children}
     </ThemeContext.Provider>
   );
@@ -60,6 +61,7 @@ export function useTheme(): ThemeContextValue {
   return {
     theme: current,
     isDark: current === 'dark',
+    setTheme: applyDomTheme,
     toggleTheme: () => applyDomTheme(current === 'light' ? 'dark' : 'light'),
   };
 }

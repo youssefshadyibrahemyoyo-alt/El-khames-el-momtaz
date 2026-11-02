@@ -1,6 +1,7 @@
 import {
   CalendarDays,
   CircleUserRound,
+  Settings,
   ShieldCheck,
   Swords,
   Trophy,
@@ -30,6 +31,7 @@ export default function MobileBottomNav({
     { id: 'players', label: t('navPlayers'), icon: CircleUserRound },
     { id: 'matches', label: t('navMatches'), icon: Swords },
     { id: 'leaderboard', label: t('navLeaderboard'), icon: Trophy },
+    { id: 'settings', label: t('navSettings'), icon: Settings },
   ];
 
   if (isAdmin) {

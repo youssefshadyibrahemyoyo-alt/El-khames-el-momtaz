@@ -1,4 +1,5 @@
 import type { GameweekHighlights, LeaguePlayer } from '../types/league';
+import { getAppIconMeta, getStoredAppIcon } from '../settings/AppSettingsContext';
 
 function drawRoundRect(
   ctx: CanvasRenderingContext2D,
@@ -52,12 +53,13 @@ async function deliverCanvasPng(canvas: HTMLCanvasElement, filename: string, sha
 }
 
 async function loadBrandLogoImage(): Promise<HTMLImageElement | null> {
+  const iconMeta = getAppIconMeta(getStoredAppIcon());
   return new Promise(resolve => {
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => resolve(img);
     img.onerror = () => resolve(null);
-    img.src = '/hagz-icon-512.png';
+    img.src = iconMeta.png512Path;
   });
 }
 

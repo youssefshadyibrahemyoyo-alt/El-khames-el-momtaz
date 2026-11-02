@@ -4,6 +4,7 @@ import {
   CircleUserRound,
   LogOut,
   Moon,
+  Settings,
   ShieldCheck,
   Sun,
   Swords,
@@ -13,6 +14,7 @@ import {
 import type { Screen } from '../types/league';
 import { useLanguage } from '../i18n/LanguageContext';
 import { useTheme } from '../theme/ThemeContext';
+import { useAppSettings } from '../settings/AppSettingsContext';
 
 type SidebarProps = {
   screen: Screen;
@@ -39,6 +41,7 @@ export default function Sidebar({
 }: SidebarProps) {
   const { t } = useLanguage();
   const { isDark, toggleTheme } = useTheme();
+  const { activeIconMeta } = useAppSettings();
 
   const navItems: { id: Screen; label: string; icon: typeof CalendarDays; admin?: boolean }[] = [
     { id: 'overview', label: t('navHome'), icon: CalendarDays },
@@ -46,6 +49,7 @@ export default function Sidebar({
     { id: 'players', label: t('navPlayers'), icon: CircleUserRound },
     { id: 'matches', label: t('navMatches'), icon: Swords },
     { id: 'leaderboard', label: t('navLeaderboard'), icon: Trophy },
+    { id: 'settings', label: t('navSettings'), icon: Settings },
     { id: 'admin', label: t('navAdmin'), icon: ShieldCheck, admin: true },
   ];
 
@@ -59,7 +63,11 @@ export default function Sidebar({
     <aside className="sidebar">
       <div className="brand compact">
         <span className="brand-mark brand-mark--logo">
-          <img src="/logo.svg" alt="الخميس الممتاز" className="brand-logo-img" />
+          <img
+            src={activeIconMeta.svgPath}
+            alt={activeIconMeta.homeLabel}
+            className="brand-logo-img"
+          />
         </span>
         <div>
           <div className="eyebrow">{t('brandEyebrow')}</div>

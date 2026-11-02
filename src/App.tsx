@@ -39,6 +39,7 @@ import SquadScreen from './screens/SquadScreen';
 import PlayerMarketScreen from './screens/PlayerMarketScreen';
 import MatchesScreen from './screens/MatchesScreen';
 import LeaderboardScreen from './screens/LeaderboardScreen';
+import SettingsScreen from './screens/SettingsScreen';
 import AdminPanel from './admin/AdminPanel';
 import PlayerProfileModal from './components/PlayerProfileModal';
 import ManagerProfileModal from './components/ManagerProfileModal';
@@ -46,16 +47,18 @@ import ScrollFxObserver from './components/ScrollFxObserver';
 import CommandPaletteModal from './components/CommandPaletteModal';
 import MobileBottomNav from './components/MobileBottomNav';
 import { useBootSplash } from './lib/useBootSplash';
+import { getStoredUserPrefs, useAppSettings } from './settings/AppSettingsContext';
 
 export default function App() {
   const { t } = useLanguage();
+  const { prefs, triggerHaptic } = useAppSettings();
   const [demoMode] = useState(!isSupabaseConfigured);
   const [demoRole, setDemoRole] = useState<AccountRole>('admin_player');
 
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [profileLoading, setProfileLoading] = useState(Boolean(supabase));
-  const [screen, setScreen] = useState<Screen>('overview');
+  const [screen, setScreen] = useState<Screen>(() => getStoredUserPrefs().defaultScreen);
   const [reloadKey, setReloadKey] = useState(0);
 
   useBootSplash(demoMode || !profileLoading);
@@ -707,10 +710,18 @@ export default function App() {
     setSquadError('');
     setSessionMessage('');
 
+    if (prefs.confirmPointHits && pointsHits > 0) {
+      const ok = window.confirm(
+        t('settingsConfirmHitsPrompt').replace('{pts}', String(pointsHits))
+      );
+      if (!ok) return;
+    }
+
     if (demoMode || !supabase || !session) {
       setSavedSnapshot({ ids: [...selected], captain, viceCaptain, chip: activeChip });
       setSessionMessage(t('squadLockedInToast'));
-      setCelebrateKey(k => k + 1);
+      if (prefs.celebrationsEnabled) setCelebrateKey(k => k + 1);
+      triggerHaptic(22);
       return;
     }
 
@@ -767,7 +778,8 @@ export default function App() {
       const gwLabel = targetGw ? targetGw.number : gameweekNumber;
       setSavedSnapshot({ ids: [...selected], captain, viceCaptain, chip: activeChip });
       setSessionMessage(`${t('squadLockedInToast')} (GW ${gwLabel})`);
-      setCelebrateKey(k => k + 1);
+      if (prefs.celebrationsEnabled) setCelebrateKey(k => k + 1);
+      triggerHaptic(24);
       setReloadKey(k => k + 1);
     } finally {
       setSquadSaving(false);
@@ -970,6 +982,33 @@ export default function App() {
               trophies={managerTrophies}
               onCupChanged={() => setReloadKey(k => k + 1)}
               onOpenPlayerProfile={setProfileModalPlayerId}
+            />
+          )}
+
+          {screen === 'settings' && (
+            <SettingsScreen
+              profile={profile}
+              demoMode={demoMode}
+              isAdmin={isAdmin}
+              onProfileUpdated={updated => {
+                setProfile(updated);
+                setStandings(prev =>
+                  prev.map(s =>
+                    s.manager_id === updated.id
+                      ? {
+                          ...s,
+                          display_name: updated.display_name,
+                          team_name: updated.team_name,
+                          avatar_url: updated.avatar_url,
+                        }
+                      : s
+                  )
+                );
+              }}
+              onOpenTrophyModal={() => setMyProfileOpen(true)}
+              onRefreshLeagueData={() => setReloadKey(k => k + 1)}
+              onSignOutOrToggleDemo={handleSignOutOrToggleDemo}
+              onNavigate={setScreen}
             />
           )}
 
