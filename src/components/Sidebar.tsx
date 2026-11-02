@@ -4,7 +4,6 @@ import {
   CircleUserRound,
   LogOut,
   Moon,
-  Settings,
   ShieldCheck,
   Sun,
   Swords,
@@ -49,7 +48,6 @@ export default function Sidebar({
     { id: 'players', label: t('navPlayers'), icon: CircleUserRound },
     { id: 'matches', label: t('navMatches'), icon: Swords },
     { id: 'leaderboard', label: t('navLeaderboard'), icon: Trophy },
-    { id: 'settings', label: t('navSettings'), icon: Settings },
     { id: 'admin', label: t('navAdmin'), icon: ShieldCheck, admin: true },
   ];
 

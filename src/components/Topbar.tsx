@@ -4,7 +4,6 @@ import {
   Globe,
   LogOut,
   Moon,
-  Search,
   Settings,
   Sun,
   Timer,
@@ -34,7 +33,6 @@ type Props = {
   squadCount?: number;
   leaderClub?: string | null;
   onSelectScreen?: (next: Screen) => void;
-  onOpenCommandPalette?: () => void;
   onOpenMyProfile: () => void;
   onSignOutOrToggleDemo: () => void;
 };
@@ -50,7 +48,6 @@ export default function Topbar({
   squadCount = 0,
   leaderClub = null,
   onSelectScreen,
-  onOpenCommandPalette,
   onOpenMyProfile,
   onSignOutOrToggleDemo,
 }: Props) {
@@ -110,34 +107,20 @@ export default function Topbar({
         </div>
 
         <div className="top-actions">
-          {onOpenCommandPalette && (
-            <button
-              type="button"
-              className="secondary compact-btn spotlight-trigger-btn"
-              onClick={onOpenCommandPalette}
-              title="⌘K / Ctrl+K"
-            >
-              <Search size={14} />
-              <span>{t('quickJumpBtn')}</span>
-              <kbd className="spotlight-kbd">⌘K</kbd>
-            </button>
-          )}
-
-          <div className="deadline">
-            <Clock3 size={14} />
-            {deadlineIso
-              ? `${t('transfersClose')}: ${formatCairoDeadline(deadlineIso, lang)}`
-              : t('noDeadlineSet')}
-          </div>
-
-          {countdown && !countdown.expired && (
-            <div
-              className={`countdown-pill ${isUrgent ? 'urgent-pulse' : ''}`}
-              title={t('transfersClose')}
-            >
-              <Timer size={14} />
-              <strong>{countdownStr}</strong>
-            </div>
+          {(screen === 'squad' || screen === 'players') && (
+            <>
+              <div className="deadline">
+                <Clock3 size={14} />
+                {deadlineIso
+                  ? `${t('transfersClose')}: ${formatCairoDeadline(deadlineIso, lang)}`
+                  : t('noDeadlineSet')}
+              </div>
+              {countdown && !countdown.expired && (
+                <div className={`countdown-pill ${isUrgent ? 'urgent-pulse' : ''}`} title={t('transfersClose')}>
+                  <Timer size={14} /> <strong>{countdownStr}</strong>
+                </div>
+              )}
+            </>
           )}
 
           <button

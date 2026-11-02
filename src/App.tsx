@@ -44,7 +44,6 @@ import AdminPanel from './admin/AdminPanel';
 import PlayerProfileModal from './components/PlayerProfileModal';
 import ManagerProfileModal from './components/ManagerProfileModal';
 import ScrollFxObserver from './components/ScrollFxObserver';
-import CommandPaletteModal from './components/CommandPaletteModal';
 import MobileBottomNav from './components/MobileBottomNav';
 import { useBootSplash } from './lib/useBootSplash';
 import { getStoredUserPrefs, useAppSettings } from './settings/AppSettingsContext';
@@ -114,19 +113,6 @@ export default function App() {
   const [celebrateKey, setCelebrateKey] = useState(0);
   const [profileModalPlayerId, setProfileModalPlayerId] = useState<string | null>(null);
   const [myProfileOpen, setMyProfileOpen] = useState(false);
-  const [cmdOpen, setCmdOpen] = useState(false);
-
-  useEffect(() => {
-    const onGlobalKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
-        e.preventDefault();
-        setCmdOpen(prev => !prev);
-      }
-    };
-    window.addEventListener('keydown', onGlobalKey);
-    return () => window.removeEventListener('keydown', onGlobalKey);
-  }, []);
-
   // Standings & Trophy Cabinet
   const [standings, setStandings] = useState<Standing[]>([]);
   const [standingsLoading, setStandingsLoading] = useState(false);
@@ -833,7 +819,6 @@ export default function App() {
               : null
           }
           onSelectScreen={setScreen}
-          onOpenCommandPalette={() => setCmdOpen(true)}
           onOpenMyProfile={() => setMyProfileOpen(true)}
           onSignOutOrToggleDemo={handleSignOutOrToggleDemo}
         />
@@ -1095,16 +1080,6 @@ export default function App() {
             onClose={() => setMyProfileOpen(false)}
           />
         )}
-
-        <CommandPaletteModal
-          isOpen={cmdOpen}
-          isAdmin={isAdmin}
-          players={players}
-          onClose={() => setCmdOpen(false)}
-          onSelectScreen={setScreen}
-          onOpenPlayerProfile={setProfileModalPlayerId}
-          onOpenMyProfile={() => setMyProfileOpen(true)}
-        />
 
         <footer>
           <span>EL KHAMES EL MOMTAZ</span>
