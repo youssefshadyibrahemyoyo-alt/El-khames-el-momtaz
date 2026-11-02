@@ -8134,3 +8134,7 @@ button:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible
   .egypt-squad-panel .egypt-chip { min-height: 72px; padding: 10px; }
   .egypt-squad-panel .egypt-bench { padding: 16px; }
 }
+
+/* Rival squad inspection should wrap its contents, not reserve an empty pitch. */
+.inspector-modal-wide { height: auto; min-height: 0; }
+.egypt-pitch.pitch-3d-stadium.inspector-pitch { min-height: 0; }
