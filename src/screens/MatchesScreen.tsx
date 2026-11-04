@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Check, Crown, Flame, Search, Sparkles, Star, Swords, ThumbsUp } from 'lucide-react';
+import { CalendarPlus, Check, ChevronDown, Crown, Flame, RefreshCw, Save, Search, Shield, Sparkles, Star, Swords, ThumbsUp, Trash2, Users } from 'lucide-react';
 import type { FanPotnPoll, Gameweek, PublicMatch } from '../types/league';
 import { useLanguage } from '../i18n/LanguageContext';
 import { supabase } from '../lib/supabase';
-import { DEMO_FAN_POLL, DEMO_MATCHES } from '../lib/demoData';
+import { DEMO_FAN_POLL, DEMO_MATCHES, DEMO_PLAYERS } from '../lib/demoData';
+import type { LeaguePlayer } from '../types/league';
 import AnimatedNumber from '../components/AnimatedNumber';
 
 type Props = {
@@ -171,6 +172,8 @@ export default function MatchesScreen({
           </select>
         )}
       </div>
+
+      <SingleFilePlanner demoMode={demoMode} />
 
       {loading && <p className="muted">{t('loadingPoints')}</p>}
       {error && <div className="notice">{error}</div>}
@@ -454,3 +457,219 @@ export default function MatchesScreen({
     </section>
   );
 }
+
+type RatedPlayer = { id: string; name: string; strength: number };
+type BalancedTeams = { teamA: RatedPlayer[]; teamB: RatedPlayer[]; difference: number };
+
+/** Finds a minimum total-rating difference among equal-sized (or one-off) teams. */
+function balanceTeams(players: RatedPlayer[], random: () => number = Math.random): BalancedTeams {
+  if (players.length < 2 || players.length > 30 || players.some(p => !Number.isInteger(p.strength) || p.strength < 1 || p.strength > 10) || new Set(players.map(p => p.id)).size !== players.length) throw new Error('Choose 2–30 unique players rated 1–10');
+  const shuffled = [...players];
+  for (let i = shuffled.length - 1; i > 0; i--) { const j = Math.floor(random() * (i + 1)); [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]; }
+  const count = Math.floor(shuffled.length / 2);
+  const total = shuffled.reduce((sum, p) => sum + p.strength, 0);
+  const states = Array.from({ length: count + 1 }, () => new Map<number, number[]>());
+  states[0].set(0, []);
+  shuffled.forEach((p, index) => {
+    for (let n = Math.min(count, index + 1); n >= 1; n--) {
+      for (const [sum, chosen] of states[n - 1]) {
+        const next = sum + p.strength;
+        if (!states[n].has(next)) states[n].set(next, [...chosen, index]);
+      }
+    }
+  });
+  let best: number[] = []; let diff = Infinity;
+  for (const [sum, indices] of states[count]) { const d = Math.abs(total - sum * 2); if (d < diff) { diff = d; best = indices; } }
+  const selected = new Set(best);
+  return { teamA: shuffled.filter((_, i) => selected.has(i)), teamB: shuffled.filter((_, i) => !selected.has(i)), difference: diff };
+}
+
+type PlannedMatch = { id: string; title: string; created_by: string; created_at: string; team_a: RatedPlayer[]; team_b: RatedPlayer[] };
+type PlannerProps = { players: LeaguePlayer[]; isAdmin: boolean; demoMode: boolean; userId?: string };
+
+function MatchPlanner({ players, isAdmin, demoMode, userId }: PlannerProps) {
+  const { lang } = useLanguage();
+  const ar = lang === 'ar';
+  const txt = (en: string, arabic: string) => ar ? arabic : en;
+  const [open, setOpen] = useState(false);
+  const [ratingsOpen, setRatingsOpen] = useState(false);
+  const [strengths, setStrengths] = useState<Record<string, number>>({});
+  const [selected, setSelected] = useState<string[]>([]);
+  const [teams, setTeams] = useState<BalancedTeams | null>(null);
+  const [matches, setMatches] = useState<PlannedMatch[]>([]);
+  const [title, setTitle] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
+  const active = useMemo(() => players.filter(p => p.is_active), [players]);
+  const missing = selected.filter(id => !strengths[id]);
+
+  const load = useCallback(async () => {
+    if (demoMode || !supabase) { setLoading(false); return; }
+    setLoading(true); setError('');
+    const [ratingRes, matchRes] = await Promise.all([
+      supabase.from('match_player_strengths').select('player_id,strength'),
+      supabase.from('planned_pickup_matches').select('id,title,created_by,created_at,team_a,team_b').order('created_at', { ascending: false }).limit(50),
+    ]);
+    if (ratingRes.error || matchRes.error) setError(txt('Could not load match planning. Please try again.', 'تعذر تحميل تخطيط المباريات. حاول مرة أخرى.'));
+    else {
+      setStrengths(Object.fromEntries((ratingRes.data ?? []).map((r: {player_id: string; strength: number}) => [r.player_id, Number(r.strength)])));
+      setMatches((matchRes.data ?? []) as PlannedMatch[]);
+    }
+    setLoading(false);
+  }, [demoMode, lang]);
+  useEffect(() => { void load(); }, [load]);
+
+  async function setRating(playerId: string, value: number) {
+    if (!isAdmin || value < 1 || value > 10) return;
+    setBusy(true); setError(''); setMessage('');
+    if (!demoMode && supabase) {
+      const { error: e } = await supabase.from('match_player_strengths').upsert({ player_id: playerId, strength: value, updated_at: new Date().toISOString() });
+      if (e) { setError(txt('Could not save the rating. Please try again.', 'تعذر حفظ التقييم. حاول مرة أخرى.')); setBusy(false); return; }
+    }
+    setStrengths(prev => ({ ...prev, [playerId]: value })); setTeams(null); setBusy(false);
+  }
+  function toggle(id: string) {
+    setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : prev.length < 30 ? [...prev, id] : prev);
+    setTeams(null); setMessage('');
+  }
+  function generate() {
+    const pool = active.filter(p => selected.includes(p.id)).map(p => ({ id: p.id, name: p.name, strength: strengths[p.id] }));
+    if (pool.length < 2 || pool.length > 30 || pool.some(p => !p.strength)) return;
+    setTeams(balanceTeams(pool)); setMessage('');
+  }
+  async function save() {
+    if (!teams || !title.trim() || busy) return;
+    setBusy(true); setError(''); setMessage('');
+    if (demoMode) {
+      setMatches(prev => [{ id: `demo-${Date.now()}`, title: title.trim(), created_by: 'demo', created_at: new Date().toISOString(), team_a: teams.teamA, team_b: teams.teamB }, ...prev]);
+    } else if (supabase) {
+      const { error: e } = await supabase.rpc('create_balanced_pickup_match', { p_title: title.trim(), p_team_a: teams.teamA.map(p => p.id), p_team_b: teams.teamB.map(p => p.id) });
+      if (e) { setError(txt('Could not save the match. Check the selected players and try again.', 'تعذر حفظ المباراة. تحقق من اللاعبين وحاول مرة أخرى.')); setBusy(false); return; }
+      await load();
+    }
+    setOpen(false); setTitle(''); setSelected([]); setTeams(null); setMessage(txt('Match created. It will not affect official fantasy points.', 'تم إنشاء المباراة. لن تؤثر على نقاط الفانتازي الرسمية.')); setBusy(false);
+  }
+  async function remove(id: string) {
+    if (!window.confirm(txt('Delete this planned match?', 'حذف هذه المباراة المخططة؟'))) return;
+    setBusy(true); setError('');
+    if (!demoMode && supabase) {
+      const { data: deleted, error: e } = await supabase.from('planned_pickup_matches').delete().eq('id', id).select('id');
+      if (e || !deleted?.length) { setError(txt('Could not delete the match.', 'تعذر حذف المباراة.')); setBusy(false); return; }
+    }
+    setMatches(prev => prev.filter(m => m.id !== id)); setBusy(false);
+  }
+  const teamCard = (team: RatedPlayer[], label: string, style: string) => (
+    <div className={`planner-team ${style}`}><div className="planner-team-head"><strong>{label}</strong><span>{team.reduce((n,p) => n + p.strength, 0)} {txt('strength', 'قوة')}</span></div>
+      <ul>{team.map(p => <li key={p.id}><span>{p.name}</span><strong>{p.strength}/10</strong></li>)}</ul></div>
+  );
+  return <div className="match-planner">
+    <div className="planner-head"><div><span className="planner-eyebrow"><Shield size={14} /> {txt('MATCH PLANNER', 'تخطيط المباراة')}</span><h3>{txt('Build a fair game.', 'خلّي المباراة متوازنة.')}</h3><p>{txt('Choose who’s playing and generate balanced teams from admin ratings.', 'اختار اللاعبين ووزّع الفرق حسب تقييمات الأدمن.')}</p></div>
+      <button className="primary planner-create-btn" type="button" onClick={() => {setOpen(v => !v);setError('');}} aria-expanded={open}><CalendarPlus size={16} /> {open ? txt('Close', 'إغلاق') : txt('Create a match', 'إنشاء مباراة')}</button></div>
+    <p className="planner-note">{txt('Planned matches are separate from official results and do not award fantasy points.', 'المباريات المخططة منفصلة عن النتائج الرسمية ولا تضيف نقاط فانتازي.')}</p>
+    {error && <div className="notice" role="alert">{error}</div>}{message && <p className="planner-message" role="status">{message}</p>}
+    {isAdmin && <details className="planner-ratings" open={ratingsOpen} onToggle={e => setRatingsOpen(e.currentTarget.open)}><summary><span><Shield size={16} /> {txt('Player strength ratings', 'تقييم قوة اللاعبين')}</span><ChevronDown size={16}/></summary><p>{txt('Set a rating from 1 to 10 for each player. Ratings are shared with league members.', 'حدد تقييم كل لاعب من ١ إلى ١٠. التقييمات تظهر لأعضاء الدوري.')}</p><div className="planner-rating-list">{active.map(p => <label key={p.id}><span>{p.name}</span><select aria-label={`${txt('Strength rating for', 'تقييم قوة')} ${p.name}`} value={strengths[p.id] || ''} disabled={busy} onChange={e => void setRating(p.id, Number(e.target.value))}><option value="" disabled>{txt('Not rated', 'لم يُقيّم')}</option>{Array.from({length:10},(_,i) => <option value={i+1} key={i+1}>{i+1}/10</option>)}</select></label>)}</div></details>}
+    {open && <div className="planner-builder"><label className="planner-title-label">{txt('Match name', 'اسم المباراة')}<input maxLength={80} value={title} onChange={e => setTitle(e.target.value)} placeholder={txt('e.g. Thursday night', 'مثال: ماتش الخميس')} /></label>
+      <div className="planner-section-title"><div><strong>{txt('Who’s playing?', 'مين هيلعب؟')}</strong><p>{txt('Select 2–30 available players.', 'اختار من ٢ إلى ٣٠ لاعبًا متاحًا.')}</p></div><span><Users size={14}/>{selected.length}</span></div>
+      <div className="planner-player-list">{active.map(p => <button type="button" key={p.id} className={`planner-player ${selected.includes(p.id) ? 'selected' : ''}`} onClick={() => toggle(p.id)} aria-pressed={selected.includes(p.id)}><span className="planner-checkbox">{selected.includes(p.id) ? '✓' : ''}</span><span>{p.name}</span><small>{strengths[p.id] ? `${strengths[p.id]}/10` : txt('Not rated', 'لم يُقيّم')}</small></button>)}</div>
+      {missing.length > 0 && <p className="planner-warning">{txt('An admin must rate every selected player before teams can be generated.', 'يجب أن يقيّم الأدمن كل اللاعبين المختارين قبل توزيع الفرق.')}</p>}
+      <div className="planner-actions"><button type="button" className="secondary" onClick={generate} disabled={selected.length < 2 || missing.length > 0 || busy}><RefreshCw size={15}/>{teams ? txt('Generate again', 'إعادة التوزيع') : txt('Generate balanced teams', 'وزّع الفرق بالتوازن')}</button></div>
+      {teams && <><div className="planner-result-header"><strong>{txt('Your teams', 'الفرق')}</strong><span>{txt('Strength difference', 'فرق القوة')}: {teams.difference}</span></div><div className="planner-teams">{teamCard(teams.teamA,txt('Team A','الفريق أ'),'team-a')}{teamCard(teams.teamB,txt('Team B','الفريق ب'),'team-b')}</div><button type="button" className="primary planner-save" disabled={!title.trim() || busy} onClick={() => void save()}><Save size={15}/>{busy ? txt('Saving…','جارٍ الحفظ…') : txt('Save match','حفظ المباراة')}</button></>}
+    </div>}
+    {loading ? <p className="muted">{txt('Loading planned matches…','جارٍ تحميل المباريات المخططة…')}</p> : matches.length > 0 && <div className="planner-saved"><div className="planner-section-title"><div><strong>{txt('Planned matches','المباريات المخططة')}</strong><p>{txt('Visible to approved league members','مرئية لأعضاء الدوري المعتمدين')}</p></div></div>{matches.map(m => <details key={m.id} className="planner-match"><summary><span><strong>{m.title}</strong><small>{new Intl.DateTimeFormat(ar?'ar-EG':'en-GB',{dateStyle:'medium',timeZone:'Africa/Cairo'}).format(new Date(m.created_at))} · {m.team_a.length + m.team_b.length} {txt('players','لاعبين')}</small></span><ChevronDown size={16}/></summary><div className="planner-teams">{teamCard(m.team_a,txt('Team A','الفريق أ'),'team-a')}{teamCard(m.team_b,txt('Team B','الفريق ب'),'team-b')}</div>{(isAdmin || m.created_by === userId || (demoMode && m.created_by === 'demo')) && <button type="button" className="secondary compact-btn planner-delete" onClick={() => void remove(m.id)} disabled={busy}><Trash2 size={14}/>{txt('Delete match','حذف المباراة')}</button>}</details>)}</div>}
+  </div>;
+}
+
+
+function SingleFilePlanner({ demoMode }: { demoMode: boolean }) {
+  const [plannerPlayers, setPlannerPlayers] = useState<LeaguePlayer[]>(demoMode ? DEMO_PLAYERS : []);
+  const [plannerAdmin, setPlannerAdmin] = useState(demoMode);
+  const [plannerUserId, setPlannerUserId] = useState<string | undefined>();
+  const [plannerLoadError, setPlannerLoadError] = useState(false);
+  const { lang } = useLanguage();
+  useEffect(() => {
+    if (demoMode || !supabase) return;
+    let cancelled = false;
+    const db = supabase;
+    async function loadPlannerContext() {
+      const { data: authData, error: authError } = await db.auth.getUser();
+      if (cancelled) return;
+      const id = authData.user?.id;
+      if (authError || !id) { setPlannerLoadError(true); return; }
+      const [profile, pool] = await Promise.all([
+        db.from('profiles').select('role').eq('id', id).maybeSingle(),
+        db.from('football_players').select('id,display_name,price,photo_url,is_active').order('display_name'),
+      ]);
+      if (cancelled) return;
+      if (profile.error || pool.error) { setPlannerLoadError(true); return; }
+      setPlannerUserId(id);
+      setPlannerAdmin(profile.data?.role === 'admin_player');
+      setPlannerPlayers((pool.data ?? []).map((p: {id: string; display_name: string; price: number; photo_url: string | null; is_active: boolean}) => ({ id: p.id, name: p.display_name, price: Number(p.price), photo_url: p.photo_url, is_active: p.is_active, points: 0, matchesPlayed: 0 })));
+    }
+    void loadPlannerContext();
+    return () => { cancelled = true; };
+  }, [demoMode]);
+  return <><style>{PLANNER_CSS}</style>{plannerLoadError && <div className="notice" role="alert">{lang === 'ar' ? 'تعذر تحميل اللاعبين. حاول تحديث الصفحة.' : 'Could not load players. Please refresh the page.'}</div>}<MatchPlanner players={plannerPlayers} isAdmin={plannerAdmin} demoMode={demoMode} userId={plannerUserId} /></>;
+}
+
+const PLANNER_CSS = `
+/* Balanced pickup match planner */
+.match-planner { padding: clamp(18px, 2.4vw, 26px); margin: 0 0 22px; border: 1px solid var(--line-strong); border-radius: 18px; background: var(--panel2); }
+.planner-head { display: flex; justify-content: space-between; align-items: center; gap: 20px; }
+.planner-eyebrow { display: inline-flex; align-items: center; gap: 6px; color: var(--gold-text); font-size: 10px; letter-spacing: .1em; font-weight: 800; }
+.planner-head h3 { font-size: clamp(21px, 2.4vw, 28px); margin: 8px 0 5px; letter-spacing: -.03em; }
+.planner-head p, .planner-section-title p { color: var(--muted); margin: 0; line-height: 1.5; font-size: 12px; }
+.planner-create-btn { flex-shrink: 0; min-height: 42px; }
+.planner-note { color: var(--muted); margin: 16px 0 0; font-size: 11px; line-height: 1.5; }
+.planner-ratings, .planner-match { border: 1px solid var(--line); border-radius: 13px; background: var(--panel); margin-top: 14px; }
+.planner-ratings summary, .planner-match summary { cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 10px; list-style: none; padding: 14px; font-size: 13px; font-weight: 700; }
+.planner-ratings summary::-webkit-details-marker, .planner-match summary::-webkit-details-marker { display: none; }
+.planner-ratings summary span { display:flex; align-items:center; gap:8px; }
+.planner-ratings[open] summary > svg, .planner-match[open] summary > svg { transform: rotate(180deg); }
+.planner-ratings > p { margin: 0 14px 12px; color: var(--muted); font-size: 12px; }
+.planner-rating-list { display: grid; grid-template-columns: repeat(auto-fit,minmax(190px,1fr)); gap: 8px; padding: 0 14px 14px; }
+.planner-rating-list label { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 10px; background: var(--panel2); font-size: 12px; }
+.planner-rating-list select { max-width: 105px; padding: 7px; border: 1px solid var(--line); border-radius: 8px; background: var(--input-bg); color: var(--text); }
+.planner-builder { margin-top: 16px; padding: 18px; border-radius: 15px; border: 1px solid var(--line); background: var(--panel); }
+.planner-title-label { display: grid; gap: 7px; font-size: 12px; font-weight: 700; }
+.planner-title-label input { width: 100%; padding: 11px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--input-bg); color: var(--heading); }
+.planner-section-title { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 20px 0 10px; }
+.planner-section-title strong { font-size: 14px; color: var(--heading); }
+.planner-section-title > span { display: inline-flex; align-items: center; gap: 5px; background: var(--green-soft); padding: 6px 9px; border-radius: 9px; color: var(--green); font-weight: 700; }
+.planner-player-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 7px; }
+.planner-player { min-width: 0; display: flex; align-items: center; gap: 9px; text-align: start; padding: 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel2); color: var(--heading); font-size: 12px; }
+.planner-player.selected { border-color: var(--green); background: var(--green-soft); }
+.planner-player small { margin-inline-start: auto; white-space: nowrap; color: var(--muted); }
+.planner-checkbox { display: grid; place-items: center; flex-shrink: 0; width: 18px; height: 18px; border-radius: 5px; border: 1px solid var(--line-strong); }
+.planner-player.selected .planner-checkbox { background: var(--green); color: #fff; border-color: var(--green); }
+.planner-warning { color: var(--gold-text); font-size: 12px; line-height: 1.5; }
+.planner-actions { margin-top: 16px; }
+.planner-result-header { margin: 22px 0 10px; display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; }
+.planner-result-header span { color: var(--muted); font-size: 11px; }
+.planner-teams { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
+.planner-team { border: 1px solid var(--line); background: var(--panel2); border-radius: 12px; padding: 13px; min-width: 0; }
+.planner-team.team-a { border-top: 3px solid #368c62; }
+.planner-team.team-b { border-top: 3px solid #c9a44e; }
+.planner-team-head { display: flex; flex-wrap: wrap; gap: 5px; justify-content: space-between; font-size: 12px; }
+.planner-team-head span { color: var(--muted); font-size: 11px; }
+.planner-team ul { list-style: none; margin: 10px 0 0; padding: 0; }
+.planner-team li { display: flex; justify-content: space-between; gap: 7px; padding: 6px 0; border-top: 1px solid var(--line); font-size: 12px; }
+.planner-team li span { overflow-wrap: anywhere; }
+.planner-team li strong { color: var(--muted); white-space: nowrap; font-size: 11px; }
+.planner-save { margin-top: 15px; }
+.planner-message { color: var(--green); font-weight: 700; font-size: 12px; }
+.planner-match summary > span { display: grid; gap: 4px; }
+.planner-match summary small { font-weight: 400; color: var(--muted); }
+.planner-match .planner-teams { padding: 0 14px; }
+.planner-delete { margin: 12px 14px 14px; }
+@media (max-width: 640px) {
+ .planner-head { align-items: flex-start; flex-direction: column; gap: 14px; }
+ .planner-create-btn { width: 100%; }
+ .planner-builder { padding: 14px; }
+ .planner-player-list { grid-template-columns: repeat(2,minmax(0,1fr)); }
+ .planner-player { flex-wrap: wrap; }
+ .planner-player small { width: 100%; padding-inline-start: 27px; }
+}
+
+`;
