@@ -173,7 +173,7 @@ export default function MatchesScreen({
         )}
       </div>
 
-      <SingleFilePlanner demoMode={demoMode} />
+      
 
       {loading && <p className="muted">{t('loadingPoints')}</p>}
       {error && <div className="notice">{error}</div>}
