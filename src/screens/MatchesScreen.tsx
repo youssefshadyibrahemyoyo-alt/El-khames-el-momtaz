@@ -149,7 +149,7 @@ export default function MatchesScreen({
 
   return (
     <section className="panel stagger-item" style={{ '--stagger-i': 0 } as React.CSSProperties}>
-      <div className="panel-heading">
+<PriceMatchPlanner demoMode={demoMode} />      <div className="panel-heading">
         <div>
           <h3>{t('matchesScreenTitle')}</h3>
           <p>{t('matchesScreenSub')}</p>
@@ -673,3 +673,514 @@ const PLANNER_CSS = `
 }
 
 `;
+// Match planner: balances teams using player prices.
+type PlannerPlayer = {
+  id: string;
+  name: string;
+  price: number;
+};
+
+type PlannerSavedPlayer = {
+  id: string;
+  name: string;
+  strength: number;
+};
+
+type PlannerMatch = {
+  id: string;
+  title: string;
+  created_by: string;
+  team_a: PlannerSavedPlayer[];
+  team_b: PlannerSavedPlayer[];
+};
+
+function PriceMatchPlanner({ demoMode }: { demoMode: boolean }) {
+  const { lang } = useLanguage();
+
+  const tr = (en: string, ar: string) => (lang === 'ar' ? ar : en);
+  const money = (n: number) => `£${n.toFixed(1)}m`;
+
+  const [players, setPlayers] = React.useState<PlannerPlayer[]>([]);
+  const [chosen, setChosen] = React.useState<string[]>([]);
+  const [teamA, setTeamA] = React.useState<PlannerPlayer[] | null>(null);
+  const [teamB, setTeamB] = React.useState<PlannerPlayer[] | null>(null);
+  const [matches, setMatches] = React.useState<PlannerMatch[]>([]);
+  const [name, setName] = React.useState('');
+  const [open, setOpen] = React.useState(false);
+  const [busy, setBusy] = React.useState(false);
+  const [error, setError] = React.useState('');
+  const [userId, setUserId] = React.useState('');
+  const [isAdmin, setIsAdmin] = React.useState(false);
+
+  React.useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      if (demoMode) {
+        const { DEMO_PLAYERS } = await import('../lib/demoData');
+
+        if (!cancelled) {
+          setPlayers(
+            DEMO_PLAYERS.filter(p => p.is_active).map(p => ({
+              id: p.id,
+              name: p.name,
+              price: p.price,
+            }))
+          );
+        }
+
+        return;
+      }
+
+      if (!supabase) return;
+
+      const { data: auth } = await supabase.auth.getUser();
+
+      if (!auth.user) {
+        if (!cancelled) {
+          setError(tr('Please sign in.', 'يرجى تسجيل الدخول.'));
+        }
+        return;
+      }
+
+      const [pool, profile, saved] = await Promise.all([
+        supabase
+          .from('football_players')
+          .select('id,display_name,price')
+          .eq('is_active', true)
+          .order('display_name'),
+
+        supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', auth.user.id)
+          .maybeSingle(),
+
+        supabase
+          .from('planned_pickup_matches')
+          .select('id,title,created_by,team_a,team_b')
+          .order('created_at', { ascending: false })
+          .limit(50),
+      ]);
+
+      if (cancelled) return;
+
+      if (pool.error || profile.error || saved.error) {
+        setError(
+          tr(
+            'Could not load the match planner.',
+            'تعذر تحميل مخطط المباريات.'
+          )
+        );
+        return;
+      }
+
+      setUserId(auth.user.id);
+      setIsAdmin(profile.data?.role === 'admin_player');
+
+      setPlayers(
+        (pool.data ?? []).map(
+          (p: { id: string; display_name: string; price: number }) => ({
+            id: p.id,
+            name: p.display_name,
+            price: Number(p.price),
+          })
+        )
+      );
+
+      setMatches((saved.data ?? []) as PlannerMatch[]);
+    }
+
+    void load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [demoMode, lang]);
+
+  function toggle(id: string) {
+    setChosen(prev =>
+      prev.includes(id)
+        ? prev.filter(x => x !== id)
+        : prev.length < 30
+          ? [...prev, id]
+          : prev
+    );
+
+    setTeamA(null);
+    setTeamB(null);
+  }
+
+  function generate() {
+    const pool = players.filter(p => chosen.includes(p.id));
+
+    if (
+      pool.length < 2 ||
+      pool.some(p => !Number.isFinite(p.price) || p.price < 0)
+    ) {
+      return;
+    }
+
+    // Shuffle first so repeated generations can produce different fair teams.
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+
+    const target = Math.floor(pool.length / 2);
+
+    const states = Array.from(
+      { length: target + 1 },
+      () => new Map<number, number[]>()
+    );
+
+    states[0].set(0, []);
+
+    pool.forEach((player, i) => {
+      for (
+        let count = Math.min(target, i + 1);
+        count >= 1;
+        count--
+      ) {
+        for (const [sum, indices] of states[count - 1]) {
+          const next = sum + Math.round(player.price * 10);
+
+          if (!states[count].has(next)) {
+            states[count].set(next, [...indices, i]);
+          }
+        }
+      }
+    });
+
+    const total = pool.reduce(
+      (sum, player) => sum + Math.round(player.price * 10),
+      0
+    );
+
+    let best: number[] = [];
+    let difference = Infinity;
+
+    for (const [sum, indices] of states[target]) {
+      const currentDifference = Math.abs(total - 2 * sum);
+
+      if (currentDifference < difference) {
+        difference = currentDifference;
+        best = indices;
+      }
+    }
+
+    const selected = new Set(best);
+
+    setTeamA(pool.filter((_, i) => selected.has(i)));
+    setTeamB(pool.filter((_, i) => !selected.has(i)));
+  }
+
+  async function save() {
+    if (!name.trim() || !teamA || !teamB || busy) return;
+
+    setBusy(true);
+    setError('');
+
+    if (demoMode) {
+      const snapshot = (team: PlannerPlayer[]) =>
+        team.map(player => ({
+          id: player.id,
+          name: player.name,
+          strength: Math.round(player.price * 10),
+        }));
+
+      setMatches(prev => [
+        {
+          id: String(Date.now()),
+          title: name.trim(),
+          created_by: 'demo',
+          team_a: snapshot(teamA),
+          team_b: snapshot(teamB),
+        },
+        ...prev,
+      ]);
+    } else if (supabase) {
+      const { error: saveError } = await supabase.rpc(
+        'create_balanced_pickup_match',
+        {
+          p_title: name.trim(),
+          p_team_a: teamA.map(player => player.id),
+          p_team_b: teamB.map(player => player.id),
+        }
+      );
+
+      if (saveError) {
+        setError(
+          tr(
+            'Could not save the match. Please try again.',
+            'تعذر حفظ المباراة. حاول مرة أخرى.'
+          )
+        );
+        setBusy(false);
+        return;
+      }
+
+      const { data, error: loadError } = await supabase
+        .from('planned_pickup_matches')
+        .select('id,title,created_by,team_a,team_b')
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (loadError) {
+        setError(
+          tr(
+            'Saved, but could not refresh the list.',
+            'تم الحفظ، لكن تعذر تحديث القائمة.'
+          )
+        );
+      } else {
+        setMatches((data ?? []) as PlannerMatch[]);
+      }
+    }
+
+    setName('');
+    setChosen([]);
+    setTeamA(null);
+    setTeamB(null);
+    setOpen(false);
+    setBusy(false);
+  }
+
+  async function remove(id: string) {
+    if (
+      !window.confirm(
+        tr('Delete this planned match?', 'حذف هذه المباراة؟')
+      )
+    ) {
+      return;
+    }
+
+    if (!demoMode && supabase) {
+      const { data, error: deleteError } = await supabase
+        .from('planned_pickup_matches')
+        .delete()
+        .eq('id', id)
+        .select('id');
+
+      if (deleteError || !data?.length) {
+        setError(
+          tr('Could not delete the match.', 'تعذر حذف المباراة.')
+        );
+        return;
+      }
+    }
+
+    setMatches(prev => prev.filter(match => match.id !== id));
+  }
+
+  const renderTeam = (label: string, team: PlannerPlayer[]) => (
+    <div
+      style={{
+        flex: 1,
+        minWidth: 130,
+        padding: 14,
+        border: '1px solid var(--line)',
+        borderRadius: 12,
+        background: 'var(--panel)',
+      }}
+    >
+      <strong>
+        {label} · {money(team.reduce((sum, p) => sum + p.price, 0))}
+      </strong>
+
+      {team.map(player => (
+        <div
+          key={player.id}
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            gap: 8,
+            paddingTop: 8,
+            fontSize: 12,
+          }}
+        >
+          <span>{player.name}</span>
+          <span>{money(player.price)}</span>
+        </div>
+      ))}
+    </div>
+  );
+
+  const fromSaved = (team: PlannerSavedPlayer[]) =>
+    team.map(player => ({
+      id: player.id,
+      name: player.name,
+      price: player.strength / 10,
+    }));
+
+  return (
+    <div
+      style={{
+        margin: '0 0 22px',
+        padding: 20,
+        border: '1px solid var(--line)',
+        borderRadius: 16,
+        background: 'var(--panel2)',
+      }}
+    >
+      <h3 style={{ margin: '0 0 6px' }}>
+        {tr('Create a balanced match', 'إنشاء مباراة متوازنة')}
+      </h3>
+
+      <p className="muted" style={{ fontSize: 12 }}>
+        {tr(
+          'Select the players attending. Teams are balanced using their prices, not official fantasy points.',
+          'اختار اللاعبين الحاضرين. يتم توزيع الفرق حسب أسعار اللاعبين دون التأثير على نقاط الفانتازي.'
+        )}
+      </p>
+
+      <button
+        type="button"
+        className="primary"
+        onClick={() => setOpen(value => !value)}
+      >
+        {open ? tr('Close', 'إغلاق') : tr('Create a match', 'إنشاء مباراة')}
+      </button>
+
+      {error && (
+        <p className="notice" role="alert">
+          {error}
+        </p>
+      )}
+
+      {open && (
+        <div style={{ marginTop: 16 }}>
+          <label style={{ display: 'grid', gap: 7, fontWeight: 700 }}>
+            {tr('Match name', 'اسم المباراة')}
+
+            <input
+              value={name}
+              onChange={event => setName(event.target.value)}
+              maxLength={80}
+              placeholder={tr('Thursday match', 'مباراة الخميس')}
+              style={{
+                padding: 10,
+                borderRadius: 9,
+                border: '1px solid var(--line)',
+                background: 'var(--input-bg)',
+                color: 'var(--text)',
+              }}
+            />
+          </label>
+
+          <p style={{ marginBottom: 8 }}>
+            {tr('Select 2–30 players', 'اختار من ٢ إلى ٣٠ لاعبًا')} ·{' '}
+            {chosen.length}
+          </p>
+
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
+            {players.map(player => (
+              <button
+                type="button"
+                key={player.id}
+                aria-pressed={chosen.includes(player.id)}
+                className={
+                  chosen.includes(player.id)
+                    ? 'primary compact-btn'
+                    : 'secondary compact-btn'
+                }
+                onClick={() => toggle(player.id)}
+              >
+                {player.name} · {money(player.price)}
+              </button>
+            ))}
+          </div>
+
+          <button
+            type="button"
+            className="secondary"
+            style={{ marginTop: 14 }}
+            disabled={chosen.length < 2}
+            onClick={generate}
+          >
+            {tr('Generate balanced teams', 'وزّع الفرق بالتوازن')}
+          </button>
+
+          {teamA && teamB && (
+            <>
+              <p>
+                {tr('Price difference', 'فرق الأسعار')}:{' '}
+                {money(
+                  Math.abs(
+                    teamA.reduce((sum, p) => sum + p.price, 0) -
+                      teamB.reduce((sum, p) => sum + p.price, 0)
+                  )
+                )}
+              </p>
+
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+                {renderTeam(tr('Team A', 'الفريق أ'), teamA)}
+                {renderTeam(tr('Team B', 'الفريق ب'), teamB)}
+              </div>
+
+              <button
+                type="button"
+                className="primary"
+                style={{ marginTop: 14 }}
+                disabled={!name.trim() || busy}
+                onClick={() => void save()}
+              >
+                {busy
+                  ? tr('Saving…', 'جارٍ الحفظ…')
+                  : tr('Save match', 'حفظ المباراة')}
+              </button>
+            </>
+          )}
+        </div>
+      )}
+
+      {matches.length > 0 && (
+        <div style={{ marginTop: 18 }}>
+          <strong>{tr('Planned matches', 'المباريات المخططة')}</strong>
+
+          {matches.map(match => (
+            <details
+              key={match.id}
+              style={{
+                marginTop: 10,
+                padding: 12,
+                border: '1px solid var(--line)',
+                borderRadius: 10,
+                background: 'var(--panel)',
+              }}
+            >
+              <summary style={{ cursor: 'pointer', fontWeight: 700 }}>
+                {match.title}
+              </summary>
+
+              <div
+                style={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: 10,
+                  marginTop: 12,
+                }}
+              >
+                {renderTeam(tr('Team A', 'الفريق أ'), fromSaved(match.team_a))}
+                {renderTeam(tr('Team B', 'الفريق ب'), fromSaved(match.team_b))}
+              </div>
+
+              {(isAdmin ||
+                match.created_by === userId ||
+                (demoMode && match.created_by === 'demo')) && (
+                <button
+                  type="button"
+                  className="secondary compact-btn"
+                  style={{ marginTop: 10 }}
+                  onClick={() => void remove(match.id)}
+                >
+                  {tr('Delete match', 'حذف المباراة')}
+                </button>
+              )}
+            </details>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
