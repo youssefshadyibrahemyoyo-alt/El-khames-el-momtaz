@@ -8347,3 +8347,127 @@ button:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible
     flex: 0 0 auto;
   }
 }
+/* PREMIUM DYNAMIC MATCHDAY DESIGN */
+
+:root {
+  --radius: 18px;
+  --shadow: 0 10px 30px rgba(12, 44, 28, 0.07);
+  --shadow-hover: 0 16px 36px rgba(12, 44, 28, 0.13);
+}
+
+/* A softer stadium-inspired background */
+body {
+  background-image:
+    radial-gradient(
+      circle at 85% 0%,
+      rgba(207, 175, 94, 0.15),
+      transparent 28%
+    ),
+    radial-gradient(
+      circle at 10% 10%,
+      rgba(43, 117, 76, 0.09),
+      transparent 35%
+    );
+}
+
+html[data-theme='dark'] body {
+  background-image:
+    radial-gradient(
+      circle at 85% 0%,
+      rgba(207, 175, 94, 0.12),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 10% 10%,
+      rgba(30, 127, 75, 0.18),
+      transparent 38%
+    );
+}
+
+/* Give the main content more breathing room */
+.main {
+  padding: 30px clamp(22px, 3vw, 46px);
+}
+
+.topbar-broadcast-wrap {
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.topbar h2 {
+  font-size: clamp(25px, 2.2vw, 32px);
+  letter-spacing: -0.04em;
+}
+
+.top-actions {
+  gap: 7px;
+}
+
+.matchday-pulse-ribbon {
+  padding: 9px 13px;
+  border-radius: 13px;
+}
+
+/* A more dramatic matchday hero */
+.hero {
+  position: relative;
+  isolation: isolate;
+  min-height: 300px;
+  overflow: hidden;
+  padding: clamp(28px, 4vw, 52px);
+  border-radius: 24px;
+  border: 1px solid rgba(225, 202, 139, 0.28);
+  background:
+    radial-gradient(
+      circle at 82% 20%,
+      rgba(196, 174, 100, 0.24),
+      transparent 25%
+    ),
+    radial-gradient(
+      circle at 80% 80%,
+      rgba(55, 155, 96, 0.34),
+      transparent 35%
+    ),
+    linear-gradient(120deg, #061b12, #10472e 58%, #09291b);
+  box-shadow: 0 20px 45px rgba(5, 37, 20, 0.22);
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  width: 390px;
+  height: 390px;
+  inset-inline-end: -60px;
+  top: -130px;
+  border: 1px solid rgba(227, 219, 170, 0.2);
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 38px rgba(255, 255, 255, 0.025),
+    0 0 0 80px rgba(255, 255, 255, 0.018);
+  pointer-events: none;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 2;
+  max-width: 650px;
+}
+
+.hero h1 {
+  margin: 14px 0 12px;
+  font-size: clamp(32px, 3.5vw, 50px);
+  line-height: 1.1;
+  letter-spacing: -0.045em;
+}
+
+.hero h1 em {
+  color: #f3d78d;
+}
+
+.hero p {
+  max-width: 490px;
+  color: #d5e7d9;
+  font-size: 14px;
+  line-height: 1.7;
+}
