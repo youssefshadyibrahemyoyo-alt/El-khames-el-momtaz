@@ -8138,3 +8138,212 @@ button:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible
 /* Rival squad inspection should wrap its contents, not reserve an empty pitch. */
 .inspector-modal-wide { height: auto; min-height: 0; }
 .egypt-pitch.pitch-3d-stadium.inspector-pitch { min-height: 0; }
+/* El Khames — cleaner premium style */
+
+:root {
+  --radius: 18px;
+  --shadow: 0 8px 30px rgba(25, 46, 33, 0.05);
+  --shadow-hover: 0 14px 34px rgba(25, 46, 33, 0.1);
+}
+
+.main {
+  padding: 30px clamp(22px, 3vw, 46px);
+}
+
+.topbar-broadcast-wrap {
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.topbar h2 {
+  font-size: clamp(24px, 2vw, 30px);
+  letter-spacing: -0.035em;
+}
+
+.sidebar {
+  padding: 26px 16px 16px;
+}
+
+.hero {
+  min-height: 270px;
+  padding: clamp(28px, 4vw, 52px);
+  border-radius: 22px;
+  border: 1px solid rgba(205, 180, 121, 0.2);
+  background:
+    radial-gradient(
+      circle at 85% 15%,
+      rgba(105, 170, 113, 0.3),
+      transparent 35%
+    ),
+    linear-gradient(120deg, #092318, #155339 65%, #0a2b1d);
+  box-shadow: 0 18px 40px rgba(10, 34, 22, 0.16);
+}
+
+.hero-content {
+  max-width: 650px;
+}
+
+.hero h1 {
+  font-size: clamp(30px, 3.3vw, 48px);
+  line-height: 1.1;
+  letter-spacing: -0.045em;
+  margin: 14px 0 12px;
+}
+
+.hero p {
+  max-width: 490px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: #d9e8dc;
+}
+
+.hero .tag {
+  border-radius: 999px;
+  padding: 6px 11px;
+}
+
+.hero-actions {
+  margin-top: 24px;
+  gap: 9px;
+}
+
+.stats-grid {
+  gap: 14px;
+  margin: 16px 0 22px;
+}
+
+.stat-card {
+  padding: 22px;
+  border-radius: 17px;
+}
+
+.stat-card > span {
+  letter-spacing: 0.055em;
+}
+
+.panel {
+  border-radius: 20px;
+}
+
+.newsroom-panel {
+  padding: clamp(20px, 2.5vw, 30px);
+  margin-bottom: 20px;
+}
+
+.news-unified-stream {
+  gap: 12px;
+}
+
+.news-bulletin-card {
+  border-radius: 14px;
+  padding: 18px;
+}
+
+.market-player-card {
+  border-radius: 13px;
+  padding: 13px;
+}
+
+.squad-flagship-hero {
+  min-height: 160px;
+  margin-bottom: 18px;
+  padding: clamp(22px, 3vw, 32px);
+}
+
+@media (max-width: 900px) {
+  .app-shell {
+    display: block;
+  }
+
+  /* Keep one mobile navigation instead of two overlapping bars. */
+  .sidebar {
+    display: none;
+  }
+
+  .topbar-brand-badge {
+    display: block;
+  }
+
+  .main {
+    padding-bottom: 105px !important;
+  }
+
+  .mobile-glass-dock {
+    bottom: max(10px, env(safe-area-inset-bottom));
+  }
+}
+
+@media (max-width: 640px) {
+  .main {
+    padding: 18px 16px 24px;
+  }
+
+  .topbar-broadcast-wrap {
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .hero {
+    min-height: 250px;
+    padding: 26px 22px;
+  }
+
+  .hero h1 {
+    font-size: 32px;
+  }
+
+  .hero p {
+    font-size: 13px;
+  }
+
+  .stats-grid {
+    gap: 8px;
+    margin: 12px 0 18px;
+  }
+
+  .stat-card {
+    padding: 15px 10px;
+  }
+
+  .stat-card > strong {
+    font-size: clamp(17px, 5vw, 24px);
+  }
+
+  .newsroom-panel {
+    padding: 20px 16px;
+  }
+
+  .newsroom-panel .panel-heading,
+  .market-panel-with-dock > .panel-heading {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+  }
+
+  .market-panel-with-dock .transfer-summary {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  .market-panel-with-dock .transfer-summary > div {
+    padding: 10px;
+  }
+
+  /* Prevent the market bar from covering controls on phones. */
+  .market-sticky-dock {
+    position: static;
+    margin-top: 16px;
+  }
+
+  .leaderboard-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 6px;
+    scrollbar-width: thin;
+  }
+
+  .leaderboard-tabs button {
+    white-space: nowrap;
+    flex: 0 0 auto;
+  }
+}
